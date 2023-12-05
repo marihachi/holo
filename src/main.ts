@@ -1,1 +1,6 @@
-console.log('hello');
+import { parse } from './syntax/index.js';
+
+function entry() {
+  parse('');
+}
+entry();
