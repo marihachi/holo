@@ -1,0 +1,9 @@
+# npm
+/node_modules
+
+# editor
+/.vscode
+
+# user
+/dist
+/temp
