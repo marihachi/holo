@@ -1,4 +1,4 @@
 export type Loc = {
-	line: number;
-	column: number;
+  line: number;
+  column: number;
 };
