@@ -1,6 +1,6 @@
-import { CharStream } from './char-stream.js';
+import { CharStream } from './stream/char-stream.js';
 import { error } from './error.js';
-import type { ITokenStream } from './token-stream.js';
+import type { ITokenStream } from './stream/token-stream.js';
 import type { Token } from './token.js';
 import { TOKEN, TokenKind } from './token.js';
 
@@ -30,7 +30,7 @@ export class Scanner implements ITokenStream {
   /**
    * カーソル位置にあるトークンを取得します。
   */
-  public get token(): Token {
+  public getToken(): Token {
     return this._tokens[0]!;
   }
 
@@ -38,7 +38,7 @@ export class Scanner implements ITokenStream {
    * カーソル位置にあるトークンの種類を取得します。
   */
   public getKind(): TokenKind {
-    return this.token.kind;
+    return this.getToken().kind;
   }
 
   /**
@@ -74,7 +74,7 @@ export class Scanner implements ITokenStream {
   */
   public expect(kind: TokenKind): void {
     if (this.getKind() !== kind) {
-      throw error(`unexpected token: ${TokenKind[this.getKind()]}`, this.token.loc);
+      throw error(`unexpected token: ${TokenKind[this.getKind()]}`, this.getToken().loc);
     }
   }
 

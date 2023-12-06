@@ -1,6 +1,6 @@
-import { error } from './error.js';
-import type { Token } from './token.js';
-import { TOKEN, TokenKind } from './token.js';
+import { error } from '../error.js';
+import type { Token } from '../token.js';
+import { TOKEN, TokenKind } from '../token.js';
 
 /**
  * トークンの読み取りに関するインターフェース
@@ -9,7 +9,7 @@ export interface ITokenStream {
   /**
    * カーソル位置にあるトークンを取得します。
   */
-  get token(): Token;
+  getToken(): Token;
 
   /**
    * カーソル位置にあるトークンの種類を取得します。
@@ -60,7 +60,7 @@ export class TokenStream implements ITokenStream {
   /**
    * カーソル位置にあるトークンを取得します。
   */
-  public get token(): Token {
+  public getToken(): Token {
     if (this.eof) {
       return TOKEN(TokenKind.EOF, { line: -1, column: -1 });
     }
@@ -71,7 +71,7 @@ export class TokenStream implements ITokenStream {
    * カーソル位置にあるトークンの種類を取得します。
   */
   public getKind(): TokenKind {
-    return this.token.kind;
+    return this.getToken().kind;
   }
 
   /**
@@ -101,7 +101,7 @@ export class TokenStream implements ITokenStream {
   */
   public expect(kind: TokenKind): void {
     if (this.getKind() !== kind) {
-      throw error(`unexpected token: ${TokenKind[this.getKind()]}`, this.token.loc);
+      throw error(`unexpected token: ${TokenKind[this.getKind()]}`, this.getToken().loc);
     }
   }
 
