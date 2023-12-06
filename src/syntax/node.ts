@@ -3,23 +3,21 @@ export type Loc = {
   column: number;
 };
 
-export type SyntaxNode = Unit | Decl | Expression | Statement;
+export type SyntaxNode = Unit | FunctionDecl | VariableDecl | Expression | Statement;
 
 export class Unit {
   kind = 'Unit' as const;
   constructor(
-    public decls: Decl[],
+    public decls: (FunctionDecl | VariableDecl)[],
     public loc: Loc,
   ) {}
 }
-
-export type Decl = FunctionDecl | VariableDecl;
 
 export class FunctionDecl {
   kind = 'FunctionDecl' as const;
   constructor(
     public paramNames: string[],
-    public body: Statement[],
+    public body: (Expression | Statement)[],
     public loc: Loc,
   ) {}
 }
@@ -80,13 +78,13 @@ export class If {
 export class Block {
   kind = 'Block' as const;
   constructor(
-    public body: Statement[],
+    public body: (Expression | Statement)[],
     public result: Expression | undefined,
     public loc: Loc,
   ) {}
 }
 
-export type Statement = Assign | ExpressionStatement;
+export type Statement = VariableDecl | Assign | While | ExpressionStatement;
 
 export class Assign {
   kind = 'Assign' as const;
@@ -94,6 +92,24 @@ export class Assign {
     public mode: 'basic' | 'add' | 'sub' | 'mul' | 'div' | 'rem' | 'shl' | 'shr' | 'bitand' | 'bitor' | 'xor',
     public left: Expression,
     public right: Expression,
+    public loc: Loc,
+  ) {}
+}
+
+export class While {
+  kind = 'While' as const;
+  constructor(
+    public cond: Expression,
+    public body: (Expression | Statement)[],
+    public loc: Loc,
+  ) {}
+}
+
+export class DoWhile {
+  kind = 'DoWhile' as const;
+  constructor(
+    public cond: Expression,
+    public body: (Expression | Statement)[],
     public loc: Loc,
   ) {}
 }
