@@ -18,6 +18,8 @@ export type Decl = FunctionDecl | VariableDecl;
 export class FunctionDecl {
   kind = 'FunctionDecl' as const;
   constructor(
+    public paramNames: string[],
+    public body: Statement[],
     public loc: Loc,
   ) {}
 }
@@ -25,11 +27,13 @@ export class FunctionDecl {
 export class VariableDecl {
   kind = 'VariableDecl' as const;
   constructor(
+    public name: string,
+    public body: Expression,
     public loc: Loc,
   ) {}
 }
 
-export type Expression = NumberLiteral | Binary | Unary;
+export type Expression = NumberLiteral | Binary | Unary | If | Block;
 
 export class NumberLiteral {
   kind = 'NumberLiteral' as const;
@@ -65,10 +69,20 @@ export class If {
     public cond: Expression,
     public thenExpr: Expression,
     public elseExpr: Expression,
+    public loc: Loc,
   ) {}
 }
 
-export type Statement = Assign;
+export class Block {
+  kind = 'Block' as const;
+  constructor(
+    public body: Statement[],
+    public result: Expression | undefined,
+    public loc: Loc,
+  ) {}
+}
+
+export type Statement = Assign | ExpressionStatement;
 
 export class Assign {
   kind = 'Assign' as const;
@@ -76,6 +90,14 @@ export class Assign {
     public mode: 'basic' | 'add' | 'sub' | 'mul' | 'div' | 'rem' | 'shl' | 'shr' | 'bitand' | 'bitor' | 'xor',
     public left: Expression,
     public right: Expression,
+    public loc: Loc,
+  ) {}
+}
+
+export class ExpressionStatement {
+  kind = 'ExpressionStatement' as const;
+  constructor(
+    public expr: Expression,
     public loc: Loc,
   ) {}
 }
