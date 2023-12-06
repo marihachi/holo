@@ -155,6 +155,11 @@ export class Scanner implements ITokenStream {
           }
           break;
         }
+        case ':': {
+          this.stream.next();
+          token = TOKEN(TokenKind.Colon, loc, { });
+          break;
+        }
         case ';': {
           this.stream.next();
           token = TOKEN(TokenKind.SemiColon, loc, { });
@@ -168,6 +173,11 @@ export class Scanner implements ITokenStream {
           } else {
             token = TOKEN(TokenKind.Eq, loc, { });
           }
+          break;
+        }
+        case '!': {
+          this.stream.next();
+          token = TOKEN(TokenKind.Exclam, loc, { });
           break;
         }
       }

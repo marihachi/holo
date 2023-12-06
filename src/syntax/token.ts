@@ -17,12 +17,16 @@ export enum TokenKind {
   Minus,
   /** "/" */
   Slash,
+  /** ":" */
+  Colon,
   /** ";" */
   SemiColon,
   /** "=" */
   Eq,
   /** "==" */
   Eq2,
+  /** "!" */
+  Exclam,
 
   Fn,
   Var,
