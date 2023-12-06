@@ -65,7 +65,6 @@ export class Unary {
 export class If {
   kind = 'If' as const;
   constructor(
-    public mode: 'not' | 'compl' | 'plus' | 'minus',
     public cond: Expression,
     public thenExpr: Expression,
     public elseExpr: Expression,
