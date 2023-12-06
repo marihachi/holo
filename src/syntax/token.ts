@@ -1,6 +1,5 @@
 export enum TokenKind {
   EOF,
-  NewLine,
   Identifier,
   NumberLiteral,
 

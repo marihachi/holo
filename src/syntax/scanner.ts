@@ -95,8 +95,13 @@ export class Scanner implements ITokenStream {
         token = TOKEN(TokenKind.EOF, this.stream.getPos(), { });
         break;
       }
+
       // skip spasing
       if (spaceChars.includes(this.stream.char)) {
+        this.stream.next();
+        continue;
+      }
+      if (lineBreakChars.includes(this.stream.char)) {
         this.stream.next();
         continue;
       }
@@ -104,11 +109,6 @@ export class Scanner implements ITokenStream {
       // トークン位置を記憶
       const loc = this.stream.getPos();
 
-      if (lineBreakChars.includes(this.stream.char)) {
-        this.stream.next();
-        token = TOKEN(TokenKind.NewLine, loc, { });
-        return token;
-      }
       switch (this.stream.char) {
         case '%': {
           this.stream.next();
