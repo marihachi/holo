@@ -24,10 +24,15 @@ export enum TokenKind {
   /** "==" */
   Eq2,
 
-  If,
-  Else,
   Fn,
   Var,
+  If,
+  Else,
+  Return,
+  While,
+  Do,
+  Break,
+  Continue,
 }
 
 export type TokenLocation = { column: number, line: number };
