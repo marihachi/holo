@@ -22,9 +22,13 @@ export enum TokenKind {
   SemiColon,
   /** "=" */
   Eq,
+  /** "==" */
+  Eq2,
 
   If,
   Else,
+  Fn,
+  Var,
 }
 
 export type TokenLocation = { column: number, line: number };

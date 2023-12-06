@@ -162,7 +162,12 @@ export class Scanner implements ITokenStream {
         }
         case '=': {
           this.stream.next();
-          token = TOKEN(TokenKind.Eq, loc, { });
+          if (!this.stream.eof && (this.stream.char as string) === '=') {
+            this.stream.next();
+            token = TOKEN(TokenKind.Eq2, loc, { });
+          } else {
+            token = TOKEN(TokenKind.Eq, loc, { });
+          }
           break;
         }
       }
@@ -199,6 +204,12 @@ export class Scanner implements ITokenStream {
     }
     // check word kind
     switch (value) {
+      case 'fn': {
+        return TOKEN(TokenKind.Fn, loc, { });
+      }
+      case 'var': {
+        return TOKEN(TokenKind.Var, loc, { });
+      }
       case 'if': {
         return TOKEN(TokenKind.If, loc, { });
       }

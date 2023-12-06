@@ -43,20 +43,25 @@ export class NumberLiteral {
   ) {}
 }
 
+type BinaryMode = 'add' | 'sub' | 'mul' | 'div' | 'rem' | 'and' | 'or' | 'eq' | 'lt' | 'lte' | 'gt' | 'gte'
+  | 'shl' | 'shr' | 'bitand' | 'bitor' | 'xor';
+
 export class Binary {
   kind = 'Binary' as const;
   constructor(
-    public mode: 'add' | 'sub' | 'mul' | 'div' | 'rem' | 'and' | 'or' | 'shl' | 'shr' | 'bitand' | 'bitor' | 'xor',
+    public mode: BinaryMode,
     public left: Expression,
     public right: Expression,
     public loc: Loc,
   ) {}
 }
 
+type UnaryMode = 'not' | 'compl' | 'plus' | 'minus';
+
 export class Unary {
   kind = 'Unary' as const;
   constructor(
-    public mode: 'not' | 'compl' | 'plus' | 'minus',
+    public mode: UnaryMode,
     public expr: Expression,
     public loc: Loc,
   ) {}
