@@ -1,11 +1,22 @@
+import fs from 'fs';
 import { inspect } from 'util';
 import { generateCode } from './codegen/index.js';
 import { analyze } from './semantic/index.js';
 import { parse } from './syntax/parse.js';
 
 function entry() {
-  const ast = parse('fn abc(a, b, c) {}');
+  // load file
+  let sourceCode;
+  try {
+    sourceCode = fs.readFileSync('test.ho', { encoding: 'utf8' });
+  } catch (err) {
+    throw new Error('Failed to load a source file.');
+  }
+
+  // parse
+  const ast = parse(sourceCode);
   console.log(inspect(ast, { depth: 10 }));
+
   //analyze(ast);
   //generateCode(ast);
 }
