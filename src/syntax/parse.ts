@@ -1,5 +1,5 @@
 import { error } from './error.js';
-import { Assign, Binary, BinaryMode, Block, Expression, ExpressionStatement, FunctionDecl, If, NumberLiteral, Reference, Statement, Unary, UnaryMode, Unit, VariableDecl, While } from './node.js';
+import { Assign, Binary, BinaryMode, Block, Break, Continue, Expression, ExpressionStatement, FunctionDecl, If, NumberLiteral, Reference, Return, Statement, Unary, UnaryMode, Unit, VariableDecl, While } from './node.js';
 import { Scanner } from './scanner.js';
 import { ITokenStream } from './stream/token-stream.js';
 import { TokenKind } from './token.js';
@@ -62,6 +62,26 @@ function parseStep(s: ITokenStream): Statement | Expression {
 
   // statement
   switch (kind) {
+    case TokenKind.Break: {
+      s.next();
+      s.nextWith(TokenKind.SemiColon);
+      return new Break(loc);
+    }
+    case TokenKind.Continue: {
+      s.next();
+      s.nextWith(TokenKind.SemiColon);
+      return new Continue(loc);
+    }
+    case TokenKind.Return: {
+      s.next();
+      if (s.getKind() == TokenKind.SemiColon) {
+        s.next();
+        return new Return(undefined, loc);
+      }
+      const expr = parseExpr(s);
+      s.nextWith(TokenKind.SemiColon);
+      return new Return(expr, loc);
+    }
     case TokenKind.Var: {
       return parseVariableDecl(s);
     }

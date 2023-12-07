@@ -3,7 +3,7 @@ export type Loc = {
   column: number;
 };
 
-export type SyntaxNode = Unit | FunctionDecl | VariableDecl | Expression | Statement;
+export type SyntaxNode = Unit | FunctionDecl | Expression | Statement;
 
 export class Unit {
   kind = 'Unit' as const;
@@ -93,7 +93,29 @@ export class Block {
   ) {}
 }
 
-export type Statement = VariableDecl | Assign | While | ExpressionStatement;
+export type Statement = VariableDecl | Break | Continue | Return | Assign | While | ExpressionStatement;
+
+export class Break {
+  kind = 'Break' as const;
+  constructor(
+    public loc: Loc,
+  ) {}
+}
+
+export class Continue {
+  kind = 'Continue' as const;
+  constructor(
+    public loc: Loc,
+  ) {}
+}
+
+export class Return {
+  kind = 'Return' as const;
+  constructor(
+    public expr: Expression | undefined,
+    public loc: Loc,
+  ) {}
+}
 
 export class Assign {
   kind = 'Assign' as const;
