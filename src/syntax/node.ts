@@ -117,10 +117,12 @@ export class Return {
   ) {}
 }
 
+export type AssignMode = 'simple' | 'add' | 'sub' | 'mul' | 'div' | 'rem' | 'shl' | 'shr' | 'bitand' | 'bitor' | 'xor';
+
 export class Assign {
   kind = 'Assign' as const;
   constructor(
-    public mode: 'basic' | 'add' | 'sub' | 'mul' | 'div' | 'rem' | 'shl' | 'shr' | 'bitand' | 'bitor' | 'xor',
+    public mode: AssignMode,
     public left: Expression,
     public right: Expression,
     public loc: Loc,

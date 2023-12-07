@@ -101,7 +101,7 @@ function parseStep(s: ITokenStream): Statement | Expression {
     case TokenKind.Eq: {
       s.next();
       const right = parseExpr(s);
-      assign = new Assign('basic', left, right, loc);
+      assign = new Assign('simple', left, right, loc);
       break;
     }
     case TokenKind.AddAssign: {
