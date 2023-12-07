@@ -1,4 +1,4 @@
-import { Assign, Block, DoWhile, Expression, FunctionDecl, If, Statement, Unit, VariableDecl, While } from './node.js';
+import { Assign, Block, Expression, FunctionDecl, If, Statement, Unit, VariableDecl, While } from './node.js';
 import { Scanner } from './scanner.js';
 import { ITokenStream } from './stream/token-stream.js';
 import { TokenKind } from './token.js';
@@ -91,36 +91,50 @@ function parseVariableDecl(s: ITokenStream): VariableDecl {
   s.next();
 
   let body;
+  if (s.getKind() == TokenKind.Eq) {
+    s.next();
+    body = parseExpr(s);
+  }
 
   s.nextWith(TokenKind.SemiColon);
   return new VariableDecl(name, body, loc);
 }
 
 function parseIf(s: ITokenStream): If {
+  const loc = s.getToken().loc;
   s.nextWith(TokenKind.If);
+
   const cond = parseCond(s);
-  const thenBlock = parseBlock(s);
+
+  const thenLoc = s.getToken().loc;
+  const thenSteps = parseBlock(s);
+  const thenBlock = new Block(thenSteps, thenLoc);
+
   let elseBlock;
   if (s.getKind() == TokenKind.Else) {
+    const elseLoc = s.getToken().loc;
     s.next();
     // TODO: else if
-    elseBlock = parseBlock(s);
+    const elseSteps = parseBlock(s);
+    elseBlock = new Block(elseSteps, elseLoc);
   }
 
-  throw new Error('todo');
+  return new If(cond, thenBlock, elseBlock, loc);
 }
 
 function parseWhile(s: ITokenStream): While {
-  s.nextWith(TokenKind.While);
-  const cond = parseCond(s);
-  const body = parseBlock(s);
-  throw new Error('todo');
-}
+  const loc = s.getToken().loc;
 
-function parseDoWhile(s: ITokenStream): DoWhile {
-  s.nextWith(TokenKind.Do);
-  const body = parseBlock(s);
-  s.nextWith(TokenKind.While);
-  const cond = parseCond(s);
-  throw new Error('todo');
+  if (s.getKind() == TokenKind.While) {
+    s.nextWith(TokenKind.While);
+    const cond = parseCond(s);
+    const body = parseBlock(s);
+    return new While('while', cond, body, loc);
+  } else {
+    s.nextWith(TokenKind.Do);
+    const body = parseBlock(s);
+    s.nextWith(TokenKind.While);
+    const cond = parseCond(s);
+    return new While('do-while', cond, body, loc);
+  }
 }

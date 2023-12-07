@@ -71,7 +71,7 @@ export class If {
   constructor(
     public cond: Expression,
     public thenExpr: Expression,
-    public elseExpr: Expression,
+    public elseExpr: Expression | undefined,
     public loc: Loc,
   ) {}
 }
@@ -100,15 +100,7 @@ export class Assign {
 export class While {
   kind = 'While' as const;
   constructor(
-    public cond: Expression,
-    public body: (Expression | Statement)[],
-    public loc: Loc,
-  ) {}
-}
-
-export class DoWhile {
-  kind = 'DoWhile' as const;
-  constructor(
+    public mode: 'while' | 'do-while',
     public cond: Expression,
     public body: (Expression | Statement)[],
     public loc: Loc,
