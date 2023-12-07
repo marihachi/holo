@@ -122,7 +122,12 @@ export class Scanner implements ITokenStream {
         }
         case '%': {
           this.stream.next();
-          token = TOKEN(TokenKind.Percent, loc, { });
+          if (!this.stream.eof && (this.stream.char as string) === '=') {
+            this.stream.next();
+            token = TOKEN(TokenKind.RemAssign, loc, { });
+          } else {
+            token = TOKEN(TokenKind.Percent, loc, { });
+          }
           break;
         }
         case '&': {
@@ -147,12 +152,22 @@ export class Scanner implements ITokenStream {
         }
         case '*': {
           this.stream.next();
-          token = TOKEN(TokenKind.Asterisk, loc, { });
+          if (!this.stream.eof && (this.stream.char as string) === '=') {
+            this.stream.next();
+            token = TOKEN(TokenKind.MulAssign, loc, { });
+          } else {
+            token = TOKEN(TokenKind.Asterisk, loc, { });
+          }
           break;
         }
         case '+': {
           this.stream.next();
-          token = TOKEN(TokenKind.Plus, loc, { });
+          if (!this.stream.eof && (this.stream.char as string) === '=') {
+            this.stream.next();
+            token = TOKEN(TokenKind.AddAssign, loc, { });
+          } else {
+            token = TOKEN(TokenKind.Plus, loc, { });
+          }
           break;
         }
         case ',': {
@@ -162,7 +177,12 @@ export class Scanner implements ITokenStream {
         }
         case '-': {
           this.stream.next();
-          token = TOKEN(TokenKind.Minus, loc, { });
+          if (!this.stream.eof && (this.stream.char as string) === '=') {
+            this.stream.next();
+            token = TOKEN(TokenKind.SubAssign, loc, { });
+          } else {
+            token = TOKEN(TokenKind.Minus, loc, { });
+          }
           break;
         }
         case '/': {
@@ -175,6 +195,9 @@ export class Scanner implements ITokenStream {
             this.stream.next();
             this.skipCommentLine();
             continue;
+          } else if (!this.stream.eof && (this.stream.char as string) === '=') {
+            this.stream.next();
+            token = TOKEN(TokenKind.DivAssign, loc, { });
           } else {
             token = TOKEN(TokenKind.Slash, loc, { });
           }

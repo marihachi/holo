@@ -78,8 +78,8 @@ export class If {
   kind = 'If' as const;
   constructor(
     public cond: Expression,
-    public thenExpr: Expression,
-    public elseExpr: Expression | undefined,
+    public thenExpr: Block,
+    public elseExpr: If | Block | undefined,
     public loc: Loc,
   ) {}
 }

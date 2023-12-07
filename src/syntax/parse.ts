@@ -1,4 +1,5 @@
-import { Assign, Binary, BinaryMode, Block, Expression, FunctionDecl, If, NumberLiteral, Reference, Statement, Unary, UnaryMode, Unit, VariableDecl, While } from './node.js';
+import { error } from './error.js';
+import { Assign, Binary, BinaryMode, Block, Expression, ExpressionStatement, FunctionDecl, If, NumberLiteral, Reference, Statement, Unary, UnaryMode, Unit, VariableDecl, While } from './node.js';
 import { Scanner } from './scanner.js';
 import { ITokenStream } from './stream/token-stream.js';
 import { TokenKind } from './token.js';
@@ -56,11 +57,77 @@ function parseBlock(s: ITokenStream): (Statement | Expression)[] {
 }
 
 function parseStep(s: ITokenStream): Statement | Expression {
-  // NOTE: セミコロンの有無でStatementかExpressionかは変わる
-  // TODO: Expression
-  // TODO: Statement
-  // TODO: Assign
-  throw new Error('todo');
+  const loc = s.getToken().loc;
+  let kind = s.getKind();
+
+  // statement
+  switch (kind) {
+    case TokenKind.Var: {
+      return parseVariableDecl(s);
+    }
+    case TokenKind.While:
+    case TokenKind.Do: {
+      return parseWhile(s);
+    }
+  }
+
+  // left expression
+  const left = parseExpr(s);
+  kind = s.getKind();
+
+  // assign
+  let assign;
+  switch (kind) {
+    case TokenKind.Eq: {
+      s.next();
+      const right = parseExpr(s);
+      assign = new Assign('basic', left, right, loc);
+      break;
+    }
+    case TokenKind.AddAssign: {
+      s.next();
+      const right = parseExpr(s);
+      assign = new Assign('add', left, right, loc);
+      break;
+    }
+    case TokenKind.SubAssign: {
+      s.next();
+      const right = parseExpr(s);
+      assign = new Assign('sub', left, right, loc);
+      break;
+    }
+    case TokenKind.MulAssign: {
+      s.next();
+      const right = parseExpr(s);
+      assign = new Assign('mul', left, right, loc);
+      break;
+    }
+    case TokenKind.DivAssign: {
+      s.next();
+      const right = parseExpr(s);
+      assign = new Assign('div', left, right, loc);
+      break;
+    }
+    case TokenKind.RemAssign: {
+      s.next();
+      const right = parseExpr(s);
+      assign = new Assign('rem', left, right, loc);
+      break;
+    }
+  }
+  if (assign != null) {
+    s.nextWith(TokenKind.SemiColon);
+    return assign;
+  }
+
+  // expression statement
+  if (s.getKind() == TokenKind.SemiColon) {
+    s.next();
+    return new ExpressionStatement(left, loc);
+  }
+
+  // expression
+  return left;
 }
 
 function parseExpr(s: ITokenStream): Expression {
@@ -113,9 +180,12 @@ function parseIf(s: ITokenStream): If {
   if (s.getKind() == TokenKind.Else) {
     const elseLoc = s.getToken().loc;
     s.next();
-    // TODO: else if
-    const elseSteps = parseBlock(s);
-    elseBlock = new Block(elseSteps, elseLoc);
+     if (s.getKind() == TokenKind.If) {
+      elseBlock = parseIf(s);
+     } else {
+      const elseSteps = parseBlock(s);
+      elseBlock = new Block(elseSteps, elseLoc);
+     }
   }
 
   return new If(cond, thenBlock, elseBlock, loc);
@@ -412,7 +482,7 @@ function parseAtom(s: ITokenStream): Expression {
       return expr;
     }
     default: {
-      throw new Error(`unexpected token: ${TokenKind[s.getKind()]}`);
+      throw error(`unexpected token: ${TokenKind[s.getKind()]}`, loc);
     }
   }
 }

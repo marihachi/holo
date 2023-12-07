@@ -9,6 +9,8 @@ export enum TokenKind {
   NotEq,
   /** "%" */
   Percent,
+  /** "%=" */
+  RemAssign,
   /** "&" */
   And,
   /** "&&" */
@@ -19,14 +21,22 @@ export enum TokenKind {
   CloseParen,
   /** "*" */
   Asterisk,
+  /** "/=" */
+  MulAssign,
   /** "+" */
   Plus,
+  /** "+=" */
+  AddAssign,
   /** "," */
   Comma,
   /** "-" */
   Minus,
+  /** "-=" */
+  SubAssign,
   /** "/" */
   Slash,
+  /** "/=" */
+  DivAssign,
   /** ":" */
   Colon,
   /** ";" */
