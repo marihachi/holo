@@ -27,6 +27,10 @@ export enum TokenKind {
   Eq2,
   /** "!" */
   Exclam,
+  /** "{" */
+  OpenBrace,
+  /** "}" */
+  CloseBrace,
 
   Fn,
   Var,

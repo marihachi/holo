@@ -79,7 +79,7 @@ export class Block {
   kind = 'Block' as const;
   constructor(
     public body: (Expression | Statement)[],
-    public result: Expression | undefined,
+    //public result: Expression | undefined,
     public loc: Loc,
   ) {}
 }
