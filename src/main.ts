@@ -1,6 +1,6 @@
 import fs from 'fs';
 import { inspect } from 'util';
-import { generateCode } from './codegen/index.js';
+import { Emitter, generateCode } from './codegen/index.js';
 import { analyze } from './semantic/index.js';
 import { parse } from './syntax/parse.js';
 
@@ -15,9 +15,12 @@ function entry() {
 
   // parse
   const ast = parse(sourceCode);
-  console.log(inspect(ast, { depth: 10 }));
+  //console.log(inspect(ast, { depth: 10 }));
 
-  //analyze(ast);
-  //generateCode(ast);
+  analyze(ast);
+  const emitter = new Emitter();
+  generateCode(emitter, ast);
+
+  console.log(emitter.code);
 }
 entry();
