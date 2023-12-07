@@ -1,5 +1,5 @@
-var a = 1;
+var value = 1 + 1;
 
-fn abc(a, b, c) {
+fn main(a, b, c) {
 
 }
