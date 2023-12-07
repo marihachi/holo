@@ -1,5 +1,5 @@
 # holo
-A fast, flexible programming language.
+A programming language refined the C.
 
 WIP!
 
