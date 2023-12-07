@@ -3,8 +3,14 @@ export enum TokenKind {
   Identifier,
   NumberLiteral,
 
+  /** "!" */
+  Exclam,
   /** "%" */
   Percent,
+  /** "&" */
+  And,
+  /** "&&" */
+  And2,
   /** "(" */
   OpenParen,
   /** ")" */
@@ -21,26 +27,38 @@ export enum TokenKind {
   Colon,
   /** ";" */
   SemiColon,
+  /** "<" */
+  Lt,
+  /** "<=" */
+  Lte,
   /** "=" */
   Eq,
   /** "==" */
   Eq2,
-  /** "!" */
-  Exclam,
+  /** ">" */
+  Gt,
+  /** ">=" */
+  Gte,
+  /** "^" */
+  Hat,
   /** "{" */
   OpenBrace,
+  /** "|" */
+  Or,
+  /** "||" */
+  Or2,
   /** "}" */
   CloseBrace,
 
-  Fn,
-  Var,
-  If,
-  Else,
-  Return,
-  While,
-  Do,
   Break,
   Continue,
+  Do,
+  Else,
+  Fn,
+  If,
+  Return,
+  Var,
+  While,
 }
 
 export type TokenLocation = { column: number, line: number };

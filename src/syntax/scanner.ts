@@ -110,9 +110,24 @@ export class Scanner implements ITokenStream {
       const loc = this.stream.getPos();
 
       switch (this.stream.char) {
+        case '!': {
+          this.stream.next();
+          token = TOKEN(TokenKind.Exclam, loc, { });
+          break;
+        }
         case '%': {
           this.stream.next();
           token = TOKEN(TokenKind.Percent, loc, { });
+          break;
+        }
+        case '&': {
+          this.stream.next();
+          if (!this.stream.eof && (this.stream.char as string) === '&') {
+            this.stream.next();
+            token = TOKEN(TokenKind.And2, loc, { });
+          } else {
+            token = TOKEN(TokenKind.And, loc, { });
+          }
           break;
         }
         case '(': {
@@ -165,6 +180,16 @@ export class Scanner implements ITokenStream {
           token = TOKEN(TokenKind.SemiColon, loc, { });
           break;
         }
+        case '<': {
+          this.stream.next();
+          if (!this.stream.eof && (this.stream.char as string) === '=') {
+            this.stream.next();
+            token = TOKEN(TokenKind.Lte, loc, { });
+          } else {
+            token = TOKEN(TokenKind.Lt, loc, { });
+          }
+          break;
+        }
         case '=': {
           this.stream.next();
           if (!this.stream.eof && (this.stream.char as string) === '=') {
@@ -175,9 +200,34 @@ export class Scanner implements ITokenStream {
           }
           break;
         }
-        case '!': {
+        case '>': {
           this.stream.next();
-          token = TOKEN(TokenKind.Exclam, loc, { });
+          if (!this.stream.eof && (this.stream.char as string) === '=') {
+            this.stream.next();
+            token = TOKEN(TokenKind.Gte, loc, { });
+          } else {
+            token = TOKEN(TokenKind.Gt, loc, { });
+          }
+          break;
+        }
+        case '{': {
+          this.stream.next();
+          token = TOKEN(TokenKind.OpenBrace, loc, { });
+          break;
+        }
+        case '|': {
+          this.stream.next();
+          if (!this.stream.eof && (this.stream.char as string) === '|') {
+            this.stream.next();
+            token = TOKEN(TokenKind.Or2, loc, { });
+          } else {
+            token = TOKEN(TokenKind.Or, loc, { });
+          }
+          break;
+        }
+        case '}': {
+          this.stream.next();
+          token = TOKEN(TokenKind.CloseBrace, loc, { });
           break;
         }
       }
@@ -214,32 +264,32 @@ export class Scanner implements ITokenStream {
     }
     // check word kind
     switch (value) {
-      case 'fn': {
-        return TOKEN(TokenKind.Fn, loc, { });
-      }
-      case 'var': {
-        return TOKEN(TokenKind.Var, loc, { });
-      }
-      case 'if': {
-        return TOKEN(TokenKind.If, loc, { });
-      }
-      case 'else': {
-        return TOKEN(TokenKind.Else, loc, { });
-      }
-      case 'return': {
-        return TOKEN(TokenKind.Return, loc, { });
-      }
-      case 'while': {
-        return TOKEN(TokenKind.While, loc, { });
-      }
-      case 'do': {
-        return TOKEN(TokenKind.Do, loc, { });
-      }
       case 'break': {
         return TOKEN(TokenKind.Break, loc, { });
       }
       case 'continue': {
         return TOKEN(TokenKind.Continue, loc, { });
+      }
+      case 'do': {
+        return TOKEN(TokenKind.Do, loc, { });
+      }
+      case 'else': {
+        return TOKEN(TokenKind.Else, loc, { });
+      }
+      case 'fn': {
+        return TOKEN(TokenKind.Fn, loc, { });
+      }
+      case 'if': {
+        return TOKEN(TokenKind.If, loc, { });
+      }
+      case 'return': {
+        return TOKEN(TokenKind.Return, loc, { });
+      }
+      case 'var': {
+        return TOKEN(TokenKind.Var, loc, { });
+      }
+      case 'while': {
+        return TOKEN(TokenKind.While, loc, { });
       }
       default: {
         return TOKEN(TokenKind.Identifier, loc, { value });
