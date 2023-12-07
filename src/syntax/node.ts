@@ -32,7 +32,7 @@ export class VariableDecl {
   ) {}
 }
 
-export type Expression = NumberLiteral | Reference | Binary | Unary | If | Block;
+export type Expression = NumberLiteral | Reference | Binary | Unary | If | Switch | Block;
 
 export class NumberLiteral {
   kind = 'NumberLiteral' as const;
@@ -76,6 +76,16 @@ export class Unary {
 
 export class If {
   kind = 'If' as const;
+  constructor(
+    public cond: Expression,
+    public thenExpr: Block,
+    public elseExpr: If | Block | undefined,
+    public loc: Loc,
+  ) {}
+}
+
+export class Switch {
+  kind = 'Switch' as const;
   constructor(
     public cond: Expression,
     public thenExpr: Block,

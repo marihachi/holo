@@ -1,5 +1,5 @@
 import { error } from './error.js';
-import { Assign, Binary, BinaryMode, Block, Break, Continue, Expression, ExpressionStatement, FunctionDecl, If, NumberLiteral, Reference, Return, Statement, Unary, UnaryMode, Unit, VariableDecl, While } from './node.js';
+import { Assign, Binary, BinaryMode, Block, Break, Continue, Expression, ExpressionStatement, FunctionDecl, If, NumberLiteral, Reference, Return, Statement, Switch, Unary, UnaryMode, Unit, VariableDecl, While } from './node.js';
 import { Scanner } from './scanner.js';
 import { ITokenStream } from './stream/token-stream.js';
 import { TokenKind } from './token.js';
@@ -104,34 +104,64 @@ function parseStep(s: ITokenStream): Statement | Expression {
       assign = new Assign('simple', left, right, loc);
       break;
     }
-    case TokenKind.AddAssign: {
+    case TokenKind.PlusEq: {
       s.next();
       const right = parseExpr(s);
       assign = new Assign('add', left, right, loc);
       break;
     }
-    case TokenKind.SubAssign: {
+    case TokenKind.MinusEq: {
       s.next();
       const right = parseExpr(s);
       assign = new Assign('sub', left, right, loc);
       break;
     }
-    case TokenKind.MulAssign: {
+    case TokenKind.AsterEq: {
       s.next();
       const right = parseExpr(s);
       assign = new Assign('mul', left, right, loc);
       break;
     }
-    case TokenKind.DivAssign: {
+    case TokenKind.SlashEq: {
       s.next();
       const right = parseExpr(s);
       assign = new Assign('div', left, right, loc);
       break;
     }
-    case TokenKind.RemAssign: {
+    case TokenKind.PercentEq: {
       s.next();
       const right = parseExpr(s);
       assign = new Assign('rem', left, right, loc);
+      break;
+    }
+    case TokenKind.Lt2Eq: {
+      s.next();
+      const right = parseExpr(s);
+      assign = new Assign('shl', left, right, loc);
+      break;
+    }
+    case TokenKind.Gt2Eq: {
+      s.next();
+      const right = parseExpr(s);
+      assign = new Assign('shr', left, right, loc);
+      break;
+    }
+    case TokenKind.AndEq: {
+      s.next();
+      const right = parseExpr(s);
+      assign = new Assign('bitand', left, right, loc);
+      break;
+    }
+    case TokenKind.OrEq: {
+      s.next();
+      const right = parseExpr(s);
+      assign = new Assign('bitor', left, right, loc);
+      break;
+    }
+    case TokenKind.HatEq: {
+      s.next();
+      const right = parseExpr(s);
+      assign = new Assign('xor', left, right, loc);
       break;
     }
   }
@@ -211,6 +241,10 @@ function parseIf(s: ITokenStream): If {
   return new If(cond, thenBlock, elseBlock, loc);
 }
 
+function parseSwitch(s: ITokenStream): Switch {
+  throw new Error('todo');
+}
+
 function parseWhile(s: ITokenStream): While {
   const loc = s.getToken().loc;
 
@@ -251,9 +285,9 @@ type InfixToken =
   | TokenKind.Plus
   | TokenKind.Minus
   | TokenKind.Lt
-  | TokenKind.Lte
+  | TokenKind.LtEq
   | TokenKind.Gt
-  | TokenKind.Gte
+  | TokenKind.GtEq
   | TokenKind.Eq2
   | TokenKind.NotEq
   | TokenKind.And2
@@ -279,9 +313,9 @@ const operators: OpInfo[] = [
   infixOp(TokenKind.Plus, 60, 61),
   infixOp(TokenKind.Minus, 60, 61),
   infixOp(TokenKind.Lt, 50, 51),
-  infixOp(TokenKind.Lte, 50, 51),
+  infixOp(TokenKind.LtEq, 50, 51),
   infixOp(TokenKind.Gt, 50, 51),
-  infixOp(TokenKind.Gte, 50, 51),
+  infixOp(TokenKind.GtEq, 50, 51),
   infixOp(TokenKind.Eq2, 40, 41),
   infixOp(TokenKind.NotEq, 40, 41),
   infixOp(TokenKind.And2, 30, 31),
@@ -420,7 +454,7 @@ function parseInfix(s: ITokenStream, left: Expression, info: InfixInfo): Express
       mode = 'lt';
       break;
     }
-    case TokenKind.Lte: {
+    case TokenKind.LtEq: {
       mode = 'lte';
       break;
     }
@@ -428,7 +462,7 @@ function parseInfix(s: ITokenStream, left: Expression, info: InfixInfo): Express
       mode = 'gt';
       break;
     }
-    case TokenKind.Gte: {
+    case TokenKind.GtEq: {
       mode = 'gte';
       break;
     }
@@ -494,6 +528,9 @@ function parseAtom(s: ITokenStream): Expression {
     // }
     case TokenKind.If: {
       return parseIf(s);
+    }
+    case TokenKind.Switch: {
+      return parseSwitch(s);
     }
     case TokenKind.OpenParen: {
       s.next();

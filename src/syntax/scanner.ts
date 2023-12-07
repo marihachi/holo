@@ -124,7 +124,7 @@ export class Scanner implements ITokenStream {
           this.stream.next();
           if (!this.stream.eof && (this.stream.char as string) === '=') {
             this.stream.next();
-            token = TOKEN(TokenKind.RemAssign, loc, { });
+            token = TOKEN(TokenKind.PercentEq, loc, { });
           } else {
             token = TOKEN(TokenKind.Percent, loc, { });
           }
@@ -154,7 +154,7 @@ export class Scanner implements ITokenStream {
           this.stream.next();
           if (!this.stream.eof && (this.stream.char as string) === '=') {
             this.stream.next();
-            token = TOKEN(TokenKind.MulAssign, loc, { });
+            token = TOKEN(TokenKind.AsterEq, loc, { });
           } else {
             token = TOKEN(TokenKind.Asterisk, loc, { });
           }
@@ -164,7 +164,7 @@ export class Scanner implements ITokenStream {
           this.stream.next();
           if (!this.stream.eof && (this.stream.char as string) === '=') {
             this.stream.next();
-            token = TOKEN(TokenKind.AddAssign, loc, { });
+            token = TOKEN(TokenKind.PlusEq, loc, { });
           } else {
             token = TOKEN(TokenKind.Plus, loc, { });
           }
@@ -179,7 +179,7 @@ export class Scanner implements ITokenStream {
           this.stream.next();
           if (!this.stream.eof && (this.stream.char as string) === '=') {
             this.stream.next();
-            token = TOKEN(TokenKind.SubAssign, loc, { });
+            token = TOKEN(TokenKind.MinusEq, loc, { });
           } else {
             token = TOKEN(TokenKind.Minus, loc, { });
           }
@@ -197,7 +197,7 @@ export class Scanner implements ITokenStream {
             continue;
           } else if (!this.stream.eof && (this.stream.char as string) === '=') {
             this.stream.next();
-            token = TOKEN(TokenKind.DivAssign, loc, { });
+            token = TOKEN(TokenKind.SlashEq, loc, { });
           } else {
             token = TOKEN(TokenKind.Slash, loc, { });
           }
@@ -215,9 +215,17 @@ export class Scanner implements ITokenStream {
         }
         case '<': {
           this.stream.next();
-          if (!this.stream.eof && (this.stream.char as string) === '=') {
+          if (!this.stream.eof && (this.stream.char as string) === '<') {
             this.stream.next();
-            token = TOKEN(TokenKind.Lte, loc, { });
+            if (!this.stream.eof && (this.stream.char as string) === '=') {
+              this.stream.next();
+              token = TOKEN(TokenKind.Lt2Eq, loc, { });
+            } else {
+              token = TOKEN(TokenKind.Lt2, loc, { });
+            }
+          } else if (!this.stream.eof && (this.stream.char as string) === '=') {
+            this.stream.next();
+            token = TOKEN(TokenKind.LtEq, loc, { });
           } else {
             token = TOKEN(TokenKind.Lt, loc, { });
           }
@@ -235,9 +243,17 @@ export class Scanner implements ITokenStream {
         }
         case '>': {
           this.stream.next();
-          if (!this.stream.eof && (this.stream.char as string) === '=') {
+          if (!this.stream.eof && (this.stream.char as string) === '>') {
             this.stream.next();
-            token = TOKEN(TokenKind.Gte, loc, { });
+            if (!this.stream.eof && (this.stream.char as string) === '=') {
+              this.stream.next();
+              token = TOKEN(TokenKind.Gt2Eq, loc, { });
+            } else {
+              token = TOKEN(TokenKind.Gt2, loc, { });
+            }
+          } else if (!this.stream.eof && (this.stream.char as string) === '=') {
+            this.stream.next();
+            token = TOKEN(TokenKind.GtEq, loc, { });
           } else {
             token = TOKEN(TokenKind.Gt, loc, { });
           }
@@ -317,6 +333,9 @@ export class Scanner implements ITokenStream {
       }
       case 'return': {
         return TOKEN(TokenKind.Return, loc, { });
+      }
+      case 'switch': {
+        return TOKEN(TokenKind.Switch, loc, { });
       }
       case 'var': {
         return TOKEN(TokenKind.Var, loc, { });

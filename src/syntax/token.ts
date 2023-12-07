@@ -10,33 +10,35 @@ export enum TokenKind {
   /** "%" */
   Percent,
   /** "%=" */
-  RemAssign,
+  PercentEq,
   /** "&" */
   And,
   /** "&&" */
   And2,
+  /** "&=" */
+  AndEq,
   /** "(" */
   OpenParen,
   /** ")" */
   CloseParen,
   /** "*" */
   Asterisk,
-  /** "/=" */
-  MulAssign,
+  /** "*=" */
+  AsterEq,
   /** "+" */
   Plus,
   /** "+=" */
-  AddAssign,
+  PlusEq,
   /** "," */
   Comma,
   /** "-" */
   Minus,
   /** "-=" */
-  SubAssign,
+  MinusEq,
   /** "/" */
   Slash,
   /** "/=" */
-  DivAssign,
+  SlashEq,
   /** ":" */
   Colon,
   /** ";" */
@@ -44,7 +46,11 @@ export enum TokenKind {
   /** "<" */
   Lt,
   /** "<=" */
-  Lte,
+  LtEq,
+  /** "<<" */
+  Lt2,
+  /** "<<=" */
+  Lt2Eq,
   /** "=" */
   Eq,
   /** "==" */
@@ -52,9 +58,15 @@ export enum TokenKind {
   /** ">" */
   Gt,
   /** ">=" */
-  Gte,
+  GtEq,
+  /** ">>" */
+  Gt2,
+  /** ">>=" */
+  Gt2Eq,
   /** "^" */
   Hat,
+  /** "^=" */
+  HatEq,
   /** "[" */
   OpenBracket,
   /** "]" */
@@ -65,6 +77,8 @@ export enum TokenKind {
   Or,
   /** "||" */
   Or2,
+  /** "|=" */
+  OrEq,
   /** "}" */
   CloseBrace,
 
@@ -75,6 +89,7 @@ export enum TokenKind {
   Fn,
   If,
   Return,
+  Switch,
   Var,
   While,
 }
