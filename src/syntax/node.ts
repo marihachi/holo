@@ -16,6 +16,7 @@ export class Unit {
 export class FunctionDecl {
   kind = 'FunctionDecl' as const;
   constructor(
+    public name: string,
     public paramNames: string[],
     public body: (Expression | Statement)[],
     public loc: Loc,
@@ -26,7 +27,7 @@ export class VariableDecl {
   kind = 'VariableDecl' as const;
   constructor(
     public name: string,
-    public body: Expression,
+    public body: Expression | undefined,
     public loc: Loc,
   ) {}
 }

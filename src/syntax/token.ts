@@ -19,6 +19,8 @@ export enum TokenKind {
   Asterisk,
   /** "+" */
   Plus,
+  /** "," */
+  Comma,
   /** "-" */
   Minus,
   /** "/" */

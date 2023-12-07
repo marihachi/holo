@@ -150,6 +150,11 @@ export class Scanner implements ITokenStream {
           token = TOKEN(TokenKind.Plus, loc, { });
           break;
         }
+        case ',': {
+          this.stream.next();
+          token = TOKEN(TokenKind.Comma, loc, { });
+          break;
+        }
         case '-': {
           this.stream.next();
           token = TOKEN(TokenKind.Minus, loc, { });
