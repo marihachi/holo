@@ -4,11 +4,11 @@ A programming language refined the C.
 WIP!
 
 ## Concept
-- コンパイルするとC言語のコードが生成される
-- C言語ライクでありながら改良された文法
+- Compile to generate C code - コンパイルするとC言語のコードを生成する
+- Improved C-based syntax - C言語をベースにした改良された文法
   - if式やswitch式のサポート
   - ブロック式による値のReturn
-- 高級な型システム
+- High-level type system - 高級な型システム
   - 参照型のサポート
   - いずれかの型であることを表すユニオン型のサポート
 
