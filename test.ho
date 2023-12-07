@@ -1,3 +1,5 @@
+var a = 1;
+
 fn abc(a, b, c) {
 
 }

@@ -4,7 +4,9 @@ export enum TokenKind {
   NumberLiteral,
 
   /** "!" */
-  Exclam,
+  Not,
+  /** "!=" */
+  NotEq,
   /** "%" */
   Percent,
   /** "&" */
@@ -43,6 +45,10 @@ export enum TokenKind {
   Gte,
   /** "^" */
   Hat,
+  /** "[" */
+  OpenBracket,
+  /** "]" */
+  CloseBracket,
   /** "{" */
   OpenBrace,
   /** "|" */

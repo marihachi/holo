@@ -112,7 +112,12 @@ export class Scanner implements ITokenStream {
       switch (this.stream.char) {
         case '!': {
           this.stream.next();
-          token = TOKEN(TokenKind.Exclam, loc, { });
+          if (!this.stream.eof && (this.stream.char as string) === '=') {
+            this.stream.next();
+            token = TOKEN(TokenKind.NotEq, loc, { });
+          } else {
+            token = TOKEN(TokenKind.Not, loc, { });
+          }
           break;
         }
         case '%': {

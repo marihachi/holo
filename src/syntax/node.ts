@@ -32,7 +32,7 @@ export class VariableDecl {
   ) {}
 }
 
-export type Expression = NumberLiteral | Binary | Unary | If | Block;
+export type Expression = NumberLiteral | Reference | Binary | Unary | If | Block;
 
 export class NumberLiteral {
   kind = 'NumberLiteral' as const;
@@ -42,7 +42,15 @@ export class NumberLiteral {
   ) {}
 }
 
-type BinaryMode = 'add' | 'sub' | 'mul' | 'div' | 'rem' | 'and' | 'or' | 'eq' | 'lt' | 'lte' | 'gt' | 'gte'
+export class Reference {
+  kind = 'Reference' as const;
+  constructor(
+    public name: string,
+    public loc: Loc,
+  ) {}
+}
+
+export type BinaryMode = 'add' | 'sub' | 'mul' | 'div' | 'rem' | 'and' | 'or' | 'eq' | 'neq' | 'lt' | 'lte' | 'gt' | 'gte'
   | 'shl' | 'shr' | 'bitand' | 'bitor' | 'xor';
 
 export class Binary {
@@ -55,7 +63,7 @@ export class Binary {
   ) {}
 }
 
-type UnaryMode = 'not' | 'compl' | 'plus' | 'minus';
+export type UnaryMode = 'not' | 'compl' | 'plus' | 'minus';
 
 export class Unary {
   kind = 'Unary' as const;
