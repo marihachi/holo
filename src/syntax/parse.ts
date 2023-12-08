@@ -218,31 +218,41 @@ function parseVariableDecl(s: ITokenStream): VariableDecl {
 
 function parseIf(s: ITokenStream): If {
   const loc = s.getToken().loc;
+
   s.nextWith(TokenKind.If);
-
   const cond = parseCond(s);
-
-  const thenLoc = s.getToken().loc;
-  const thenSteps = parseBlock(s);
-  const thenBlock = new Block(thenSteps, thenLoc);
-
-  let elseBlock;
+  const  thenExpr = parseExpr(s);
+  let elseExpr;
   if (s.getKind() == TokenKind.Else) {
-    const elseLoc = s.getToken().loc;
     s.next();
-     if (s.getKind() == TokenKind.If) {
-      elseBlock = parseIf(s);
-     } else {
-      const elseSteps = parseBlock(s);
-      elseBlock = new Block(elseSteps, elseLoc);
-     }
+    elseExpr = parseExpr(s);
   }
 
-  return new If(cond, thenBlock, elseBlock, loc);
+  return new If(cond, thenExpr, elseExpr, loc);
 }
 
 function parseSwitch(s: ITokenStream): Switch {
-  throw new Error('todo');
+  const loc = s.getToken().loc;
+
+  s.nextWith(TokenKind.Switch);
+  const cond = parseCond(s);
+  s.nextWith(TokenKind.OpenBrace);
+  const arms = [];
+  let defaultBlock;
+  while (s.getKind() != TokenKind.CloseBrace) {
+    if (s.getKind() == TokenKind.Default) {
+      s.next();
+      defaultBlock = parseBlock(s);
+      break;
+    }
+    s.nextWith(TokenKind.Case);
+    const armCond = parseExpr(s);
+    const armBlock = parseBlock(s);
+    arms.push({ cond: armCond, thenBlock: armBlock });
+  }
+  s.nextWith(TokenKind.CloseBrace);
+
+  return new Switch(arms, defaultBlock);
 }
 
 function parseWhile(s: ITokenStream): While {
@@ -297,12 +307,12 @@ type PostfixInfo = { kind: 'postfix', token: PostfixToken, bp: number };
 const postfixOp = (token: PostfixToken, bp: number): OpInfo => ({ kind: 'postfix', token, bp });
 
 type PostfixToken =
-  | TokenKind.OpenBracket
+  //| TokenKind.OpenBracket
   | TokenKind.OpenParen;
 
 const operators: OpInfo[] = [
   postfixOp(TokenKind.OpenParen, 90),
-  postfixOp(TokenKind.OpenBracket, 90),
+  //postfixOp(TokenKind.OpenBracket, 90),
   //infixOp(TokenKind.Dot, 90, 91),
   prefixOp(TokenKind.Not, 80),
   prefixOp(TokenKind.Plus, 80),
@@ -336,15 +346,15 @@ function parsePratt(s: ITokenStream, minBp: number): Expression {
   }
   while (true) {
     const kind = s.getKind();
-    // const postfix = operators.find((x): x is PostfixInfo => x.kind == 'postfix' && x.token == kind);
-    // if (postfix != null) {
-    //   // postfix
-    //   if (postfix.bp < minBp) {
-    //     break;
-    //   }
-    //   left = parsePostfix(s, left, postfix);
-    //   continue;
-    // }
+    const postfix = operators.find((x): x is PostfixInfo => x.kind == 'postfix' && x.token == kind);
+    if (postfix != null) {
+      // postfix
+      if (postfix.bp < minBp) {
+        break;
+      }
+      left = parsePostfix(s, left, postfix);
+      continue;
+    }
     const infix = operators.find((x): x is InfixInfo => x.kind == 'infix' && x.token == kind);
     if (infix != null) {
       // infix
@@ -383,34 +393,34 @@ function parsePrefix(s: ITokenStream, info: PrefixInfo): Expression {
   return new Unary(mode, right, loc);
 }
 
-// function parsePostfix(s: ITokenStream, left: Expression, info: PostfixInfo): Expression {
-//   const loc = s.getToken().loc;
-//   s.next();
-//   switch (info.token) {
-//     case TokenKind.OpenBracket: {
-//       // index access
-//       const index = parseExpr(s);
-//       s.nextWith(TokenKind.CloseBracket);
-//       return createIndexAccess(loc, left, index);
-//     }
-//     case TokenKind.OpenParen: {
-//       // call
-//       const args: Expression[] = [];
-//       if (s.getKind() != TokenKind.CloseParen) {
-//         args.push(parseExpr(s));
-//         while (s.getKind() == (TokenKind.Comma)) {
-//           s.next();
-//           if (s.getKind() == (TokenKind.CloseParen)) {
-//             break;
-//           }
-//           args.push(parseExpr(s));
-//         }
-//       }
-//       s.nextWith(TokenKind.CloseParen);
-//       return createCall(loc, left, args);
-//     }
-//   }
-// }
+function parsePostfix(s: ITokenStream, left: Expression, info: PostfixInfo): Expression {
+  const loc = s.getToken().loc;
+  s.next();
+  switch (info.token) {
+    // case TokenKind.OpenBracket: {
+    //   // index access
+    //   const index = parseExpr(s);
+    //   s.nextWith(TokenKind.CloseBracket);
+    //   return createIndexAccess(loc, left, index);
+    // }
+    case TokenKind.OpenParen: {
+      // call
+      const args: Expression[] = [];
+      if (s.getKind() != TokenKind.CloseParen) {
+        args.push(parseExpr(s));
+        while (s.getKind() == (TokenKind.Comma)) {
+          s.next();
+          if (s.getKind() == (TokenKind.CloseParen)) {
+            break;
+          }
+          args.push(parseExpr(s));
+        }
+      }
+      s.nextWith(TokenKind.CloseParen);
+      return new Call(loc, left, args);
+    }
+  }
+}
 
 function parseInfix(s: ITokenStream, left: Expression, info: InfixInfo): Expression {
   const loc = s.getToken().loc;

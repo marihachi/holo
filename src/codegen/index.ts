@@ -22,8 +22,10 @@ export class Emitter {
   }
 }
 
-export function generateCode(e: Emitter, node: Unit) {
+export function generateCode(node: Unit) {
+  const e = new Emitter();
   emit(e, node);
+  return e.code;
 }
 
 function emit(e: Emitter, node: SyntaxNode) {

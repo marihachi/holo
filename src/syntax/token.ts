@@ -83,7 +83,9 @@ export enum TokenKind {
   CloseBrace,
 
   Break,
+  Case,
   Continue,
+  Default,
   Do,
   Else,
   Fn,

@@ -87,9 +87,8 @@ export class If {
 export class Switch {
   kind = 'Switch' as const;
   constructor(
-    public cond: Expression,
-    public thenExpr: Block,
-    public elseExpr: If | Block | undefined,
+    public arms: { cond: Expression, thenBlock: Block }[],
+    public defaultBlock: Block | undefined,
     public loc: Loc,
   ) {}
 }

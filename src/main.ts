@@ -16,11 +16,8 @@ function entry() {
   // parse
   const ast = parse(sourceCode);
   //console.log(inspect(ast, { depth: 10 }));
-
   analyze(ast);
-  const emitter = new Emitter();
-  generateCode(emitter, ast);
-
-  console.log(emitter.code);
+  const code = generateCode(ast);
+  console.log(code);
 }
 entry();

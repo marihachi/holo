@@ -316,8 +316,14 @@ export class Scanner implements ITokenStream {
       case 'break': {
         return TOKEN(TokenKind.Break, loc, { });
       }
+      case 'case': {
+        return TOKEN(TokenKind.Case, loc, { });
+      }
       case 'continue': {
         return TOKEN(TokenKind.Continue, loc, { });
+      }
+      case 'default': {
+        return TOKEN(TokenKind.Default, loc, { });
       }
       case 'do': {
         return TOKEN(TokenKind.Do, loc, { });
