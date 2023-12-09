@@ -3,7 +3,7 @@ import { inspect } from 'util';
 import { generate } from './compile/codegen.js';
 import { typecheck } from './compile/typecheck.js';
 import { parse } from './compile/parse.js';
-import { lowering } from './compile/lowering/index.js';
+import { lowering } from './compile/lowering.js';
 
 function entry() {
   // load file
