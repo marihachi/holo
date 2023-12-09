@@ -1,8 +1,8 @@
 import fs from 'fs';
 import { inspect } from 'util';
-import { Emitter, generateCode } from './codegen/index.js';
-import { analyze } from './semantic/index.js';
-import { parse } from './syntax/parse.js';
+import { Emitter, generateCode } from './compile/codegen.js';
+import { typecheck } from './compile/typecheck.js';
+import { parse } from './compile/parse.js';
 
 function entry() {
   // load file
@@ -16,7 +16,7 @@ function entry() {
   // parse
   const ast = parse(sourceCode);
   //console.log(inspect(ast, { depth: 10 }));
-  analyze(ast);
+  typecheck(ast);
   const code = generateCode(ast);
   console.log(code);
 }

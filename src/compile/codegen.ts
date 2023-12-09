@@ -1,4 +1,4 @@
-import { SyntaxNode, Unit } from '../syntax/node.js';
+import { SyntaxNode, Unit, isExpr } from './ast.js';
 
 export class Emitter {
   code: string;
@@ -28,12 +28,12 @@ export function generateCode(node: Unit) {
   return e.code;
 }
 
-function emit(e: Emitter, node: SyntaxNode) {
+function emit(e: Emitter, node: SyntaxNode, parent?: SyntaxNode) {
   switch (node.kind) {
     case 'Unit': {
       for (const decl of node.decls) {
         e.beginLine();
-        emit(e, decl);
+        emit(e, decl, node);
         e.endLine();
       }
       break;
@@ -53,7 +53,7 @@ function emit(e: Emitter, node: SyntaxNode) {
       e.level(1);
       for (const step of node.body) {
         e.beginLine();
-        emit(e, step);
+        emit(e, step, node);
         e.endLine();
       }
       e.level(-1);
@@ -69,7 +69,7 @@ function emit(e: Emitter, node: SyntaxNode) {
         e.level(1);
         e.beginLine();
         e.code += '= ';
-        emit(e, node.body);
+        emit(e, node.body, node);
         e.code += ';';
         e.level(-1);
       } else {
@@ -115,13 +115,13 @@ function emit(e: Emitter, node: SyntaxNode) {
       e.code += 'return';
       if (node.expr != null) {
         e.code += ' ';
-        emit(e, node.expr);
+        emit(e, node.expr, node);
       }
       e.code += ';';
       break;
     }
     case 'Assign': {
-      emit(e, node.left);
+      emit(e, node.left, node);
       switch (node.mode) {
         case 'simple': { e.code += ' = '; break; }
         case 'add': { e.code += ' += '; break; }
@@ -134,13 +134,13 @@ function emit(e: Emitter, node: SyntaxNode) {
         case 'shl': { e.code += ' <<= '; break; }
         case 'shr': { e.code += ' >>= '; break; }
       }
-      emit(e, node.right);
+      emit(e, node.right, node);
       break;
     }
     case 'While': {
       e.code += 'while ';
       e.code += '(';
-      emit(e, node.cond);
+      emit(e, node.cond, node);
       e.code += ')';
       e.code += ' {';
       e.endLine();
@@ -148,7 +148,49 @@ function emit(e: Emitter, node: SyntaxNode) {
       e.level(1);
       for (const step of node.body) {
         e.beginLine();
-        emit(e, step);
+        emit(e, step, node);
+        e.endLine();
+      }
+      e.level(-1);
+
+      e.beginLine();
+      e.code += '}';
+      break;
+    }
+    case 'Switch': {
+      e.code += 'switch ';
+      e.code += '(';
+      emit(e, node.expr, node);
+      e.code += ')';
+      e.code += ' {';
+      e.endLine();
+
+      e.level(1);
+      for (const arm of node.arms) {
+        e.beginLine();
+        e.code += 'case ';
+        emit(e, arm.cond, node);
+        e.code += ': {';
+        e.endLine();
+        let blockResult;
+        for (const step of arm.thenBlock.body) {
+          if (!isExpr(step)) {
+            e.beginLine();
+            emit(e, step, arm.thenBlock);
+            e.endLine();
+          }
+          blockResult = step;
+        }
+        // TODO: support Assign
+        if (parent != null && blockResult != null && parent.kind == 'VariableDecl' && isExpr(blockResult)) {
+          e.beginLine();
+          e.code += `${parent.name} = `;
+          emit(e, blockResult, arm.thenBlock);
+          e.code += ';';
+          e.endLine();
+        }
+        e.beginLine();
+        e.code += '}';
         e.endLine();
       }
       e.level(-1);
@@ -158,7 +200,7 @@ function emit(e: Emitter, node: SyntaxNode) {
       break;
     }
     case 'ExpressionStatement': {
-      emit(e, node.expr);
+      emit(e, node.expr, node);
       e.code += ';';
       break;
     }

@@ -32,7 +32,22 @@ export class VariableDecl {
   ) {}
 }
 
-export type Expression = NumberLiteral | Reference | Binary | Unary | If | Switch | Block;
+export type Expression = NumberLiteral | Reference | Binary | Unary | If | Switch | Block | Call;
+
+export function isExpr(node: SyntaxNode): node is Expression {
+  switch (node.kind) {
+    case 'NumberLiteral':
+    case 'Reference':
+    case 'Binary':
+    case 'Unary':
+    case 'If':
+    case 'Switch':
+    case 'Block':
+    case 'Call':
+      return true;
+  }
+  return false;
+}
 
 export class NumberLiteral {
   kind = 'NumberLiteral' as const;
@@ -78,8 +93,8 @@ export class If {
   kind = 'If' as const;
   constructor(
     public cond: Expression,
-    public thenExpr: Block,
-    public elseExpr: If | Block | undefined,
+    public thenExpr: Expression,
+    public elseExpr: Expression | undefined,
     public loc: Loc,
   ) {}
 }
@@ -87,6 +102,7 @@ export class If {
 export class Switch {
   kind = 'Switch' as const;
   constructor(
+    public expr: Expression,
     public arms: { cond: Expression, thenBlock: Block }[],
     public defaultBlock: Block | undefined,
     public loc: Loc,
@@ -98,6 +114,15 @@ export class Block {
   constructor(
     public body: (Expression | Statement)[],
     //public result: Expression | undefined,
+    public loc: Loc,
+  ) {}
+}
+
+export class Call {
+  kind = 'Call' as const;
+  constructor(
+    public expr: Expression,
+    public args: Expression[],
     public loc: Loc,
   ) {}
 }

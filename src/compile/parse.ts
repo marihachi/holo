@@ -1,5 +1,5 @@
 import { error } from './error.js';
-import { Assign, Binary, BinaryMode, Block, Break, Continue, Expression, ExpressionStatement, FunctionDecl, If, NumberLiteral, Reference, Return, Statement, Switch, Unary, UnaryMode, Unit, VariableDecl, While } from './node.js';
+import { Assign, Binary, BinaryMode, Block, Break, Call, Continue, Expression, ExpressionStatement, FunctionDecl, If, NumberLiteral, Reference, Return, Statement, Switch, Unary, UnaryMode, Unit, VariableDecl, While } from './ast.js';
 import { Scanner } from './scanner.js';
 import { ITokenStream } from './stream/token-stream.js';
 import { TokenKind } from './token.js';
@@ -221,7 +221,7 @@ function parseIf(s: ITokenStream): If {
 
   s.nextWith(TokenKind.If);
   const cond = parseCond(s);
-  const  thenExpr = parseExpr(s);
+  const thenExpr = parseExpr(s);
   let elseExpr;
   if (s.getKind() == TokenKind.Else) {
     s.next();
@@ -235,24 +235,26 @@ function parseSwitch(s: ITokenStream): Switch {
   const loc = s.getToken().loc;
 
   s.nextWith(TokenKind.Switch);
-  const cond = parseCond(s);
+  const expr = parseCond(s);
   s.nextWith(TokenKind.OpenBrace);
   const arms = [];
   let defaultBlock;
   while (s.getKind() != TokenKind.CloseBrace) {
     if (s.getKind() == TokenKind.Default) {
       s.next();
-      defaultBlock = parseBlock(s);
+      const defaultArmLoc = s.getToken().loc;
+      defaultBlock = new Block(parseBlock(s), defaultArmLoc);
       break;
     }
     s.nextWith(TokenKind.Case);
     const armCond = parseExpr(s);
-    const armBlock = parseBlock(s);
+    const armLoc = s.getToken().loc;
+    const armBlock = new Block(parseBlock(s), armLoc);
     arms.push({ cond: armCond, thenBlock: armBlock });
   }
   s.nextWith(TokenKind.CloseBrace);
 
-  return new Switch(arms, defaultBlock);
+  return new Switch(expr, arms, defaultBlock, loc);
 }
 
 function parseWhile(s: ITokenStream): While {
@@ -417,7 +419,7 @@ function parsePostfix(s: ITokenStream, left: Expression, info: PostfixInfo): Exp
         }
       }
       s.nextWith(TokenKind.CloseParen);
-      return new Call(loc, left, args);
+      return new Call(left, args, loc);
     }
   }
 }
