@@ -11,13 +11,6 @@ export function lowering(node: Unit): Unit {
 function transformExprStack(unit: Unit): Unit {
   function transform(node: SyntaxNode): any {
     switch (node.kind) {
-      case 'Call': {
-        node.expr = transform(node.expr);
-        for (let i = 0; i < node.args.length; i++) {
-          node.args[i] = transform(node.args[i]);
-        }
-        break;
-      }
       case 'Unit': {
         for (let i = 0; i < node.decls.length; i++) {
           node.decls[i] = transform(node.decls[i]);
@@ -62,6 +55,13 @@ function transformExprStack(unit: Unit): Unit {
       case 'Block': {
         for (let i = 0; i < node.body.length; i++) {
           node.body[i] = transform(node.body[i]);
+        }
+        break;
+      }
+      case 'Call': {
+        node.expr = transform(node.expr);
+        for (let i = 0; i < node.args.length; i++) {
+          node.args[i] = transform(node.args[i]);
         }
         break;
       }

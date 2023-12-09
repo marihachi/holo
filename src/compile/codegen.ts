@@ -101,6 +101,10 @@ function emit(e: Emitter, node: SyntaxNode, parent?: SyntaxNode) {
       // TODO
       break;
     }
+    case 'Call': {
+      // TODO
+      break;
+    }
     case 'Break': {
       e.code += 'break';
       e.code += ';';
