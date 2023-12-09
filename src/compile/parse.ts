@@ -1,4 +1,4 @@
-import { error } from './error.js';
+import { error } from './util/error.js';
 import { Assign, Binary, BinaryMode, Block, Break, Call, Continue, Expression, ExpressionStatement, FunctionDecl, If, NumberLiteral, Reference, Return, Statement, Switch, Unary, UnaryMode, Unit, VariableDecl, While } from './ast.js';
 import { Scanner } from './scanner.js';
 import { ITokenStream } from './stream/token-stream.js';

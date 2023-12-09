@@ -1,5 +1,5 @@
 import { CharStream } from './stream/char-stream.js';
-import { error } from './error.js';
+import { error } from './util/error.js';
 import type { ITokenStream } from './stream/token-stream.js';
 import type { Token } from './token.js';
 import { TOKEN, TokenKind } from './token.js';
