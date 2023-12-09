@@ -1,6 +1,6 @@
 import fs from 'fs';
 import { inspect } from 'util';
-import { Emitter, generateCode } from './compile/codegen.js';
+import { generate } from './compile/codegen.js';
 import { typecheck } from './compile/typecheck.js';
 import { parse } from './compile/parse.js';
 
@@ -17,7 +17,7 @@ function entry() {
   const ast = parse(sourceCode);
   //console.log(inspect(ast, { depth: 10 }));
   typecheck(ast);
-  const code = generateCode(ast);
+  const code = generate(ast);
   console.log(code);
 }
 entry();
