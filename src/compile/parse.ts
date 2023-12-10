@@ -544,6 +544,9 @@ function parseAtom(s: ITokenStream): Expression {
     case TokenKind.Switch: {
       return parseSwitch(s);
     }
+    case TokenKind.OpenBrace: {
+      return new Block(parseBlock(s), loc);
+    }
     case TokenKind.OpenParen: {
       s.next();
       const expr = parseExpr(s);

@@ -1,4 +1,4 @@
-import { SyntaxNode, Unit } from './ast.js';
+import { Expression, SyntaxNode, Unit, isExpression, isStatement } from './ast.js';
 
 export function lowering(node: Unit): Unit {
   node = transformExprStack(node);
@@ -7,25 +7,90 @@ export function lowering(node: Unit): Unit {
 
 /**
  * 式をスタック操作に変換
+ *
+ * - 全てのステートメントに対して適用。
+ * - ステートメントのchildrenツリーについて、if switch blockのいずれかが含まれていれば、そのステートメントは変形の対象とする。
+ * - ツリーをトラバースする際、if switch blockのchildrenツリーは検索対象外とする。
 */
 function transformExprStack(unit: Unit): Unit {
-  function transform(node: SyntaxNode): any {
-    switch (node.kind) {
+  function needLowering(node: Expression): boolean {
+    let found = false;
+    visit(node, ctx => {
+      switch (ctx.node.kind) {
+        case 'If':
+        case 'Switch':
+        case 'Block': {
+          found = true;
+          break;
+        }
+      }
+      return !found;
+    });
+    return found;
+  }
+
+  return visit(unit, ctx => {
+    console.log(ctx.node.kind);
+    switch (ctx.node.kind) {
+      case 'VariableDecl':
+      case 'Return':
+      case 'ExpressionStatement': {
+        if (ctx.node.expr != null && needLowering(ctx.node.expr)) {
+          console.log('lowering');
+        }
+        break;
+      }
+      case 'Assign': {
+        if (ctx.node.target != null && needLowering(ctx.node.target)) {
+          console.log('lowering');
+        }
+        if (ctx.node.expr != null && needLowering(ctx.node.expr)) {
+          console.log('lowering');
+        }
+        break;
+      }
+      case 'While': {
+        if (ctx.node.expr != null && needLowering(ctx.node.expr)) {
+          console.log('lowering');
+        }
+        for (let i = 0; i < ctx.node.body.length; i++) {
+          const step = ctx.node.body[i];
+          if (isExpression(step) && needLowering(step)) {
+            console.log('lowering');
+          }
+        }
+        break;
+      }
+    }
+    return true;
+  });
+}
+
+/**
+ * ASTをトラバースする
+ *
+ * ハンドラのctx.nodeから必要に応じてノードを上書きできる。
+ * ハンドラがfalseを返すと内側ノードのトラバースをスキップできる。
+*/
+function visit(node: SyntaxNode, f: (ctx: { node: SyntaxNode }) => boolean): any {
+  const ctx = { node };
+  if (f(ctx)) {
+    switch (ctx.node.kind) {
       case 'Unit': {
-        for (let i = 0; i < node.decls.length; i++) {
-          node.decls[i] = transform(node.decls[i]);
+        for (let i = 0; i < ctx.node.decls.length; i++) {
+          ctx.node.decls[i] = visit(ctx.node.decls[i], f);
         }
         break;
       }
       case 'FunctionDecl': {
-        for (let i = 0; i < node.body.length; i++) {
-          node.body[i] = transform(node.body[i]);
+        for (let i = 0; i < ctx.node.body.length; i++) {
+          ctx.node.body[i] = visit(ctx.node.body[i], f);
         }
         break;
       }
       case 'VariableDecl': {
-        if (node.body != null) {
-          node.body = transform(node.body);
+        if (ctx.node.expr != null) {
+          ctx.node.expr = visit(ctx.node.expr, f);
         }
         break;
       }
@@ -36,32 +101,32 @@ function transformExprStack(unit: Unit): Unit {
         break;
       }
       case 'Binary': {
-        node.left = transform(node.left);
-        node.right = transform(node.right);
+        ctx.node.left = visit(ctx.node.left, f);
+        ctx.node.right = visit(ctx.node.right, f);
         break;
       }
       case 'Unary': {
-        node.expr = transform(node.expr);
+        ctx.node.expr = visit(ctx.node.expr, f);
         break;
       }
       case 'If': {
-        node.cond = transform(node.cond);
-        node.thenExpr = transform(node.thenExpr);
-        if (node.elseExpr != null) {
-          node.elseExpr = transform(node.elseExpr);
+        ctx.node.cond = visit(ctx.node.cond, f);
+        ctx.node.thenExpr = visit(ctx.node.thenExpr, f);
+        if (ctx.node.elseExpr != null) {
+          ctx.node.elseExpr = visit(ctx.node.elseExpr, f);
         }
         break;
       }
       case 'Block': {
-        for (let i = 0; i < node.body.length; i++) {
-          node.body[i] = transform(node.body[i]);
+        for (let i = 0; i < ctx.node.body.length; i++) {
+          ctx.node.body[i] = visit(ctx.node.body[i], f);
         }
         break;
       }
       case 'Call': {
-        node.expr = transform(node.expr);
-        for (let i = 0; i < node.args.length; i++) {
-          node.args[i] = transform(node.args[i]);
+        ctx.node.expr = visit(ctx.node.expr, f);
+        for (let i = 0; i < ctx.node.args.length; i++) {
+          ctx.node.args[i] = visit(ctx.node.args[i], f);
         }
         break;
       }
@@ -72,46 +137,40 @@ function transformExprStack(unit: Unit): Unit {
         break;
       }
       case 'Return': {
-        if (node.expr != null) {
-          node.expr = transform(node.expr);
+        if (ctx.node.expr != null) {
+          ctx.node.expr = visit(ctx.node.expr, f);
         }
         break;
       }
       case 'Assign': {
-        node.left = transform(node.left);
-        node.right = transform(node.right);
+        ctx.node.target = visit(ctx.node.target, f);
+        ctx.node.expr = visit(ctx.node.expr, f);
         break;
       }
       case 'While': {
-        node.cond = transform(node.cond);
-        for (let i = 0; i < node.body.length; i++) {
-          node.body[i] = transform(node.body[i]);
+        ctx.node.expr = visit(ctx.node.expr, f);
+        for (let i = 0; i < ctx.node.body.length; i++) {
+          ctx.node.body[i] = visit(ctx.node.body[i], f);
         }
         break;
       }
       case 'Switch': {
-        node.expr = transform(node.expr);
-        for (let i = 0; i < node.arms.length; i++) {
-          node.arms[i].cond = transform(node.arms[i].cond);
-          node.arms[i].thenBlock = transform(node.arms[i].thenBlock);
+        ctx.node.expr = visit(ctx.node.expr, f);
+        for (let i = 0; i < ctx.node.arms.length; i++) {
+          ctx.node.arms[i].cond = visit(ctx.node.arms[i].cond, f);
+          ctx.node.arms[i].thenBlock = visit(ctx.node.arms[i].thenBlock, f);
         }
-        if (node.defaultBlock != null) {
-          node.defaultBlock = transform(node.defaultBlock);
+        if (ctx.node.defaultBlock != null) {
+          ctx.node.defaultBlock = visit(ctx.node.defaultBlock, f);
         }
         break;
       }
       case 'ExpressionStatement': {
-        node.expr = transform(node.expr);
+        ctx.node.expr = visit(ctx.node.expr, f);
         break;
       }
     }
-    return node;
   }
 
-  return transform(unit);
-}
-
-function loweringSwitch(node: Unit): Unit {
-  // TODO
-  return node;
+  return ctx.node;
 }

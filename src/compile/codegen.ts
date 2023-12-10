@@ -1,4 +1,4 @@
-import { SyntaxNode, Unit, isExpr } from './ast.js';
+import { SyntaxNode, Unit, isExpression } from './ast.js';
 
 export class Emitter {
   code: string;
@@ -64,12 +64,12 @@ function emit(e: Emitter, node: SyntaxNode, parent?: SyntaxNode) {
     }
     case 'VariableDecl': {
       e.code += `int ${node.name}`;
-      if (node.body != null) {
+      if (node.expr != null) {
         e.endLine();
         e.level(1);
         e.beginLine();
         e.code += '= ';
-        emit(e, node.body, node);
+        emit(e, node.expr, node);
         e.code += ';';
         e.level(-1);
       } else {
@@ -125,7 +125,7 @@ function emit(e: Emitter, node: SyntaxNode, parent?: SyntaxNode) {
       break;
     }
     case 'Assign': {
-      emit(e, node.left, node);
+      emit(e, node.target, node);
       switch (node.mode) {
         case 'simple': { e.code += ' = '; break; }
         case 'add': { e.code += ' += '; break; }
@@ -138,13 +138,13 @@ function emit(e: Emitter, node: SyntaxNode, parent?: SyntaxNode) {
         case 'shl': { e.code += ' <<= '; break; }
         case 'shr': { e.code += ' >>= '; break; }
       }
-      emit(e, node.right, node);
+      emit(e, node.expr, node);
       break;
     }
     case 'While': {
       e.code += 'while ';
       e.code += '(';
-      emit(e, node.cond, node);
+      emit(e, node.expr, node);
       e.code += ')';
       e.code += ' {';
       e.endLine();
@@ -178,7 +178,7 @@ function emit(e: Emitter, node: SyntaxNode, parent?: SyntaxNode) {
         e.endLine();
         let blockResult;
         for (const step of arm.thenBlock.body) {
-          if (!isExpr(step)) {
+          if (!isExpression(step)) {
             e.beginLine();
             emit(e, step, arm.thenBlock);
             e.endLine();
@@ -186,7 +186,7 @@ function emit(e: Emitter, node: SyntaxNode, parent?: SyntaxNode) {
           blockResult = step;
         }
         // TODO: support Assign
-        if (parent != null && blockResult != null && parent.kind == 'VariableDecl' && isExpr(blockResult)) {
+        if (parent != null && blockResult != null && parent.kind == 'VariableDecl' && isExpression(blockResult)) {
           e.beginLine();
           e.code += `${parent.name} = `;
           emit(e, blockResult, arm.thenBlock);

@@ -1,9 +1,37 @@
+export type SyntaxNode = Unit | FunctionDecl | Statement | Expression;
+export type Statement = VariableDecl | Break | Continue | Return | Assign | While | ExpressionStatement;
+export type Expression = NumberLiteral | Reference | Binary | Unary | If | Switch | Block | Call;
+
+export function isStatement(node: SyntaxNode): node is Statement {
+  switch (node.kind) {
+    case 'Unit':
+    case 'FunctionDecl':
+      return false;
+  }
+  return !isExpression(node);
+}
+
+export function isExpression(node: SyntaxNode): node is Expression {
+  switch (node.kind) {
+    case 'NumberLiteral':
+    case 'Reference':
+    case 'Binary':
+    case 'Unary':
+    case 'If':
+    case 'Switch':
+    case 'Block':
+    case 'Call':
+      return true;
+  }
+  return false;
+}
+
 export type Loc = {
   line: number;
   column: number;
 };
 
-export type SyntaxNode = Unit | FunctionDecl | Expression | Statement;
+// SyntaxNode
 
 export class Unit {
   kind = 'Unit' as const;
@@ -23,31 +51,70 @@ export class FunctionDecl {
   ) {}
 }
 
+// Statement
+
 export class VariableDecl {
   kind = 'VariableDecl' as const;
   constructor(
     public name: string,
-    public body: Expression | undefined,
+    public expr: Expression | undefined,
     public loc: Loc,
   ) {}
 }
 
-export type Expression = NumberLiteral | Reference | Binary | Unary | If | Switch | Block | Call;
-
-export function isExpr(node: SyntaxNode): node is Expression {
-  switch (node.kind) {
-    case 'NumberLiteral':
-    case 'Reference':
-    case 'Binary':
-    case 'Unary':
-    case 'If':
-    case 'Switch':
-    case 'Block':
-    case 'Call':
-      return true;
-  }
-  return false;
+export class Break {
+  kind = 'Break' as const;
+  constructor(
+    public loc: Loc,
+  ) {}
 }
+
+export class Continue {
+  kind = 'Continue' as const;
+  constructor(
+    public loc: Loc,
+  ) {}
+}
+
+export class Return {
+  kind = 'Return' as const;
+  constructor(
+    public expr: Expression | undefined,
+    public loc: Loc,
+  ) {}
+}
+
+export type AssignMode = 'simple' | 'add' | 'sub' | 'mul' | 'div' | 'rem' | 'shl' | 'shr' | 'bitand' | 'bitor' | 'xor';
+
+export class Assign {
+  kind = 'Assign' as const;
+  constructor(
+    public mode: AssignMode,
+    public target: Expression,
+    public expr: Expression,
+    public loc: Loc,
+  ) {}
+}
+
+export class While {
+  kind = 'While' as const;
+  constructor(
+    public mode: 'while' | 'do-while',
+    public expr: Expression,
+    public body: (Expression | Statement)[],
+    public loc: Loc,
+  ) {}
+}
+
+export class ExpressionStatement {
+  kind = 'ExpressionStatement' as const;
+  constructor(
+    public expr: Expression,
+    public loc: Loc,
+  ) {}
+}
+
+// Expression
 
 export class NumberLiteral {
   kind = 'NumberLiteral' as const;
@@ -123,60 +190,6 @@ export class Call {
   constructor(
     public expr: Expression,
     public args: Expression[],
-    public loc: Loc,
-  ) {}
-}
-
-export type Statement = VariableDecl | Break | Continue | Return | Assign | While | ExpressionStatement;
-
-export class Break {
-  kind = 'Break' as const;
-  constructor(
-    public loc: Loc,
-  ) {}
-}
-
-export class Continue {
-  kind = 'Continue' as const;
-  constructor(
-    public loc: Loc,
-  ) {}
-}
-
-export class Return {
-  kind = 'Return' as const;
-  constructor(
-    public expr: Expression | undefined,
-    public loc: Loc,
-  ) {}
-}
-
-export type AssignMode = 'simple' | 'add' | 'sub' | 'mul' | 'div' | 'rem' | 'shl' | 'shr' | 'bitand' | 'bitor' | 'xor';
-
-export class Assign {
-  kind = 'Assign' as const;
-  constructor(
-    public mode: AssignMode,
-    public left: Expression,
-    public right: Expression,
-    public loc: Loc,
-  ) {}
-}
-
-export class While {
-  kind = 'While' as const;
-  constructor(
-    public mode: 'while' | 'do-while',
-    public cond: Expression,
-    public body: (Expression | Statement)[],
-    public loc: Loc,
-  ) {}
-}
-
-export class ExpressionStatement {
-  kind = 'ExpressionStatement' as const;
-  constructor(
-    public expr: Expression,
     public loc: Loc,
   ) {}
 }
