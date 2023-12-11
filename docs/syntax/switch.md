@@ -1,4 +1,4 @@
-# Switch expression
+# switch expression
 一致
 ```
 var x: int =
@@ -18,7 +18,7 @@ var x: int =
   };
 ```
 ↓
-```
+```c
 int x;
 switch (c) {
   case 'a': {
@@ -56,7 +56,7 @@ var x: int =
   };
 ```
 ↓
-```
+```c
 int x;
 switch (c) {
   case 1:
