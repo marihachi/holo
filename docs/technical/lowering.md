@@ -22,8 +22,11 @@ var x =
     case 1 || 3 {
       1
     }
-    default {
+    case 4 {
       2
+    }
+    default {
+      3
     }
   };
 ```
@@ -41,8 +44,12 @@ switch (a) {
     x = 1;
     break;
   }
-  default: {
+  case 4: {
     x = 2;
+    break;
+  }
+  default: {
+    x = 3;
     break;
   }
 }
