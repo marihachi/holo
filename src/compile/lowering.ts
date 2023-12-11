@@ -1,18 +1,11 @@
 import { Expression, SyntaxNode, Unit, isExpression, isStatement } from './ast.js';
 
 export function lowering(node: Unit): Unit {
-  node = transformExprStack(node);
+  node = desugarExpr(node);
   return node;
 }
 
-/**
- * 式をスタック操作に変換
- *
- * - 全てのステートメントに対して適用。
- * - ステートメントのchildrenツリーについて、if switch blockのいずれかが含まれていれば、そのステートメントは変形の対象とする。
- * - ツリーをトラバースする際、if switch blockのchildrenツリーは検索対象外とする。
-*/
-function transformExprStack(unit: Unit): Unit {
+function desugarExpr(unit: Unit): Unit {
   function needLowering(node: Expression): boolean {
     let found = false;
     visit(node, ctx => {
