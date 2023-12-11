@@ -2,6 +2,9 @@ import { Expression, SyntaxNode, Unit, isExpression, isStatement } from './ast.j
 
 export function lowering(node: Unit): Unit {
   node = desugarExpr(node);
+  node = desugarSwitch(node);
+  node = desugarIf(node);
+  node = desugarBlock(node);
   return node;
 }
 
@@ -57,6 +60,21 @@ function desugarExpr(unit: Unit): Unit {
     }
     return true;
   });
+}
+
+function desugarSwitch(unit: Unit): Unit {
+  // TODO
+  return unit;
+}
+
+function desugarIf(unit: Unit): Unit {
+  // TODO
+  return unit;
+}
+
+function desugarBlock(unit: Unit): Unit {
+  // TODO
+  return unit;
 }
 
 /**
