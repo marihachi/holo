@@ -87,13 +87,6 @@ function emit(e: Emitter, node: SyntaxNode, parent?: SyntaxNode) {
     }
     case 'Binary': {
       // TODO
-      switch (node.mode) {
-        case "add": {
-          emit(e, node.left, node);
-          e.code += ' + ';
-          emit(e, node.right, node);
-        }
-      }
       break;
     }
     case 'Unary': {
@@ -101,29 +94,11 @@ function emit(e: Emitter, node: SyntaxNode, parent?: SyntaxNode) {
       break;
     }
     case 'If': {
-      e.code += 'if (';
-      emit(e, node.cond, node);
-      e.code += ') ';
-      emit(e, node.thenExpr, node);
-      if (node.elseExpr) {
-        e.code += ' else ';
-        emit(e, node.elseExpr, node);
-      }
+      // TODO
       break;
     }
     case 'Block': {
-      e.code += '{';
-      e.level(1);
-      for (const child of node.body) {
-        e.endLine();
-        e.beginLine();
-        emit(e, child, node);
-        e.code += ";";
-      }
-      e.endLine();
-      e.level(-1);
-      e.beginLine();
-      e.code += '}';
+      // TODO
       break;
     }
     case 'Call': {
