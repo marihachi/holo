@@ -1,17 +1,17 @@
-import fs from "fs";
-import { inspect } from "util";
-import { generate } from "./compile/codegen.js";
-import { typecheck } from "./compile/typecheck.js";
-import { parse } from "./compile/parse.js";
-import { lowering } from "./compile/lowering.js";
+import fs from 'fs';
+import { inspect } from 'util';
+import { generate } from './compile/codegen.js';
+import { typecheck } from './compile/typecheck.js';
+import { parse } from './compile/parse.js';
+import { lowering } from './compile/lowering.js';
 
 function entry() {
   // load file
   let sourceCode;
   try {
-    sourceCode = fs.readFileSync("test.ho", { encoding: "utf8" });
+    sourceCode = fs.readFileSync('test.ho', { encoding: 'utf8' });
   } catch (err) {
-    throw new Error("Failed to load a source file.");
+    throw new Error('Failed to load a source file.');
   }
 
   let ast = parse(sourceCode);
