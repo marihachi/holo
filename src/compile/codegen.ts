@@ -121,7 +121,6 @@ function emit(e: Emitter, node: SyntaxNode, parent?: SyntaxNode) {
       for (const child of node.body) {
         e.beginLine();
         emit(e, child, node);
-        e.code += ";";
         e.endLine();
       }
       e.level(-1);
@@ -167,6 +166,7 @@ function emit(e: Emitter, node: SyntaxNode, parent?: SyntaxNode) {
         case 'shr': { e.code += ' >>= '; break; }
       }
       emit(e, node.expr, node);
+      e.code += ';';
       break;
     }
     case 'While': {
