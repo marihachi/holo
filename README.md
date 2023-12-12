@@ -24,5 +24,8 @@ fn main(argc: int, argv: char*[]): int {
 }
 ```
 
+## Contributers
+- [@ikasoba](https://github.com/ikasoba) 
+
 ## License
 MIT License
