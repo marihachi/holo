@@ -1,12 +1,16 @@
 fn main(a, b, c) {
   var hoge = if (1) {
     if (1) {
+      1;
+    } else {
+      0;
+    }
+    var t = if (1) {
       1
     } else {
       0
-    }
-
-    1234
+    };
+    t
   } else {
     0
   };
