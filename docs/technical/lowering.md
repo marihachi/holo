@@ -89,12 +89,14 @@ int x;
 - Switch
 - Block
 - Call
+
 のいずれかで、  
 その式ノードがコンテナの直下にはなく、  
 文ノード:  
 - VariableDecl
 - Assign
 - ExpressionStatement
+
 のいずれかの直下にもない時は、  
 その式ノードを独立の代入文として切り出します。  
 代入文は現在の文ノードのひとつ前の位置に挿入します。  
