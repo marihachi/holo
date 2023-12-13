@@ -15,11 +15,11 @@ function entry() {
   }
 
   let ast = parse(sourceCode);
-  // console.log(inspect(ast, { depth: 10 }));
+  // console.log(inspect(ast, { depth: 30 }));
   // console.log('----');
   typecheck(ast);
   ast = lowering(ast);
-  // console.log(inspect(ast, { depth: 10 }));
+  // console.log(inspect(ast, { depth: 30 }));
   // console.log('----');
   const code = generate(ast);
   // console.log(code);

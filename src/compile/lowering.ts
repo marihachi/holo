@@ -10,70 +10,76 @@ import {
 } from './ast.js';
 
 export function lowering(node: Unit): Unit {
-  desugar(node.decls);
+  // 全てのコンテナを見る
+  visitContainer(node, ctx => {
+    const cCtx = ctx.subCtx!;
+    while (!cCtx.endOfStream()) {
+      desugarSwitch(ctx);
+      desugarIf(ctx);
+      desugarBlock(ctx);
+      cCtx.seek(1);
+    }
+    return true;
+  });
+
   return node;
 }
 
-function desugar<T extends SyntaxNode>(body: T[]) {
-  // コンテナ毎に見ていく
-  visitContainer(body, (ctx) => {
-    desugarSwitch(ctx);
-    desugarIf(ctx);
-    desugarBlock(ctx);
-  });
-}
-
-function desugarSwitch(ctx: ContainerVisitorContext): void {
+function desugarSwitch(ctx: NodeVisitorContext<ContainerContext>): void {
+  const cCtx = ctx.subCtx!;
   // TODO
 }
 
-function desugarIf(ctx: ContainerVisitorContext): void {
-  const node = ctx.getNode();
-
+function desugarIf(ctx: NodeVisitorContext<ContainerContext>): void {
+  const cCtx = ctx.subCtx!;
+  const node = cCtx.getNode();
   switch (node.kind) {
     case 'VariableDecl': {
       const expr = node.expr;
       if (expr != null && expr.kind == 'If') {
         node.expr = undefined;
-        transformLastExpr(expr, (e, _, release) => {
+        transformLastExpr(expr, (e, _parent, release) => {
           if (e.kind == 'If') return release(e);
           return new Assign('simple', new Reference(node.name, e.loc), e, e.loc);
         }, node => (node.kind != 'VariableDecl'));
-        ctx.insertNext(expr);
+        cCtx.insertNext(expr);
       }
       break;
     }
     case 'Return': {
       const expr = node.expr;
       if (expr != null && expr.kind == 'If') {
-        transformLastExpr(expr, (e, _, release) => {
+        transformLastExpr(expr, (e, _parent, release) => {
           if (e.kind == 'If') return release(e);
           return new Return(e, e.loc);
         });
-        ctx.replace(expr);
+        cCtx.replace(expr);
       }
       break;
     }
   }
 }
 
-function desugarBlock(ctx: ContainerVisitorContext): void {
+function desugarBlock(ctx: NodeVisitorContext<ContainerContext>): void {
+  const cCtx = ctx.subCtx!;
   // TODO
 }
 
-class NodeVisitorContext<T extends SyntaxNode = SyntaxNode> {
-  private _node: T;
+class NodeVisitorContext<T, U extends SyntaxNode = SyntaxNode> {
+  private _node: U;
 
-  constructor(node: T) {
+  subCtx?: T;
+
+  constructor(node: U) {
     this._node = node;
   }
 
-  get node(): T {
+  getNode(): U {
     return this._node;
   }
 
   /** 現在のノードを置換 */
-  replace(node: T): void {
+  replace(node: U): void {
     this._node = node;
   }
 }
@@ -81,31 +87,32 @@ class NodeVisitorContext<T extends SyntaxNode = SyntaxNode> {
 /**
  * ASTを訪問する
  *
- * NodeVisitorContext.nodeから必要に応じてノードを上書きできる。
- * ハンドラがfalseを返すと内側ノードのトラバースをスキップできる。
+ * ハンドラの戻り値で子ノードを訪問するかを決定できる。
+ * subCtxから追加情報をハンドラで参照できる。
  */
-function visitNode<T extends SyntaxNode>(
-  node: T,
-  handler: (ctx: NodeVisitorContext) => boolean,
-): T {
-  const ctx = new NodeVisitorContext(node);
+function visitNode<T, U extends SyntaxNode>(
+  node: U,
+  handler: (ctx: NodeVisitorContext<T>) => boolean,
+): U {
+  const ctx = new NodeVisitorContext<T, U>(node);
   if (handler(ctx)) {
-    switch (ctx.node.kind) {
+    const vNode = ctx.getNode();
+    switch (vNode.kind) {
       case 'Unit': {
-        for (let i = 0; i < ctx.node.decls.length; i++) {
-          ctx.node.decls[i] = visitNode(ctx.node.decls[i], handler);
+        for (let i = 0; i < vNode.decls.length; i++) {
+          vNode.decls[i] = visitNode(vNode.decls[i], handler);
         }
         break;
       }
       case 'FunctionDecl': {
-        for (let i = 0; i < ctx.node.body.length; i++) {
-          ctx.node.body[i] = visitNode(ctx.node.body[i], handler);
+        for (let i = 0; i < vNode.body.length; i++) {
+          vNode.body[i] = visitNode(vNode.body[i], handler);
         }
         break;
       }
       case 'VariableDecl': {
-        if (ctx.node.expr != null) {
-          ctx.node.expr = visitNode(ctx.node.expr, handler);
+        if (vNode.expr != null) {
+          vNode.expr = visitNode(vNode.expr, handler);
         }
         break;
       }
@@ -116,32 +123,32 @@ function visitNode<T extends SyntaxNode>(
         break;
       }
       case 'Binary': {
-        ctx.node.left = visitNode(ctx.node.left, handler);
-        ctx.node.right = visitNode(ctx.node.right, handler);
+        vNode.left = visitNode(vNode.left, handler);
+        vNode.right = visitNode(vNode.right, handler);
         break;
       }
       case 'Unary': {
-        ctx.node.expr = visitNode(ctx.node.expr, handler);
+        vNode.expr = visitNode(vNode.expr, handler);
         break;
       }
       case 'If': {
-        ctx.node.cond = visitNode(ctx.node.cond, handler);
-        ctx.node.thenExpr = visitNode(ctx.node.thenExpr, handler);
-        if (ctx.node.elseExpr != null) {
-          ctx.node.elseExpr = visitNode(ctx.node.elseExpr, handler);
+        vNode.cond = visitNode(vNode.cond, handler);
+        vNode.thenExpr = visitNode(vNode.thenExpr, handler);
+        if (vNode.elseExpr != null) {
+          vNode.elseExpr = visitNode(vNode.elseExpr, handler);
         }
         break;
       }
       case 'Block': {
-        for (let i = 0; i < ctx.node.body.length; i++) {
-          ctx.node.body[i] = visitNode(ctx.node.body[i], handler);
+        for (let i = 0; i < vNode.body.length; i++) {
+          vNode.body[i] = visitNode(vNode.body[i], handler);
         }
         break;
       }
       case 'Call': {
-        ctx.node.expr = visitNode(ctx.node.expr, handler);
-        for (let i = 0; i < ctx.node.args.length; i++) {
-          ctx.node.args[i] = visitNode(ctx.node.args[i], handler);
+        vNode.expr = visitNode(vNode.expr, handler);
+        for (let i = 0; i < vNode.args.length; i++) {
+          vNode.args[i] = visitNode(vNode.args[i], handler);
         }
         break;
       }
@@ -152,51 +159,51 @@ function visitNode<T extends SyntaxNode>(
         break;
       }
       case 'Return': {
-        if (ctx.node.expr != null) {
-          ctx.node.expr = visitNode(ctx.node.expr, handler);
+        if (vNode.expr != null) {
+          vNode.expr = visitNode(vNode.expr, handler);
         }
         break;
       }
       case 'Assign': {
-        ctx.node.target = visitNode(ctx.node.target, handler);
-        ctx.node.expr = visitNode(ctx.node.expr, handler);
+        vNode.target = visitNode(vNode.target, handler);
+        vNode.expr = visitNode(vNode.expr, handler);
         break;
       }
       case 'While': {
-        ctx.node.expr = visitNode(ctx.node.expr, handler);
-        for (let i = 0; i < ctx.node.body.length; i++) {
-          ctx.node.body[i] = visitNode(ctx.node.body[i], handler);
+        vNode.expr = visitNode(vNode.expr, handler);
+        for (let i = 0; i < vNode.body.length; i++) {
+          vNode.body[i] = visitNode(vNode.body[i], handler);
         }
         break;
       }
       case 'Switch': {
-        ctx.node.expr = visitNode(ctx.node.expr, handler);
-        for (let i = 0; i < ctx.node.arms.length; i++) {
-          ctx.node.arms[i].cond = visitNode(ctx.node.arms[i].cond, handler);
-          ctx.node.arms[i].thenBlock = visitNode(ctx.node.arms[i].thenBlock, handler);
+        vNode.expr = visitNode(vNode.expr, handler);
+        for (let i = 0; i < vNode.arms.length; i++) {
+          vNode.arms[i].cond = visitNode(vNode.arms[i].cond, handler);
+          vNode.arms[i].thenBlock = visitNode(vNode.arms[i].thenBlock, handler);
         }
-        if (ctx.node.defaultBlock != null) {
-          ctx.node.defaultBlock = visitNode(ctx.node.defaultBlock, handler);
+        if (vNode.defaultBlock != null) {
+          vNode.defaultBlock = visitNode(vNode.defaultBlock, handler);
         }
         break;
       }
       case 'ExpressionStatement': {
-        ctx.node.expr = visitNode(ctx.node.expr, handler);
+        vNode.expr = visitNode(vNode.expr, handler);
         break;
       }
     }
   }
 
-  return ctx.node;
+  return ctx.getNode();
 }
 
-class ContainerVisitorContext<T extends SyntaxNode = SyntaxNode> {
+class ContainerContext<T extends SyntaxNode = SyntaxNode> {
   constructor(
     public container: T[],
     public index: number
   ) {}
 
-  endOfStream() {
+  endOfStream(): boolean {
     return (this.index >= this.container.length);
   }
 
@@ -223,46 +230,27 @@ class ContainerVisitorContext<T extends SyntaxNode = SyntaxNode> {
 /**
  * コンテナにノードを追加・削除できるvisitor
 */
-function visitContainer<T extends SyntaxNode>(
-  container: T[],
-  handler: (ctx: ContainerVisitorContext) => void,
+function visitContainer<T extends SyntaxNode = SyntaxNode>(
+  node: T,
+  handler: (ctx: NodeVisitorContext<ContainerContext>) => boolean,
 ): void {
-  const ctx = new ContainerVisitorContext(container, 0);
-  while (!ctx.endOfStream()) {
-    handler(ctx);
-    const node = ctx.getNode();
-    switch (node.kind) {
+  visitNode<ContainerContext, T>(node, ctx => {
+    const vNode = ctx.getNode();
+    switch (vNode.kind) {
       case 'FunctionDecl':
+      case 'While':
       case 'Block': {
-        visitContainer(node.body, handler);
-        break;
-      }
-      case 'VariableDecl': {
-        if (node.expr?.kind == 'Block') {
-          visitContainer(node.expr.body, handler);
-        }
-        break;
-      }
-      case 'If': {
-        if (node.cond.kind == 'Block') {
-          visitContainer(node.cond.body, handler);
-        }
-        if (node.thenExpr.kind == 'Block') {
-          visitContainer(node.thenExpr.body, handler);
-        }
-        if (node.elseExpr?.kind == 'Block') {
-          visitContainer(node.elseExpr.body, handler);
-        }
-        break;
+        ctx.subCtx = new ContainerContext(vNode.body, 0);
+        return handler(ctx);
       }
     }
-    ctx.seek(1);
-  }
+    return true;
+  });
 }
 
 type ReleaseFn = (node: Expression | Statement) => Expression | Statement;
 
-type TransformState = {
+type TransformContext = {
   nestLevel: number;
   pos?: {
     container: (Expression | Statement)[];
@@ -278,21 +266,21 @@ function transformLastExpr(
   node: SyntaxNode,
   fn: (expr: Expression, parent: SyntaxNode, release: ReleaseFn) => Expression | Statement,
   filter?: (node: SyntaxNode) => boolean,
-  state: TransformState = { nestLevel: 0 },
+  tCtx: TransformContext = { nestLevel: 0 },
 ): void {
-  const releaseFn = (): ReleaseFn => (node) => (transformLastExpr(node, fn), node);
   visitNode(node, (ctx) => {
-    if (ctx.node.kind == 'FunctionDecl' || ctx.node.kind == 'Block') {
-      const body = ctx.node.body;
-      state.pos ??= { container: body, index: 0 };
-      const level = state.nestLevel++;
+    const vNode = ctx.getNode();
+    if (vNode.kind == 'FunctionDecl' || vNode.kind == 'Block') {
+      const body = vNode.body;
+      tCtx.pos ??= { container: body, index: 0 };
+      const level = tCtx.nestLevel++;
       loop: for (let i = 0; i < body.length; i++) {
         const child = body[i];
-        state.pos.container = body;
+        tCtx.pos.container = body;
         if (i == body.length - 1) {
           if (isExpression(child)) {
-            state.pos.index = i;
-            state.pos.node = child;
+            tCtx.pos.index = i;
+            tCtx.pos.node = child;
             break loop;
           }
         }
@@ -302,53 +290,59 @@ function transformLastExpr(
             if (i > 0) {
               const prevNode = body[i - 1];
               if (isExpression(prevNode)) {
-                state.pos.index = i - 1;
-                state.pos.node = prevNode;
+                tCtx.pos.index = i - 1;
+                tCtx.pos.node = prevNode;
                 break loop;
               }
             }
             break;
           }
           case 'Return': {
-            if (child.expr) {
-              state.pos.index = i;
-              state.pos.node = child;
+            if (child.expr != null) {
+              tCtx.pos.index = i;
+              tCtx.pos.node = child;
               break loop;
             }
             break;
           }
           default: {
-            transformLastExpr(child, fn, filter, state);
+            transformLastExpr(child, fn, filter, tCtx);
             break;
           }
         }
       }
       if (level <= 0) {
-        if (state.pos.node) {
-          switch (state.pos.node.kind) {
+        if (tCtx.pos.node) {
+          switch (tCtx.pos.node.kind) {
             case 'Return': {
-              if (state.pos.node.expr) {
-                let res = fn(state.pos.node.expr, ctx.node, releaseFn());
+              if (tCtx.pos.node.expr != null) {
+                let res = fn(tCtx.pos.node.expr, vNode, (n) => {
+                  transformLastExpr(n, fn);
+                  return n;
+                });
                 if (isExpression(res)) {
-                  state.pos.node.expr = res;
-                  res = state.pos.node;
+                  tCtx.pos.node.expr = res;
+                  res = tCtx.pos.node;
                 }
-                state.pos.container[state.pos.index] = res;
+                tCtx.pos.container[tCtx.pos.index] = res;
               }
               break;
             }
             default: {
-              let res = fn(state.pos.node, ctx.node, releaseFn());
-              state.pos.container[state.pos.index] = res;
+              let res = fn(tCtx.pos.node, vNode, (n) => {
+                transformLastExpr(n, fn);
+                return n;
+              });
+              tCtx.pos.container[tCtx.pos.index] = res;
               break;
             }
           }
         }
-        state.pos = undefined;
+        tCtx.pos = undefined;
       }
-      state.nestLevel--;
+      tCtx.nestLevel--;
       return false;
     }
-    return filter?.(ctx.node) ?? true;
+    return filter?.(vNode) ?? true;
   });
 }
