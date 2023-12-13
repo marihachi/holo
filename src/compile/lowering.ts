@@ -11,30 +11,28 @@ import {
 
 export function lowering(node: Unit): Unit {
   // 全てのコンテナを見る
-  for (const decl of node.decls) {
-    switch (decl.kind) {
-      case 'FunctionDecl': {
-        visitContainer(decl, decl.body, ctx => {
-          desugarSwitch(ctx);
-          desugarIf(ctx);
-          desugarBlock(ctx);
-          return true;
-        });
-        break;
-      }
+  visitContainer(node, ctx => {
+    const cCtx = ctx.subCtx!;
+    while (!cCtx.endOfStream()) {
+      desugarSwitch(ctx);
+      desugarIf(ctx);
+      desugarBlock(ctx);
+      cCtx.seek(1);
     }
-  }
+    return true;
+  });
 
   return node;
 }
 
 function desugarSwitch(ctx: NodeVisitorContext<ContainerContext>): void {
+  const cCtx = ctx.subCtx!;
   // TODO
 }
 
 function desugarIf(ctx: NodeVisitorContext<ContainerContext>): void {
-  const node = ctx.getNode();
-
+  const cCtx = ctx.subCtx!;
+  const node = cCtx.getNode();
   switch (node.kind) {
     case 'VariableDecl': {
       const expr = node.expr;
@@ -44,7 +42,7 @@ function desugarIf(ctx: NodeVisitorContext<ContainerContext>): void {
           if (e.kind == 'If') return release(e);
           return new Assign('simple', new Reference(node.name, e.loc), e, e.loc);
         }, node => (node.kind != 'VariableDecl'));
-        ctx.subCtx.insertNext(expr);
+        cCtx.insertNext(expr);
       }
       break;
     }
@@ -55,7 +53,7 @@ function desugarIf(ctx: NodeVisitorContext<ContainerContext>): void {
           if (e.kind == 'If') return release(e);
           return new Return(e, e.loc);
         });
-        ctx.replace(expr);
+        cCtx.replace(expr);
       }
       break;
     }
@@ -63,16 +61,16 @@ function desugarIf(ctx: NodeVisitorContext<ContainerContext>): void {
 }
 
 function desugarBlock(ctx: NodeVisitorContext<ContainerContext>): void {
+  const cCtx = ctx.subCtx!;
   // TODO
 }
 
 class NodeVisitorContext<T, U extends SyntaxNode = SyntaxNode> {
   private _node: U;
 
-  subCtx: T;
+  subCtx?: T;
 
-  constructor(node: U, subCtx: T) {
-    this.subCtx = subCtx;
+  constructor(node: U) {
     this._node = node;
   }
 
@@ -94,28 +92,27 @@ class NodeVisitorContext<T, U extends SyntaxNode = SyntaxNode> {
  */
 function visitNode<T, U extends SyntaxNode>(
   node: U,
-  subCtx: T,
   handler: (ctx: NodeVisitorContext<T>) => boolean,
 ): U {
-  const ctx = new NodeVisitorContext(node, subCtx);
+  const ctx = new NodeVisitorContext<T, U>(node);
   if (handler(ctx)) {
     const vNode = ctx.getNode();
     switch (vNode.kind) {
       case 'Unit': {
         for (let i = 0; i < vNode.decls.length; i++) {
-          vNode.decls[i] = visitNode(vNode.decls[i], subCtx, handler);
+          vNode.decls[i] = visitNode(vNode.decls[i], handler);
         }
         break;
       }
       case 'FunctionDecl': {
         for (let i = 0; i < vNode.body.length; i++) {
-          vNode.body[i] = visitNode(vNode.body[i], subCtx, handler);
+          vNode.body[i] = visitNode(vNode.body[i], handler);
         }
         break;
       }
       case 'VariableDecl': {
         if (vNode.expr != null) {
-          vNode.expr = visitNode(vNode.expr, subCtx, handler);
+          vNode.expr = visitNode(vNode.expr, handler);
         }
         break;
       }
@@ -126,32 +123,32 @@ function visitNode<T, U extends SyntaxNode>(
         break;
       }
       case 'Binary': {
-        vNode.left = visitNode(vNode.left, subCtx, handler);
-        vNode.right = visitNode(vNode.right, subCtx, handler);
+        vNode.left = visitNode(vNode.left, handler);
+        vNode.right = visitNode(vNode.right, handler);
         break;
       }
       case 'Unary': {
-        vNode.expr = visitNode(vNode.expr, subCtx, handler);
+        vNode.expr = visitNode(vNode.expr, handler);
         break;
       }
       case 'If': {
-        vNode.cond = visitNode(vNode.cond, subCtx, handler);
-        vNode.thenExpr = visitNode(vNode.thenExpr, subCtx, handler);
+        vNode.cond = visitNode(vNode.cond, handler);
+        vNode.thenExpr = visitNode(vNode.thenExpr, handler);
         if (vNode.elseExpr != null) {
-          vNode.elseExpr = visitNode(vNode.elseExpr, subCtx, handler);
+          vNode.elseExpr = visitNode(vNode.elseExpr, handler);
         }
         break;
       }
       case 'Block': {
         for (let i = 0; i < vNode.body.length; i++) {
-          vNode.body[i] = visitNode(vNode.body[i], subCtx, handler);
+          vNode.body[i] = visitNode(vNode.body[i], handler);
         }
         break;
       }
       case 'Call': {
-        vNode.expr = visitNode(vNode.expr, subCtx, handler);
+        vNode.expr = visitNode(vNode.expr, handler);
         for (let i = 0; i < vNode.args.length; i++) {
-          vNode.args[i] = visitNode(vNode.args[i], subCtx, handler);
+          vNode.args[i] = visitNode(vNode.args[i], handler);
         }
         break;
       }
@@ -163,35 +160,35 @@ function visitNode<T, U extends SyntaxNode>(
       }
       case 'Return': {
         if (vNode.expr != null) {
-          vNode.expr = visitNode(vNode.expr, subCtx, handler);
+          vNode.expr = visitNode(vNode.expr, handler);
         }
         break;
       }
       case 'Assign': {
-        vNode.target = visitNode(vNode.target, subCtx, handler);
-        vNode.expr = visitNode(vNode.expr, subCtx, handler);
+        vNode.target = visitNode(vNode.target, handler);
+        vNode.expr = visitNode(vNode.expr, handler);
         break;
       }
       case 'While': {
-        vNode.expr = visitNode(vNode.expr, subCtx, handler);
+        vNode.expr = visitNode(vNode.expr, handler);
         for (let i = 0; i < vNode.body.length; i++) {
-          vNode.body[i] = visitNode(vNode.body[i], subCtx, handler);
+          vNode.body[i] = visitNode(vNode.body[i], handler);
         }
         break;
       }
       case 'Switch': {
-        vNode.expr = visitNode(vNode.expr, subCtx, handler);
+        vNode.expr = visitNode(vNode.expr, handler);
         for (let i = 0; i < vNode.arms.length; i++) {
-          vNode.arms[i].cond = visitNode(vNode.arms[i].cond, subCtx, handler);
-          vNode.arms[i].thenBlock = visitNode(vNode.arms[i].thenBlock, subCtx, handler);
+          vNode.arms[i].cond = visitNode(vNode.arms[i].cond, handler);
+          vNode.arms[i].thenBlock = visitNode(vNode.arms[i].thenBlock, handler);
         }
         if (vNode.defaultBlock != null) {
-          vNode.defaultBlock = visitNode(vNode.defaultBlock, subCtx, handler);
+          vNode.defaultBlock = visitNode(vNode.defaultBlock, handler);
         }
         break;
       }
       case 'ExpressionStatement': {
-        vNode.expr = visitNode(vNode.expr, subCtx, handler);
+        vNode.expr = visitNode(vNode.expr, handler);
         break;
       }
     }
@@ -233,17 +230,17 @@ class ContainerContext<T extends SyntaxNode = SyntaxNode> {
 /**
  * コンテナにノードを追加・削除できるvisitor
 */
-function visitContainer<T extends SyntaxNode = SyntaxNode, U extends SyntaxNode = SyntaxNode>(
+function visitContainer<T extends SyntaxNode = SyntaxNode>(
   node: T,
-  body: U[],
-  handler: (ctx: NodeVisitorContext<ContainerContext<U>>) => boolean,
+  handler: (ctx: NodeVisitorContext<ContainerContext>) => boolean,
 ): void {
-  visitNode(node, new ContainerContext(body, 0), ctx => {
+  visitNode<ContainerContext, T>(node, ctx => {
     const vNode = ctx.getNode();
     switch (vNode.kind) {
       case 'FunctionDecl':
       case 'While':
       case 'Block': {
+        ctx.subCtx = new ContainerContext(vNode.body, 0);
         return handler(ctx);
       }
     }
@@ -317,7 +314,7 @@ function transformLastExpr(
   filter?: (node: SyntaxNode) => boolean,
   tCtx: TransformContext = { nestLevel: 0 },
 ): void {
-  visitNode(node, {}, (ctx) => {
+  visitNode(node, (ctx) => {
     const vNode = ctx.getNode();
     if (vNode.kind == 'FunctionDecl' || vNode.kind == 'Block') {
       const body = vNode.body;
