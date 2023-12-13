@@ -248,23 +248,38 @@ function visitContainer<T extends SyntaxNode = SyntaxNode>(
   });
 }
 
-type ReleaseFn = (node: Expression | Statement) => Expression | Statement;
-
 type TransformContext = {
+  /**
+   * コンテナのネストレベル
+   * 最後に評価される式の追跡で使用する
+   */
   nestLevel: number;
-  pos?: {
+
+  /**
+   * 式の位置
+   */
+  pos?: Readonly<{
     container: (Expression | Statement)[];
     index: number;
-    node?: Expression | Return;
-  }
+    node: Expression | Return;
+  }>;
 };
 
+type TransformFn =
+  /**
+   * @param parent - `expr`の親ノード
+   * @param release - 生成されたノードを再帰的に置換するための関数
+   */
+  (expr: Expression, parent: SyntaxNode, release: ReleaseFn) => Expression | Statement;
+
+type ReleaseFn = (node: Expression | Statement) => Expression | Statement;
+
 /*
- * コンテナの最後に評価される式を置換するやつ
+ * コンテナの最後に評価される式を置換する
  */
 function transformLastExpr(
   node: SyntaxNode,
-  fn: (expr: Expression, parent: SyntaxNode, release: ReleaseFn) => Expression | Statement,
+  fn: TransformFn,
   filter?: (node: SyntaxNode) => boolean,
   tCtx: TransformContext = { nestLevel: 0 },
 ): void {
@@ -272,77 +287,105 @@ function transformLastExpr(
     const vNode = ctx.getNode();
     if (vNode.kind == 'FunctionDecl' || vNode.kind == 'Block') {
       const body = vNode.body;
-      tCtx.pos ??= { container: body, index: 0 };
       const level = tCtx.nestLevel++;
+
+      // 式の検索を行う
+      //
+      // ループ内でposが適当なタイミングで更新されていく
+      // 検索が終わったタイミングでのposは最後に評価される式の位置が記録されているという仕組み
       loop: for (let i = 0; i < body.length; i++) {
         const child = body[i];
-        tCtx.pos.container = body;
+
+        // ループの終端であれば
         if (i == body.length - 1) {
           if (isExpression(child)) {
-            tCtx.pos.index = i;
-            tCtx.pos.node = child;
+            tCtx.pos = {
+              container: body,
+              index: i,
+              node: child
+            };
             break loop;
           }
         }
+
+        // ブロックから抜け出す処理がある場合、その時に評価される式の位置を記録
+        // そうでなければそのノードの内容から再帰的に記録していく
         switch (child.kind) {
           case 'Continue':
           case 'Break': {
             if (i > 0) {
               const prevNode = body[i - 1];
               if (isExpression(prevNode)) {
-                tCtx.pos.index = i - 1;
-                tCtx.pos.node = prevNode;
+                tCtx.pos = {
+                  container: body,
+                  index: i - 1,
+                  node: prevNode,
+                };
                 break loop;
               }
             }
             break;
           }
+
           case 'Return': {
             if (child.expr != null) {
-              tCtx.pos.index = i;
-              tCtx.pos.node = child;
+              tCtx.pos = {
+                container: body,
+                index: i,
+                node: child
+              };
               break loop;
             }
             break;
           }
+
           default: {
+            // 子コンテナの内容も探査する
             transformLastExpr(child, fn, filter, tCtx);
             break;
           }
         }
       }
-      if (level <= 0) {
-        if (tCtx.pos.node) {
-          switch (tCtx.pos.node.kind) {
-            case 'Return': {
-              if (tCtx.pos.node.expr != null) {
-                let res = fn(tCtx.pos.node.expr, vNode, (n) => {
-                  transformLastExpr(n, fn);
-                  return n;
-                });
-                if (isExpression(res)) {
-                  tCtx.pos.node.expr = res;
-                  res = tCtx.pos.node;
-                }
-                tCtx.pos.container[tCtx.pos.index] = res;
-              }
-              break;
-            }
-            default: {
-              let res = fn(tCtx.pos.node, vNode, (n) => {
+
+      // ルートコンテナであるならば置換を開始する
+      if (level <= 0 && tCtx.pos) {
+        switch (tCtx.pos.node.kind) {
+          case 'Return': {
+            if (tCtx.pos.node.expr) {
+              let res = fn(tCtx.pos.node.expr, vNode, (n) => {
                 transformLastExpr(n, fn);
                 return n;
               });
+
+              // 帰ってきたノードが式であるならreturnでラップする
+              if (isExpression(res)) {
+                tCtx.pos.node.expr = res;
+                res = tCtx.pos.node;
+              }
+
               tCtx.pos.container[tCtx.pos.index] = res;
-              break;
             }
+            break;
+          }
+          default: {
+            let res = fn(tCtx.pos.node, vNode, (n) => {
+              transformLastExpr(n, fn);
+              return n;
+            });
+
+            tCtx.pos.container[tCtx.pos.index] = res;
+            break;
           }
         }
+
         tCtx.pos = undefined;
       }
+
       tCtx.nestLevel--;
       return false;
     }
+
+    // 置換されると都合の悪いものはフィルタリングしてもらう
     return filter?.(vNode) ?? true;
   });
 }
