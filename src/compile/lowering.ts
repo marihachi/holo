@@ -285,6 +285,8 @@ function transformLastExpr(
 ): void {
   visitNode(node, (ctx) => {
     const vNode = ctx.getNode();
+
+    // コンテナであれば置換を開始する
     if (vNode.kind == 'FunctionDecl' || vNode.kind == 'Block') {
       const body = vNode.body;
       const level = tCtx.nestLevel++;
@@ -313,6 +315,7 @@ function transformLastExpr(
         switch (child.kind) {
           case 'Continue':
           case 'Break': {
+            // 後ろにノードがあればその位置を記録
             if (i > 0) {
               const prevNode = body[i - 1];
               if (isExpression(prevNode)) {
