@@ -203,7 +203,7 @@ class ContainerContext<T extends SyntaxNode = SyntaxNode> {
     public index: number
   ) {}
 
-  endOfStream() {
+  endOfStream(): boolean {
     return (this.index >= this.container.length);
   }
 
@@ -247,52 +247,6 @@ function visitContainer<T extends SyntaxNode = SyntaxNode>(
     return true;
   });
 }
-
-// function visitContainer0<T extends SyntaxNode>(
-//   containerNode: T,
-//   handler: (ctx: ContainerContext) => void,
-// ): void {
-//   switch (containerNode.kind) {
-//     case 'FunctionDecl':
-//     case 'While':
-//     case 'Block': {
-//       break;
-//     }
-//     default: {
-//       return;
-//     }
-//   }
-//   const ctx = new ContainerContext(containerNode.body, 0);
-//   while (!ctx.endOfStream()) {
-//     handler(ctx);
-//     const node = ctx.getNode();
-//     switch (node.kind) {
-//       case 'Block': {
-//         visitContainer0(node, handler);
-//         break;
-//       }
-//       case 'VariableDecl': {
-//         if (node.expr?.kind == 'Block') {
-//           visitContainer0(node.expr, handler);
-//         }
-//         break;
-//       }
-//       case 'If': {
-//         if (node.cond.kind == 'Block') {
-//           visitContainer0(node.cond, handler);
-//         }
-//         if (node.thenExpr.kind == 'Block') {
-//           visitContainer0(node.thenExpr, handler);
-//         }
-//         if (node.elseExpr?.kind == 'Block') {
-//           visitContainer0(node.elseExpr, handler);
-//         }
-//         break;
-//       }
-//     }
-//     ctx.seek(1);
-//   }
-// }
 
 type ReleaseFn = (node: Expression | Statement) => Expression | Statement;
 
