@@ -14,20 +14,21 @@ export function lowering(node: Unit): Unit {
   return node;
 }
 
-function desugar<N extends SyntaxNode>(body: N[]): N[] {
-  return visitBlock(body, (ctx) => {
+function desugar<T extends SyntaxNode>(body: T[]) {
+  // コンテナ毎に見ていく
+  visitContainer(body, (ctx) => {
+    desugarSwitch(ctx);
     desugarIf(ctx);
     desugarBlock(ctx);
-    desugarSwitch(ctx);
   });
 }
 
-function desugarSwitch(ctx: BlockVisitorContext): void {
+function desugarSwitch(ctx: ContainerVisitorContext): void {
   // TODO
 }
 
-function desugarIf(ctx: BlockVisitorContext): void {
-  const node = ctx.node;
+function desugarIf(ctx: ContainerVisitorContext): void {
+  const node = ctx.getNode();
 
   switch (node.kind) {
     case 'VariableDecl': {
@@ -38,7 +39,7 @@ function desugarIf(ctx: BlockVisitorContext): void {
           if (e.kind == 'If') return release(e);
           return new Assign('simple', new Reference(node.name, e.loc), e, e.loc);
         }, node => (node.kind != 'VariableDecl'));
-        ctx.insert(expr);
+        ctx.insertNext(expr);
       }
       break;
     }
@@ -56,35 +57,55 @@ function desugarIf(ctx: BlockVisitorContext): void {
   }
 }
 
-function desugarBlock(ctx: BlockVisitorContext): void {
+function desugarBlock(ctx: ContainerVisitorContext): void {
   // TODO
 }
 
+class NodeVisitorContext<T extends SyntaxNode = SyntaxNode> {
+  private _node: T;
+
+  constructor(node: T) {
+    this._node = node;
+  }
+
+  get node(): T {
+    return this._node;
+  }
+
+  /** 現在のノードを置換 */
+  replace(node: T): void {
+    this._node = node;
+  }
+}
+
 /**
- * ASTをトラバースする
+ * ASTを訪問する
  *
- * ハンドラのctx.nodeから必要に応じてノードを上書きできる。
+ * NodeVisitorContext.nodeから必要に応じてノードを上書きできる。
  * ハンドラがfalseを返すと内側ノードのトラバースをスキップできる。
  */
-function visit<N extends SyntaxNode>(node: N, f: (ctx: { node: SyntaxNode }) => boolean): N {
-  const ctx = { node };
-  if (f(ctx)) {
+function visitNode<T extends SyntaxNode>(
+  node: T,
+  handler: (ctx: NodeVisitorContext) => boolean,
+): T {
+  const ctx = new NodeVisitorContext(node);
+  if (handler(ctx)) {
     switch (ctx.node.kind) {
       case 'Unit': {
         for (let i = 0; i < ctx.node.decls.length; i++) {
-          ctx.node.decls[i] = visit(ctx.node.decls[i], f);
+          ctx.node.decls[i] = visitNode(ctx.node.decls[i], handler);
         }
         break;
       }
       case 'FunctionDecl': {
         for (let i = 0; i < ctx.node.body.length; i++) {
-          ctx.node.body[i] = visit(ctx.node.body[i], f);
+          ctx.node.body[i] = visitNode(ctx.node.body[i], handler);
         }
         break;
       }
       case 'VariableDecl': {
         if (ctx.node.expr != null) {
-          ctx.node.expr = visit(ctx.node.expr, f);
+          ctx.node.expr = visitNode(ctx.node.expr, handler);
         }
         break;
       }
@@ -95,32 +116,32 @@ function visit<N extends SyntaxNode>(node: N, f: (ctx: { node: SyntaxNode }) => 
         break;
       }
       case 'Binary': {
-        ctx.node.left = visit(ctx.node.left, f);
-        ctx.node.right = visit(ctx.node.right, f);
+        ctx.node.left = visitNode(ctx.node.left, handler);
+        ctx.node.right = visitNode(ctx.node.right, handler);
         break;
       }
       case 'Unary': {
-        ctx.node.expr = visit(ctx.node.expr, f);
+        ctx.node.expr = visitNode(ctx.node.expr, handler);
         break;
       }
       case 'If': {
-        ctx.node.cond = visit(ctx.node.cond, f);
-        ctx.node.thenExpr = visit(ctx.node.thenExpr, f);
+        ctx.node.cond = visitNode(ctx.node.cond, handler);
+        ctx.node.thenExpr = visitNode(ctx.node.thenExpr, handler);
         if (ctx.node.elseExpr != null) {
-          ctx.node.elseExpr = visit(ctx.node.elseExpr, f);
+          ctx.node.elseExpr = visitNode(ctx.node.elseExpr, handler);
         }
         break;
       }
       case 'Block': {
         for (let i = 0; i < ctx.node.body.length; i++) {
-          ctx.node.body[i] = visit(ctx.node.body[i], f);
+          ctx.node.body[i] = visitNode(ctx.node.body[i], handler);
         }
         break;
       }
       case 'Call': {
-        ctx.node.expr = visit(ctx.node.expr, f);
+        ctx.node.expr = visitNode(ctx.node.expr, handler);
         for (let i = 0; i < ctx.node.args.length; i++) {
-          ctx.node.args[i] = visit(ctx.node.args[i], f);
+          ctx.node.args[i] = visitNode(ctx.node.args[i], handler);
         }
         break;
       }
@@ -132,35 +153,35 @@ function visit<N extends SyntaxNode>(node: N, f: (ctx: { node: SyntaxNode }) => 
       }
       case 'Return': {
         if (ctx.node.expr != null) {
-          ctx.node.expr = visit(ctx.node.expr, f);
+          ctx.node.expr = visitNode(ctx.node.expr, handler);
         }
         break;
       }
       case 'Assign': {
-        ctx.node.target = visit(ctx.node.target, f);
-        ctx.node.expr = visit(ctx.node.expr, f);
+        ctx.node.target = visitNode(ctx.node.target, handler);
+        ctx.node.expr = visitNode(ctx.node.expr, handler);
         break;
       }
       case 'While': {
-        ctx.node.expr = visit(ctx.node.expr, f);
+        ctx.node.expr = visitNode(ctx.node.expr, handler);
         for (let i = 0; i < ctx.node.body.length; i++) {
-          ctx.node.body[i] = visit(ctx.node.body[i], f);
+          ctx.node.body[i] = visitNode(ctx.node.body[i], handler);
         }
         break;
       }
       case 'Switch': {
-        ctx.node.expr = visit(ctx.node.expr, f);
+        ctx.node.expr = visitNode(ctx.node.expr, handler);
         for (let i = 0; i < ctx.node.arms.length; i++) {
-          ctx.node.arms[i].cond = visit(ctx.node.arms[i].cond, f);
-          ctx.node.arms[i].thenBlock = visit(ctx.node.arms[i].thenBlock, f);
+          ctx.node.arms[i].cond = visitNode(ctx.node.arms[i].cond, handler);
+          ctx.node.arms[i].thenBlock = visitNode(ctx.node.arms[i].thenBlock, handler);
         }
         if (ctx.node.defaultBlock != null) {
-          ctx.node.defaultBlock = visit(ctx.node.defaultBlock, f);
+          ctx.node.defaultBlock = visitNode(ctx.node.defaultBlock, handler);
         }
         break;
       }
       case 'ExpressionStatement': {
-        ctx.node.expr = visit(ctx.node.expr, f);
+        ctx.node.expr = visitNode(ctx.node.expr, handler);
         break;
       }
     }
@@ -169,75 +190,74 @@ function visit<N extends SyntaxNode>(node: N, f: (ctx: { node: SyntaxNode }) => 
   return ctx.node;
 }
 
-interface BlockVisitorContext<N extends SyntaxNode = SyntaxNode> {
-  node: N;
-  block: N[];
-  index: number;
-  /** 次の位置に挿入する、挿入したノードも処理される */
-  insert(node: N): void;
-  /** 次の位置に挿入する、挿入したノードは処理されない */
-  insertSkip(node: N): void;
+class ContainerVisitorContext<T extends SyntaxNode = SyntaxNode> {
+  constructor(
+    public container: T[],
+    public index: number
+  ) {}
+
+  endOfStream() {
+    return (this.index >= this.container.length);
+  }
+
+  getNode(): T {
+    return this.container[this.index];
+  }
+
   /** 現在のノードを置換 */
-  replace(...nodes: N[]): void;
-  /** 次に来るノードをn回分読み飛ばす */
-  skip(n: number): void;
+  replace(...nodes: T[]): void {
+    this.container.splice(this.index, 1, ...nodes);
+  }
+
+  /** 次の位置に挿入する */
+  insertNext(node: T): void {
+    this.container.splice(this.index + 1, 0, node);
+  }
+
+  /** 現在位置を変更 */
+  seek(offset: number): void {
+    this.index += offset;
+  }
 }
 
 /**
- * ノードを追加したりするのに特化させたvisitor
- */
-function visitBlock<N extends SyntaxNode>(body: N[], fn: (ctx: BlockVisitorContext) => void): N[] {
-  for (let i = 0; i < body.length; i++) {
-    const node = body[i];
-    const ctx: BlockVisitorContext<N> = {
-      node: node,
-      block: body,
-      index: i,
-      insert(node) {
-        body.splice(i + 1, 0, node);
-      },
-      insertSkip(node) {
-        body.splice(i += 1, 0, node);
-      },
-      replace(...nodes) {
-        body.splice(i, 1, ...nodes);
-      },
-      skip(n) {
-        i += n;
-      }
-    }
-    fn(ctx);
+ * コンテナにノードを追加・削除できるvisitor
+*/
+function visitContainer<T extends SyntaxNode>(
+  container: T[],
+  handler: (ctx: ContainerVisitorContext) => void,
+): void {
+  const ctx = new ContainerVisitorContext(container, 0);
+  while (!ctx.endOfStream()) {
+    handler(ctx);
+    const node = ctx.getNode();
     switch (node.kind) {
+      case 'FunctionDecl':
       case 'Block': {
-        visitBlock(node.body, fn);
-        break;
-      }
-      case 'FunctionDecl': {
-        visitBlock(node.body, fn);
+        visitContainer(node.body, handler);
         break;
       }
       case 'VariableDecl': {
         if (node.expr?.kind == 'Block') {
-          visitBlock(node.expr.body, fn);
+          visitContainer(node.expr.body, handler);
         }
         break;
       }
       case 'If': {
         if (node.cond.kind == 'Block') {
-          visitBlock(node.cond.body, fn);
+          visitContainer(node.cond.body, handler);
         }
         if (node.thenExpr.kind == 'Block') {
-          visitBlock(node.thenExpr.body, fn);
+          visitContainer(node.thenExpr.body, handler);
         }
         if (node.elseExpr?.kind == 'Block') {
-          visitBlock(node.elseExpr.body, fn);
+          visitContainer(node.elseExpr.body, handler);
         }
         break;
       }
     }
+    ctx.seek(1);
   }
-
-  return body;
 }
 
 type ReleaseFn = (node: Expression | Statement) => Expression | Statement;
@@ -245,30 +265,30 @@ type ReleaseFn = (node: Expression | Statement) => Expression | Statement;
 type TransformState = {
   nestLevel: number;
   pos?: {
-    block: (Expression | Statement)[];
+    container: (Expression | Statement)[];
     index: number;
     node?: Expression | Return;
   }
 };
 
 /*
- * ブロックの最後に評価される式を置換するやつ
+ * コンテナの最後に評価される式を置換するやつ
  */
 function transformLastExpr(
   node: SyntaxNode,
   fn: (expr: Expression, parent: SyntaxNode, release: ReleaseFn) => Expression | Statement,
   filter?: (node: SyntaxNode) => boolean,
-  state: TransformState = { nestLevel: 0 }
-) {
+  state: TransformState = { nestLevel: 0 },
+): void {
   const releaseFn = (): ReleaseFn => (node) => (transformLastExpr(node, fn), node);
-  visit(node, (ctx) => {
+  visitNode(node, (ctx) => {
     if (ctx.node.kind == 'FunctionDecl' || ctx.node.kind == 'Block') {
       const body = ctx.node.body;
-      state.pos ??= { block: body, index: 0 };
+      state.pos ??= { container: body, index: 0 };
       const level = state.nestLevel++;
       loop: for (let i = 0; i < body.length; i++) {
         const child = body[i];
-        state.pos.block = body;
+        state.pos.container = body;
         if (i == body.length - 1) {
           if (isExpression(child)) {
             state.pos.index = i;
@@ -313,13 +333,13 @@ function transformLastExpr(
                   state.pos.node.expr = res;
                   res = state.pos.node;
                 }
-                state.pos.block[state.pos.index] = res;
+                state.pos.container[state.pos.index] = res;
               }
               break;
             }
             default: {
               let res = fn(state.pos.node, ctx.node, releaseFn());
-              state.pos.block[state.pos.index] = res;
+              state.pos.container[state.pos.index] = res;
               break;
             }
           }
