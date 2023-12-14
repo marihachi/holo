@@ -1,4 +1,4 @@
-export type Symbol =
+export type SemanticSymbol =
   | FunctionSymbol
   | VariableSymbol
   | ParameterSymbol

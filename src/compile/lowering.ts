@@ -8,8 +8,9 @@ import {
   Unit,
   isExpression,
 } from './ast.js';
+import { SemanticSymbol } from './symbol.js';
 
-export function lowering(node: Unit): Unit {
+export function lowering(node: Unit, symbols: Map<SyntaxNode, SemanticSymbol>): Unit {
   // 全てのコンテナを見る
   visitContainer(node, ctx => {
     const cCtx = ctx.subCtx!;
