@@ -259,7 +259,7 @@ type LastExprReplacer =
     release: ((node: Expression | Statement) => Expression | Statement)
   ) => Expression | Statement;
 
-/*
+/**
  * コンテナの最後に評価される式を置換する
  */
 function replaceLastExprInContainer(
