@@ -253,9 +253,11 @@ type LastExprReplacer =
    * @param parent - `expr`の親ノード
    * @param release - 生成されたノードを再帰的に置換するための関数
    */
-  (expr: Expression, parent: SyntaxNode, release: ReleaseFn) => Expression | Statement;
-
-type ReleaseFn = (node: Expression | Statement) => Expression | Statement;
+  (
+    expr: Expression,
+    parent: SyntaxNode,
+    release: ((node: Expression | Statement) => Expression | Statement)
+  ) => Expression | Statement;
 
 /*
  * コンテナの最後に評価される式を置換する
