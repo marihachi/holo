@@ -315,12 +315,6 @@ function replaceLastExprInContainer(
 
 type FindLastExprContext = {
   /**
-   * コンテナのネストレベル
-   * 最後に評価される式の追跡で使用する
-   */
-  nestLevel: number;
-
-  /**
    * 式の位置
    */
   pos?: Readonly<{
@@ -333,7 +327,7 @@ type FindLastExprContext = {
 /**
  * コンテナの最後に評価される式を探す
  */
-function findLastExprInContainer(body: (Statement | Expression)[], filter?: (node: SyntaxNode) => boolean, ctx: FindLastExprContext = { nestLevel: 0 }) {
+function findLastExprInContainer(body: (Statement | Expression)[], filter?: (node: SyntaxNode) => boolean, ctx: FindLastExprContext = { }) {
   loop: for (let i = 0; i < body.length; i++) {
     const child = body[i];
 
