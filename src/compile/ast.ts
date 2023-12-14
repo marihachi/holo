@@ -1,6 +1,7 @@
 export type SyntaxNode = Unit | FunctionDecl | Statement | Expression;
 export type Statement = VariableDecl | Break | Continue | Return | Assign | While | ExpressionStatement;
 export type Expression = NumberLiteral | Reference | Binary | Unary | If | Switch | Block | Call;
+export type ContainerNode = Block | FunctionDecl | While;
 
 export function isStatement(node: SyntaxNode): node is Statement {
   switch (node.kind) {
@@ -23,6 +24,17 @@ export function isExpression(node: SyntaxNode): node is Expression {
     case 'Call':
       return true;
   }
+  return false;
+}
+
+export function isContainerNode(node: SyntaxNode): node is ContainerNode {
+  switch (node.kind) {
+    case "Block":
+    case "FunctionDecl":
+    case "While":
+      return true;
+  }
+
   return false;
 }
 
