@@ -6,6 +6,7 @@ import {
   Statement,
   SyntaxNode,
   Unit,
+  isContainerNode,
   isExpression,
 } from './ast.js';
 
@@ -271,7 +272,7 @@ function replaceLastExprInContainer(
     const vNode = ctx.getNode();
 
     // コンテナであれば置換を開始する
-    if (vNode.kind == "FunctionDecl" || vNode.kind == "Block") {
+    if (isContainerNode(vNode)) {
       const pos = findLastExprInContainer(vNode.body, filter);
 
       if (!pos) return filter?.(vNode) ?? true;
@@ -390,7 +391,7 @@ function findLastExprInContainer(body: (Statement | Expression)[], filter?: (nod
         visitNode(child, vCtx => {
           const node = vCtx.getNode();
 
-          if (node.kind == "Block" || node.kind == "FunctionDecl" || node.kind == "While") {
+          if (isContainerNode(node)) {
             findLastExprInContainer(node.body, filter, ctx);
           }
 
