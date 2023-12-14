@@ -289,7 +289,7 @@ function transformLastExpr(
     // コンテナであれば置換を開始する
     if (vNode.kind == 'FunctionDecl' || vNode.kind == 'Block') {
       const body = vNode.body;
-      const level = tCtx.nestLevel;
+      const level = tCtx.nestLevel++;
 
       // 式の検索を行う
       //
@@ -345,9 +345,7 @@ function transformLastExpr(
 
           default: {
             // 子コンテナの内容も探査する
-            tCtx.nestLevel++;
             transformLastExpr(child, fn, filter, tCtx);
-            tCtx.nestLevel--;
             break;
           }
         }
@@ -387,6 +385,7 @@ function transformLastExpr(
         tCtx.pos = undefined;
       }
 
+      tCtx.nestLevel--;
       return false;
     }
 
