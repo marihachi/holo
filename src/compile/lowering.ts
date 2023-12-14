@@ -280,7 +280,7 @@ function replaceLastExprInContainer(
         case "Return": {
           if (pos.node.expr) {
             let res = fn(pos.node.expr, vNode, (n) => {
-              replaceLastExprInContainer(n, fn);
+              replaceLastExprInContainer(n, fn, filter);
               return n;
             });
 
@@ -296,7 +296,7 @@ function replaceLastExprInContainer(
         }
         default: {
           let res = fn(pos.node, vNode, (n) => {
-            replaceLastExprInContainer(n, fn);
+            replaceLastExprInContainer(n, fn, filter);
             return n;
           });
 
