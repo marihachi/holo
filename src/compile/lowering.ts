@@ -377,6 +377,16 @@ function findLastExprInContainer(body: (Statement | Expression)[], filter?: (nod
             node: child
           };
           break loop;
+        } else if (i > 0) {
+          const prevNode = body[i - 1];
+          if (isExpression(prevNode)) {
+            ctx.pos = {
+              container: body,
+              index: i - 1,
+              node: prevNode,
+            };
+            break loop;
+          }
         }
         break;
       }
