@@ -1,5 +1,5 @@
 import { SyntaxNode, Unit } from './ast.js';
-import { FunctionSymbol, SemanticSymbol, VariableSymbol } from './symbol.js';
+import { FunctionSymbol, NumberSymbol, SemanticSymbol, VariableSymbol } from './symbol.js';
 
 export class Symbols {
   table: Map<SyntaxNode, SemanticSymbol> = new Map();
@@ -50,6 +50,7 @@ function bindNode(node: SyntaxNode, env: Environment, symbols: Symbols): void {
       const symbol = new FunctionSymbol(node.name);
       symbols.set(node, symbol);
       env.set(node.name, symbol);
+
       const funcEnv = new Environment(env);
       for (const child of node.body) {
         bindNode(child, funcEnv, symbols);
@@ -60,12 +61,15 @@ function bindNode(node: SyntaxNode, env: Environment, symbols: Symbols): void {
       const symbol = new VariableSymbol(node.name);
       symbols.set(node, symbol);
       env.set(node.name, symbol);
+
       if (node.expr != null) {
         bindNode(node.expr, env, symbols);
       }
       break;
     }
     case 'NumberLiteral': {
+      const symbol = new NumberSymbol();
+      symbols.set(node, symbol);
       break;
     }
     case 'Reference': {
@@ -78,9 +82,12 @@ function bindNode(node: SyntaxNode, env: Environment, symbols: Symbols): void {
       break;
     }
     case 'Binary': {
+      bindNode(node.left, env, symbols);
+      bindNode(node.right, env, symbols);
       break;
     }
     case 'Unary': {
+      bindNode(node.expr, env, symbols);
       break;
     }
     case 'If': {
@@ -99,6 +106,10 @@ function bindNode(node: SyntaxNode, env: Environment, symbols: Symbols): void {
       break;
     }
     case 'Call': {
+      bindNode(node.expr, env, symbols);
+      for (const child of node.args) {
+        bindNode(child, env, symbols);
+      }
       break;
     }
     case 'Break': {
@@ -108,18 +119,36 @@ function bindNode(node: SyntaxNode, env: Environment, symbols: Symbols): void {
       break;
     }
     case 'Return': {
+      if (node.expr != null) {
+        bindNode(node.expr, env, symbols);
+      }
       break;
     }
     case 'Assign': {
+      bindNode(node.target, env, symbols);
+      bindNode(node.expr, env, symbols);
       break;
     }
     case 'While': {
+      bindNode(node.expr, env, symbols);
+      for (const child of node.body) {
+        bindNode(child, env, symbols);
+      }
       break;
     }
     case 'Switch': {
+      bindNode(node.expr, env, symbols);
+      for (const arm of node.arms) {
+        bindNode(arm.cond, env, symbols);
+        bindNode(arm.thenBlock, env, symbols);
+      }
+      if (node.defaultBlock != null) {
+        bindNode(node.defaultBlock, env, symbols);
+      }
       break;
     }
     case 'ExpressionStatement': {
+      bindNode(node.expr, env, symbols);
       break;
     }
   }

@@ -3,7 +3,8 @@ export type SemanticSymbol =
   | VariableSymbol
   | ParameterSymbol
   | OperatorSymbol
-  | BlockSymbol;
+  | BlockSymbol
+  | NumberSymbol;
 
 export class FunctionSymbol {
   kind = 'FunctionSymbol' as const;
@@ -32,4 +33,12 @@ export class OperatorSymbol {
 
 export class BlockSymbol {
   kind = 'BlockSymbol' as const;
+}
+
+export class NumberSymbol {
+  kind = 'NumberSymbol' as const;
+}
+
+export class IfSymbol {
+  kind = 'IfSymbol' as const;
 }
