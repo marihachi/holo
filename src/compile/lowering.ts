@@ -9,9 +9,9 @@ import {
   isContainerNode,
   isExpression,
 } from './ast.js';
-import { SemanticSymbol } from './symbol.js';
+import { Symbols } from './bind.js';
 
-export function lowering(node: Unit, symbols: Map<SyntaxNode, SemanticSymbol>): Unit {
+export function lowering(node: Unit, symbols: Symbols): Unit {
   // 全てのコンテナを見る
   visitContainer(node, ctx => {
     const cCtx = ctx.subCtx!;

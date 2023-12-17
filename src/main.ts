@@ -19,6 +19,7 @@ function entry() {
   // console.log(inspect(ast, { depth: 30 }));
   // console.log('----');
   const symbols = bind(ast);
+  // console.log(inspect(symbols, { depth: 30 }));
   typecheck(ast, symbols);
   ast = lowering(ast, symbols);
   // console.log(inspect(ast, { depth: 30 }));

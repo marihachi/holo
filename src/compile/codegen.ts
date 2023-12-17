@@ -1,5 +1,5 @@
 import { SyntaxNode, Unit, isExpression } from './ast.js';
-import { SemanticSymbol } from './symbol.js';
+import { Symbols } from './bind.js';
 
 export class Emitter {
   code: string;
@@ -23,7 +23,7 @@ export class Emitter {
   }
 }
 
-export function generate(node: Unit, symbols: Map<SyntaxNode, SemanticSymbol>) {
+export function generate(node: Unit, symbols: Symbols) {
   const e = new Emitter();
   emit(e, node);
   return e.code;

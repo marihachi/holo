@@ -1,6 +1,6 @@
-import { SyntaxNode, Unit } from './ast.js';
-import { SemanticSymbol } from './symbol.js';
+import { Unit } from './ast.js';
+import { Symbols } from './bind.js';
 
-export function typecheck(ast: Unit, symbols: Map<SyntaxNode, SemanticSymbol>): void {
+export function typecheck(ast: Unit, symbols: Symbols): void {
   // TODO
 }
