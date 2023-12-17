@@ -1,5 +1,5 @@
 import { SyntaxNode, Unit } from './ast.js';
-import { FunctionSymbol, NumberSymbol, SemanticSymbol, VariableSymbol } from './symbol.js';
+import { FunctionSymbol, SemanticSymbol, VariableSymbol } from './symbol.js';
 
 export class Symbols {
   table: Map<SyntaxNode, SemanticSymbol> = new Map();
@@ -47,7 +47,7 @@ export function bind(ast: Unit): Symbols {
 function bindNode(node: SyntaxNode, env: Environment, symbols: Symbols): void {
   switch (node.kind) {
     case 'FunctionDecl': {
-      const symbol = new FunctionSymbol(node.name);
+      const symbol = new FunctionSymbol(node.name, node);
       symbols.set(node, symbol);
       env.set(node.name, symbol);
 
@@ -58,7 +58,7 @@ function bindNode(node: SyntaxNode, env: Environment, symbols: Symbols): void {
       break;
     }
     case 'VariableDecl': {
-      const symbol = new VariableSymbol(node.name);
+      const symbol = new VariableSymbol(node.name, node);
       symbols.set(node, symbol);
       env.set(node.name, symbol);
 
@@ -68,8 +68,6 @@ function bindNode(node: SyntaxNode, env: Environment, symbols: Symbols): void {
       break;
     }
     case 'NumberLiteral': {
-      const symbol = new NumberSymbol();
-      symbols.set(node, symbol);
       break;
     }
     case 'Reference': {
@@ -131,8 +129,9 @@ function bindNode(node: SyntaxNode, env: Environment, symbols: Symbols): void {
     }
     case 'While': {
       bindNode(node.expr, env, symbols);
+      const blockEnv = new Environment(env);
       for (const child of node.body) {
-        bindNode(child, env, symbols);
+        bindNode(child, blockEnv, symbols);
       }
       break;
     }

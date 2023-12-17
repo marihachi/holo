@@ -1,15 +1,15 @@
+import { FunctionDecl, VariableDecl } from './ast.js';
+
 export type SemanticSymbol =
   | FunctionSymbol
   | VariableSymbol
-  | ParameterSymbol
-  | OperatorSymbol
-  | BlockSymbol
-  | NumberSymbol;
+  | ParameterSymbol;
 
 export class FunctionSymbol {
   kind = 'FunctionSymbol' as const;
   constructor(
     public name: string,
+    public node: FunctionDecl,
   ) {}
 }
 
@@ -17,6 +17,7 @@ export class VariableSymbol {
   kind = 'VariableSymbol' as const;
   constructor(
     public name: string,
+    public node: VariableDecl,
   ) {}
 }
 
@@ -25,20 +26,4 @@ export class ParameterSymbol {
   constructor(
     public name: string,
   ) {}
-}
-
-export class OperatorSymbol {
-  kind = 'OperatorSymbol' as const;
-}
-
-export class BlockSymbol {
-  kind = 'BlockSymbol' as const;
-}
-
-export class NumberSymbol {
-  kind = 'NumberSymbol' as const;
-}
-
-export class IfSymbol {
-  kind = 'IfSymbol' as const;
 }
