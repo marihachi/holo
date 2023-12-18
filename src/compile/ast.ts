@@ -1,4 +1,4 @@
-export type SyntaxNode = Unit | FunctionDecl | Statement | Expression;
+export type SyntaxNode = Unit | FunctionDecl | FuncParameter | TypeRef | Statement | Expression;
 export type Statement = VariableDecl | Break | Continue | Return | Assign | While | ExpressionStatement;
 export type Expression = NumberLiteral | Reference | Binary | Unary | If | Switch | Block | Call;
 export type ContainerNode = Block | FunctionDecl | While;
@@ -53,12 +53,29 @@ export class Unit {
   ) {}
 }
 
+export class FuncParameter {
+  kind = 'FuncParameter' as const;
+  constructor(
+    public name: string,
+    public typeRef: TypeRef | undefined,
+  ) {}
+}
+
 export class FunctionDecl {
   kind = 'FunctionDecl' as const;
   constructor(
     public name: string,
-    public paramNames: string[],
+    public parameters: FuncParameter[],
+    public returnTypeRef: TypeRef | undefined,
     public body: (Expression | Statement)[],
+    public loc: Loc,
+  ) {}
+}
+
+export class TypeRef {
+  kind = 'TypeRef' as const;
+  constructor(
+    public name: string,
     public loc: Loc,
   ) {}
 }
@@ -69,6 +86,7 @@ export class VariableDecl {
   kind = 'VariableDecl' as const;
   constructor(
     public name: string,
+    public typeRef: TypeRef | undefined,
     public expr: Expression | undefined,
     public loc: Loc,
   ) {}
