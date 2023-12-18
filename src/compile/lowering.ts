@@ -9,8 +9,9 @@ import {
   isContainerNode,
   isExpression,
 } from './ast.js';
+import { Symbols } from './bind.js';
 
-export function lowering(node: Unit): Unit {
+export function lowering(node: Unit, symbols: Symbols): Unit {
   // 全てのコンテナを見る
   visitContainer(node, ctx => {
     const cCtx = ctx.subCtx!;
@@ -69,7 +70,7 @@ function desugarBlock(ctx: NodeVisitorContext<ContainerContext>): void {
   // TODO
 }
 
-class NodeVisitorContext<T, U extends SyntaxNode = SyntaxNode> {
+export class NodeVisitorContext<T, U extends SyntaxNode = SyntaxNode> {
   private _node: U;
 
   subCtx?: T;
@@ -94,7 +95,7 @@ class NodeVisitorContext<T, U extends SyntaxNode = SyntaxNode> {
  * ハンドラの戻り値で子ノードを訪問するかを決定できる。
  * subCtxから追加情報をハンドラで参照できる。
  */
-function visitNode<T, U extends SyntaxNode>(
+export function visitNode<T, U extends SyntaxNode>(
   node: U,
   handler: (ctx: NodeVisitorContext<T>) => boolean,
 ): U {
