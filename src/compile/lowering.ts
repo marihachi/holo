@@ -39,11 +39,13 @@ function desugarIf(ctx: NodeVisitorContext<ContainerContext>): void {
     case 'VariableDecl': {
       const expr = node.expr;
       if (expr != null && expr.kind == 'If') {
+        // 初期化式のない変数宣言にする
         node.expr = undefined;
         replaceLastExprInContainer(expr, (e, _parent, release) => {
           if (e.kind == 'If') return release(e);
           return new Assign('simple', new Reference(node.name, e.loc), e, e.loc);
         }, node => (node.kind != 'VariableDecl'));
+        // 変数宣言の次のステップにif式を生成
         cCtx.insertNext(expr);
       }
       break;
@@ -55,6 +57,7 @@ function desugarIf(ctx: NodeVisitorContext<ContainerContext>): void {
           if (e.kind == 'If') return release(e);
           return new Return(e, e.loc);
         });
+        // return文を置き換える
         cCtx.replace(expr);
       }
       break;
