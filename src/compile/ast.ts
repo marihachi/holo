@@ -5,11 +5,16 @@ export type ContainerNode = Block | FunctionDecl | While;
 
 export function isStatement(node: SyntaxNode): node is Statement {
   switch (node.kind) {
-    case 'Unit':
-    case 'FunctionDecl':
-      return false;
+    case 'VariableDecl':
+    case 'Break':
+    case 'Continue':
+    case 'Return':
+    case 'Assign':
+    case 'While':
+    case 'ExpressionStatement':
+      return true;
   }
-  return !isExpression(node);
+  return false;
 }
 
 export function isExpression(node: SyntaxNode): node is Expression {
@@ -58,6 +63,7 @@ export class FuncParameter {
   constructor(
     public name: string,
     public typeRef: TypeRef | undefined,
+    public loc: Loc,
   ) {}
 }
 

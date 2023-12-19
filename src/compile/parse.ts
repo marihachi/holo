@@ -7,6 +7,8 @@ import { TokenKind } from './token.js';
 export function parse(input: string): Unit {
   const s = new Scanner(input);
 
+  const loc = s.getToken().loc;
+
   const decls = [];
   while (s.getKind() != TokenKind.EOF) {
     switch (s.getKind()) {
@@ -20,7 +22,7 @@ export function parse(input: string): Unit {
     }
   }
 
-  return new Unit(decls, { line: 1, column: 1 });
+  return new Unit(decls, loc);
 }
 
 function parseFuncParameters(s: ITokenStream): FuncParameter[] {
@@ -31,6 +33,7 @@ function parseFuncParameters(s: ITokenStream): FuncParameter[] {
       s.nextWith(TokenKind.Comma);
     }
 
+    const loc = s.getToken().loc;
     s.expect(TokenKind.Identifier);
     const name = s.getToken().value!;
     s.next();
@@ -40,7 +43,7 @@ function parseFuncParameters(s: ITokenStream): FuncParameter[] {
       s.next();
       typeRef = parseTypeRef(s);
     }
-    items.push(new FuncParameter(name, typeRef));
+    items.push(new FuncParameter(name, typeRef, loc));
   }
   s.nextWith(TokenKind.CloseParen);
   return items;
@@ -64,6 +67,8 @@ function parseBlock(s: ITokenStream): (Statement | Expression)[] {
 }
 
 function parseTypeRef(s: ITokenStream): TypeRef {
+  const loc = s.getToken().loc;
+
   s.expect(TokenKind.Identifier);
   const name = s.getToken().value!;
   s.next();
@@ -74,7 +79,7 @@ function parseTypeRef(s: ITokenStream): TypeRef {
 
   }
 
-  return new TypeRef(name);
+  return new TypeRef(name, loc);
 }
 
 function parseStep(s: ITokenStream): Statement | Expression {
