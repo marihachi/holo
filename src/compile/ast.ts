@@ -66,7 +66,7 @@ export class FunctionDecl {
   constructor(
     public name: string,
     public parameters: FuncParameter[],
-    public returnTypeRef: TypeRef | undefined,
+    public typeRef: TypeRef | undefined,
     public body: (Expression | Statement)[],
     public loc: Loc,
   ) {}

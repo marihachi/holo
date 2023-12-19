@@ -40,12 +40,15 @@ function emit(e: Emitter, node: SyntaxNode, parent?: SyntaxNode) {
       break;
     }
     case 'FunctionDecl': {
-      e.code += 'int ';
+      e.code += node.typeRef?.name ?? '';
+      e.code += ' ';
       e.code += node.name;
       e.code += '(';
-      for (let i = 0; i < node.paramNames.length; i++) {
+      for (let i = 0; i < node.parameters.length; i++) {
         if (i > 0) e.code += ', ';
-        e.code += `int ${node.paramNames[i]}`;
+        e.code += node.parameters[i].typeRef?.name ?? '';
+        e.code += ' ';
+        e.code += node.parameters[i].name;
       }
       e.code += ')';
       e.code += ' {';
@@ -64,7 +67,9 @@ function emit(e: Emitter, node: SyntaxNode, parent?: SyntaxNode) {
       break;
     }
     case 'VariableDecl': {
-      e.code += `int ${node.name}`;
+      e.code += node.typeRef?.name ?? '';
+      e.code += ' ';
+      e.code += node.name;
       if (node.expr != null) {
         e.endLine();
         e.level(1);
