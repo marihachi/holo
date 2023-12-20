@@ -73,13 +73,23 @@ function parseTypeRef(s: ITokenStream): TypeRef {
   const name = s.getToken().value!;
   s.next();
 
-  
-  if (s.getKind() == TokenKind.Asterisk) {
-    s.next();
-
+  const prefixes = [];
+  while (true) {
+    if (s.getKind() == TokenKind.Asterisk) {
+      s.next();
+      prefixes.push('pointer');
+    }
+    else if (s.getKind() == TokenKind.OpenBracket) {
+      s.next();
+      s.nextWith(TokenKind.CloseBracket);
+      prefixes.push('array');
+    }
+    else {
+      break;
+    }
   }
 
-  return new TypeRef(name, loc);
+  return new TypeRef(name, prefixes, loc);
 }
 
 function parseStep(s: ITokenStream): Statement | Expression {
