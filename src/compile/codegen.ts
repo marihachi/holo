@@ -67,8 +67,13 @@ function emit(e: Emitter, node: SyntaxNode, parent?: SyntaxNode) {
       break;
     }
     case 'VariableDecl': {
-      e.code += node.typeRef?.name ?? '';
-      e.code += ' ';
+      if (node.typeRef != null) {
+        e.code += node.typeRef.name;
+        e.code += ' ';
+        for (const suffix of node.typeRef.suffixes) {
+          e.code += '*';
+        }
+      }
       e.code += node.name;
       if (node.expr != null) {
         e.endLine();
