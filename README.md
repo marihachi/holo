@@ -1,5 +1,5 @@
 # holo
-A programming language refined the C.
+A better C-like programming language.
 
 WIP!
 
