@@ -81,8 +81,13 @@ function parseTypeRef(s: ITokenStream): TypeRef {
     }
     else if (s.getKind() == TokenKind.OpenBracket) {
       s.next();
+      let dimension = 1;
+      while (s.getKind() != TokenKind.CloseBracket) {
+        s.nextWith(TokenKind.Comma);
+        dimension++;
+      }
       s.nextWith(TokenKind.CloseBracket);
-      suffixes.push({ kind: 'array', dimension: 1 });
+      suffixes.push({ kind: 'array', dimension });
     }
     else {
       break;

@@ -259,6 +259,16 @@ export class Scanner implements ITokenStream {
           }
           break;
         }
+        case '[': {
+          this.stream.next();
+          token = TOKEN(TokenKind.OpenBracket, loc, { });
+          break;
+        }
+        case ']': {
+          this.stream.next();
+          token = TOKEN(TokenKind.CloseBracket, loc, { });
+          break;
+        }
         case '{': {
           this.stream.next();
           token = TOKEN(TokenKind.OpenBrace, loc, { });
