@@ -77,12 +77,12 @@ function parseTypeRef(s: ITokenStream): TypeRef {
   while (true) {
     if (s.getKind() == TokenKind.Asterisk) {
       s.next();
-      suffixes.push('pointer');
+      suffixes.push({ kind: 'pointer' });
     }
     else if (s.getKind() == TokenKind.OpenBracket) {
       s.next();
       s.nextWith(TokenKind.CloseBracket);
-      suffixes.push('array');
+      suffixes.push({ kind: 'array', dimension: 1 });
     }
     else {
       break;

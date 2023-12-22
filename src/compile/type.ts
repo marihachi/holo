@@ -1,5 +1,3 @@
-import { FunctionDecl, VariableDecl } from './ast.js';
-
 export type Type =
   | PremitiveType
   | PointerType
@@ -14,10 +12,10 @@ export class PremitiveType {
   ) {}
 }
 
-// int* --> pointer(primitive(int))
-// int[] --> array(1, primitive(int))
+// int*   --> pointer(primitive(int))
+// int[]  --> array(1, primitive(int))
 // int[,] --> array(2, primitive(int))
-// int** --> pointer(pointer(primitive(int)))
+// int**  --> pointer(pointer(primitive(int)))
 // int*[] --> array(1, pointer(primitive(int)))
 // int[]* --> pointer(array(1, primitive(int)))
 
@@ -31,6 +29,7 @@ export class PointerType {
 export class ArrayType {
   kind = 'ArrayType' as const;
   constructor(
+    public dimension: number,
     public innerType: Type | undefined,
   ) {}
 }
