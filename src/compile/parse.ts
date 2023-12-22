@@ -73,7 +73,7 @@ function parseTypeRef(s: ITokenStream): TypeRef {
   const name = s.getToken().value!;
   s.next();
 
-  const suffixes = [];
+  const suffixes: TypeRef['suffixes'] = [];
   while (true) {
     if (s.getKind() == TokenKind.Asterisk) {
       s.next();
@@ -238,7 +238,7 @@ function parseFunctionDecl(s: ITokenStream): FunctionDecl {
 
   const body = parseBlock(s);
 
-  return new FunctionDecl(name, params, body, loc);
+  return new FunctionDecl(name, params, retTypeRef, body, loc);
 }
 
 function parseVariableDecl(s: ITokenStream): VariableDecl {
