@@ -10,11 +10,11 @@ export class Emitter {
     this.indentLevel = 0;
   }
 
-  beginLine() {
+  indent() {
     this.code += '  '.repeat(this.indentLevel);
   }
 
-  endLine() {
+  newLine() {
     this.code += '\n';
   }
 
@@ -33,9 +33,9 @@ function emit(e: Emitter, node: SyntaxNode, parent?: SyntaxNode) {
   switch (node.kind) {
     case 'Unit': {
       for (const decl of node.decls) {
-        e.beginLine();
+        e.indent();
         emit(e, decl, node);
-        e.endLine();
+        e.newLine();
       }
       break;
     }
@@ -52,17 +52,17 @@ function emit(e: Emitter, node: SyntaxNode, parent?: SyntaxNode) {
       }
       e.code += ')';
       e.code += ' {';
-      e.endLine();
+      e.newLine();
 
       e.level(1);
       for (const step of node.body) {
-        e.beginLine();
+        e.indent();
         emit(e, step, node);
-        e.endLine();
+        e.newLine();
       }
       e.level(-1);
 
-      e.beginLine();
+      e.indent();
       e.code += '}';
       break;
     }
@@ -76,9 +76,9 @@ function emit(e: Emitter, node: SyntaxNode, parent?: SyntaxNode) {
       }
       e.code += node.name;
       if (node.expr != null) {
-        e.endLine();
+        e.newLine();
         e.level(1);
-        e.beginLine();
+        e.indent();
         e.code += '= ';
         emit(e, node.expr, node);
         e.code += ';';
@@ -127,15 +127,15 @@ function emit(e: Emitter, node: SyntaxNode, parent?: SyntaxNode) {
     case 'Block': {
       // TODO
       e.code += '{';
-      e.endLine();
+      e.newLine();
       e.level(1);
       for (const child of node.body) {
-        e.beginLine();
+        e.indent();
         emit(e, child, node);
-        e.endLine();
+        e.newLine();
       }
       e.level(-1);
-      e.beginLine();
+      e.indent();
       e.code += '}';
       break;
     }
@@ -186,17 +186,17 @@ function emit(e: Emitter, node: SyntaxNode, parent?: SyntaxNode) {
       emit(e, node.expr, node);
       e.code += ')';
       e.code += ' {';
-      e.endLine();
+      e.newLine();
 
       e.level(1);
       for (const step of node.body) {
-        e.beginLine();
+        e.indent();
         emit(e, step, node);
-        e.endLine();
+        e.newLine();
       }
       e.level(-1);
 
-      e.beginLine();
+      e.indent();
       e.code += '}';
       break;
     }
@@ -206,39 +206,39 @@ function emit(e: Emitter, node: SyntaxNode, parent?: SyntaxNode) {
       emit(e, node.expr, node);
       e.code += ')';
       e.code += ' {';
-      e.endLine();
+      e.newLine();
 
       e.level(1);
       for (const arm of node.arms) {
-        e.beginLine();
+        e.indent();
         e.code += 'case ';
         emit(e, arm.cond, node);
         e.code += ': {';
-        e.endLine();
+        e.newLine();
         let blockResult;
         for (const step of arm.thenBlock.body) {
           if (!isExpression(step)) {
-            e.beginLine();
+            e.indent();
             emit(e, step, arm.thenBlock);
-            e.endLine();
+            e.newLine();
           }
           blockResult = step;
         }
         // TODO: support Assign
         if (parent != null && blockResult != null && parent.kind == 'VariableDecl' && isExpression(blockResult)) {
-          e.beginLine();
+          e.indent();
           e.code += `${parent.name} = `;
           emit(e, blockResult, arm.thenBlock);
           e.code += ';';
-          e.endLine();
+          e.newLine();
         }
-        e.beginLine();
+        e.indent();
         e.code += '}';
-        e.endLine();
+        e.newLine();
       }
       e.level(-1);
 
-      e.beginLine();
+      e.indent();
       e.code += '}';
       break;
     }

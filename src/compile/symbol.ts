@@ -1,9 +1,11 @@
 import { FunctionDecl, VariableDecl } from './ast.js';
+import { Type } from './type.js';
 
 export type SemanticSymbol =
   | FunctionSymbol
   | VariableSymbol
-  | ParameterSymbol;
+  | ParameterSymbol
+  | TypeSymbol;
 
 export class FunctionSymbol {
   kind = 'FunctionSymbol' as const;
@@ -25,5 +27,14 @@ export class ParameterSymbol {
   kind = 'ParameterSymbol' as const;
   constructor(
     public name: string,
+  ) {}
+}
+
+export class TypeSymbol {
+  kind = 'TypeSymbol' as const;
+  constructor(
+    public name: string,
+    public suffixes: ('array' | 'pointer')[],
+    public type: Type,
   ) {}
 }
