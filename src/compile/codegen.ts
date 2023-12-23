@@ -1,4 +1,4 @@
-import { SyntaxNode, Unit, isExpression } from './ast.js';
+import { SyntaxNode, UnitNode, isExpressionNode } from './syntax-node.js';
 import { Symbols } from './bind.js';
 
 export class Emitter {
@@ -23,7 +23,7 @@ export class Emitter {
   }
 }
 
-export function generate(node: Unit, symbols: Symbols) {
+export function generate(node: UnitNode, symbols: Symbols) {
   const e = new Emitter();
   emit(e, node);
   return e.code;
@@ -31,7 +31,7 @@ export function generate(node: Unit, symbols: Symbols) {
 
 function emit(e: Emitter, node: SyntaxNode, parent?: SyntaxNode) {
   switch (node.kind) {
-    case 'Unit': {
+    case 'UnitNode': {
       for (const decl of node.decls) {
         e.indent();
         emit(e, decl, node);
@@ -39,7 +39,7 @@ function emit(e: Emitter, node: SyntaxNode, parent?: SyntaxNode) {
       }
       break;
     }
-    case 'FunctionDecl': {
+    case 'FunctionDeclNode': {
       e.code += node.typeRef?.name ?? '';
       e.code += ' ';
       e.code += node.name;
@@ -66,7 +66,7 @@ function emit(e: Emitter, node: SyntaxNode, parent?: SyntaxNode) {
       e.code += '}';
       break;
     }
-    case 'VariableDecl': {
+    case 'VariableDeclNode': {
       if (node.typeRef != null) {
         e.code += node.typeRef.name;
         e.code += ' ';
@@ -88,15 +88,15 @@ function emit(e: Emitter, node: SyntaxNode, parent?: SyntaxNode) {
       }
       break;
     }
-    case 'NumberLiteral': {
+    case 'NumberLiteralNode': {
       e.code += node.value;
       break;
     }
-    case 'Reference': {
+    case 'ReferenceNode': {
       e.code += node.name;
       break;
     }
-    case 'Binary': {
+    case 'BinaryNode': {
       // TODO
       switch (node.mode) {
         case 'add': {
@@ -108,11 +108,11 @@ function emit(e: Emitter, node: SyntaxNode, parent?: SyntaxNode) {
       }
       break;
     }
-    case 'Unary': {
+    case 'UnaryNode': {
       // TODO
       break;
     }
-    case 'If': {
+    case 'IfNode': {
       // TODO
       e.code += 'if (';
       emit(e, node.cond, node);
@@ -124,7 +124,7 @@ function emit(e: Emitter, node: SyntaxNode, parent?: SyntaxNode) {
       }
       break;
     }
-    case 'Block': {
+    case 'BlockNode': {
       // TODO
       e.code += '{';
       e.newLine();
@@ -139,21 +139,21 @@ function emit(e: Emitter, node: SyntaxNode, parent?: SyntaxNode) {
       e.code += '}';
       break;
     }
-    case 'Call': {
+    case 'CallNode': {
       // TODO
       break;
     }
-    case 'Break': {
+    case 'BreakNode': {
       e.code += 'break';
       e.code += ';';
       break;
     }
-    case 'Continue': {
+    case 'ContinueNode': {
       e.code += 'continue';
       e.code += ';';
       break;
     }
-    case 'Return': {
+    case 'ReturnNode': {
       e.code += 'return';
       if (node.expr != null) {
         e.code += ' ';
@@ -162,7 +162,7 @@ function emit(e: Emitter, node: SyntaxNode, parent?: SyntaxNode) {
       e.code += ';';
       break;
     }
-    case 'Assign': {
+    case 'AssignNode': {
       emit(e, node.target, node);
       switch (node.mode) {
         case 'simple': { e.code += ' = '; break; }
@@ -180,7 +180,7 @@ function emit(e: Emitter, node: SyntaxNode, parent?: SyntaxNode) {
       e.code += ';';
       break;
     }
-    case 'While': {
+    case 'WhileNode': {
       e.code += 'while ';
       e.code += '(';
       emit(e, node.expr, node);
@@ -200,7 +200,7 @@ function emit(e: Emitter, node: SyntaxNode, parent?: SyntaxNode) {
       e.code += '}';
       break;
     }
-    case 'Switch': {
+    case 'SwitchNode': {
       e.code += 'switch ';
       e.code += '(';
       emit(e, node.expr, node);
@@ -217,7 +217,7 @@ function emit(e: Emitter, node: SyntaxNode, parent?: SyntaxNode) {
         e.newLine();
         let blockResult;
         for (const step of arm.thenBlock.body) {
-          if (!isExpression(step)) {
+          if (!isExpressionNode(step)) {
             e.indent();
             emit(e, step, arm.thenBlock);
             e.newLine();
@@ -225,7 +225,7 @@ function emit(e: Emitter, node: SyntaxNode, parent?: SyntaxNode) {
           blockResult = step;
         }
         // TODO: support Assign
-        if (parent != null && blockResult != null && parent.kind == 'VariableDecl' && isExpression(blockResult)) {
+        if (parent != null && blockResult != null && parent.kind == 'VariableDeclNode' && isExpressionNode(blockResult)) {
           e.indent();
           e.code += `${parent.name} = `;
           emit(e, blockResult, arm.thenBlock);
@@ -242,7 +242,7 @@ function emit(e: Emitter, node: SyntaxNode, parent?: SyntaxNode) {
       e.code += '}';
       break;
     }
-    case 'ExpressionStatement': {
+    case 'ExpressionStatementNode': {
       emit(e, node.expr, node);
       e.code += ';';
       break;

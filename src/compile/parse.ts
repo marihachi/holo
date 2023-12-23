@@ -1,10 +1,10 @@
 import { error } from './util/error.js';
-import { Assign, Binary, BinaryMode, Block, Break, Call, Continue, Expression, ExpressionStatement, FuncParameter, FunctionDecl, If, NumberLiteral, Reference, Return, Statement, Switch, TypeRef, Unary, UnaryMode, Unit, VariableDecl, While } from './ast.js';
+import { AssignNode, BinaryNode, BinaryMode, BlockNode, BreakNode, CallNode, ContinueNode, ExpressionNode, ExpressionStatementNode, FuncParameterNode, FunctionDeclNode, IfNode, NumberLiteralNode, ReferenceNode, ReturnNode, StatementNode, SwitchNode, TypeRefNode, UnaryNode, UnaryMode, UnitNode, VariableDeclNode, WhileNode } from './syntax-node.js';
 import { Scanner } from './scan.js';
 import { ITokenStream } from './stream/token-stream.js';
 import { TokenKind } from './token.js';
 
-export function parse(input: string): Unit {
+export function parse(input: string): UnitNode {
   const s = new Scanner(input);
 
   const loc = s.getToken().loc;
@@ -22,10 +22,10 @@ export function parse(input: string): Unit {
     }
   }
 
-  return new Unit(decls, loc);
+  return new UnitNode(decls, loc);
 }
 
-function parseFuncParameters(s: ITokenStream): FuncParameter[] {
+function parseFuncParameters(s: ITokenStream): FuncParameterNode[] {
   s.nextWith(TokenKind.OpenParen);
   const items = [];
   while (s.getKind() != TokenKind.CloseParen) {
@@ -43,20 +43,20 @@ function parseFuncParameters(s: ITokenStream): FuncParameter[] {
       s.next();
       typeRef = parseTypeRef(s);
     }
-    items.push(new FuncParameter(name, typeRef, loc));
+    items.push(new FuncParameterNode(name, typeRef, loc));
   }
   s.nextWith(TokenKind.CloseParen);
   return items;
 }
 
-function parseCond(s: ITokenStream): Expression {
+function parseCond(s: ITokenStream): ExpressionNode {
   s.nextWith(TokenKind.OpenParen);
   const expr = parseExpr(s);
   s.nextWith(TokenKind.CloseParen);
   return expr;
 }
 
-function parseBlock(s: ITokenStream): (Statement | Expression)[] {
+function parseBlock(s: ITokenStream): (StatementNode | ExpressionNode)[] {
   s.nextWith(TokenKind.OpenBrace);
   const steps = [];
   while (s.getKind() != TokenKind.CloseBrace) {
@@ -66,14 +66,14 @@ function parseBlock(s: ITokenStream): (Statement | Expression)[] {
   return steps;
 }
 
-function parseTypeRef(s: ITokenStream): TypeRef {
+function parseTypeRef(s: ITokenStream): TypeRefNode {
   const loc = s.getToken().loc;
 
   s.expect(TokenKind.Identifier);
   const name = s.getToken().value!;
   s.next();
 
-  const suffixes: TypeRef['suffixes'] = [];
+  const suffixes: TypeRefNode['suffixes'] = [];
   while (true) {
     if (s.getKind() == TokenKind.Asterisk) {
       s.next();
@@ -102,10 +102,10 @@ function parseTypeRef(s: ITokenStream): TypeRef {
     }
   }
 
-  return new TypeRef(name, suffixes, loc);
+  return new TypeRefNode(name, suffixes, loc);
 }
 
-function parseStep(s: ITokenStream): Statement | Expression {
+function parseStep(s: ITokenStream): StatementNode | ExpressionNode {
   const loc = s.getToken().loc;
   let kind = s.getKind();
 
@@ -114,22 +114,22 @@ function parseStep(s: ITokenStream): Statement | Expression {
     case TokenKind.Break: {
       s.next();
       s.nextWith(TokenKind.SemiColon);
-      return new Break(loc);
+      return new BreakNode(loc);
     }
     case TokenKind.Continue: {
       s.next();
       s.nextWith(TokenKind.SemiColon);
-      return new Continue(loc);
+      return new ContinueNode(loc);
     }
     case TokenKind.Return: {
       s.next();
       if (s.getKind() == TokenKind.SemiColon) {
         s.next();
-        return new Return(undefined, loc);
+        return new ReturnNode(undefined, loc);
       }
       const expr = parseExpr(s);
       s.nextWith(TokenKind.SemiColon);
-      return new Return(expr, loc);
+      return new ReturnNode(expr, loc);
     }
     case TokenKind.Var: {
       return parseVariableDecl(s);
@@ -150,67 +150,67 @@ function parseStep(s: ITokenStream): Statement | Expression {
     case TokenKind.Eq: {
       s.next();
       const right = parseExpr(s);
-      assign = new Assign('simple', left, right, loc);
+      assign = new AssignNode('simple', left, right, loc);
       break;
     }
     case TokenKind.PlusEq: {
       s.next();
       const right = parseExpr(s);
-      assign = new Assign('add', left, right, loc);
+      assign = new AssignNode('add', left, right, loc);
       break;
     }
     case TokenKind.MinusEq: {
       s.next();
       const right = parseExpr(s);
-      assign = new Assign('sub', left, right, loc);
+      assign = new AssignNode('sub', left, right, loc);
       break;
     }
     case TokenKind.AsterEq: {
       s.next();
       const right = parseExpr(s);
-      assign = new Assign('mul', left, right, loc);
+      assign = new AssignNode('mul', left, right, loc);
       break;
     }
     case TokenKind.SlashEq: {
       s.next();
       const right = parseExpr(s);
-      assign = new Assign('div', left, right, loc);
+      assign = new AssignNode('div', left, right, loc);
       break;
     }
     case TokenKind.PercentEq: {
       s.next();
       const right = parseExpr(s);
-      assign = new Assign('rem', left, right, loc);
+      assign = new AssignNode('rem', left, right, loc);
       break;
     }
     case TokenKind.Lt2Eq: {
       s.next();
       const right = parseExpr(s);
-      assign = new Assign('shl', left, right, loc);
+      assign = new AssignNode('shl', left, right, loc);
       break;
     }
     case TokenKind.Gt2Eq: {
       s.next();
       const right = parseExpr(s);
-      assign = new Assign('shr', left, right, loc);
+      assign = new AssignNode('shr', left, right, loc);
       break;
     }
     case TokenKind.AndEq: {
       s.next();
       const right = parseExpr(s);
-      assign = new Assign('bitand', left, right, loc);
+      assign = new AssignNode('bitand', left, right, loc);
       break;
     }
     case TokenKind.OrEq: {
       s.next();
       const right = parseExpr(s);
-      assign = new Assign('bitor', left, right, loc);
+      assign = new AssignNode('bitor', left, right, loc);
       break;
     }
     case TokenKind.HatEq: {
       s.next();
       const right = parseExpr(s);
-      assign = new Assign('xor', left, right, loc);
+      assign = new AssignNode('xor', left, right, loc);
       break;
     }
   }
@@ -222,18 +222,18 @@ function parseStep(s: ITokenStream): Statement | Expression {
   // expression statement
   if (s.getKind() == TokenKind.SemiColon) {
     s.next();
-    return new ExpressionStatement(left, loc);
+    return new ExpressionStatementNode(left, loc);
   }
 
   // expression
   return left;
 }
 
-function parseExpr(s: ITokenStream): Expression {
+function parseExpr(s: ITokenStream): ExpressionNode {
   return parsePratt(s, 0);
 }
 
-function parseFunctionDecl(s: ITokenStream): FunctionDecl {
+function parseFunctionDecl(s: ITokenStream): FunctionDeclNode {
   const loc = s.getToken().loc;
   s.nextWith(TokenKind.Fn);
 
@@ -251,10 +251,10 @@ function parseFunctionDecl(s: ITokenStream): FunctionDecl {
 
   const body = parseBlock(s);
 
-  return new FunctionDecl(name, params, retTypeRef, body, loc);
+  return new FunctionDeclNode(name, params, retTypeRef, body, loc);
 }
 
-function parseVariableDecl(s: ITokenStream): VariableDecl {
+function parseVariableDecl(s: ITokenStream): VariableDeclNode {
   const loc = s.getToken().loc;
   s.nextWith(TokenKind.Var);
 
@@ -275,10 +275,10 @@ function parseVariableDecl(s: ITokenStream): VariableDecl {
   }
 
   s.nextWith(TokenKind.SemiColon);
-  return new VariableDecl(name, typeRef, body, loc);
+  return new VariableDeclNode(name, typeRef, body, loc);
 }
 
-function parseIf(s: ITokenStream): If {
+function parseIf(s: ITokenStream): IfNode {
   const loc = s.getToken().loc;
 
   s.nextWith(TokenKind.If);
@@ -290,10 +290,10 @@ function parseIf(s: ITokenStream): If {
     elseExpr = parseExpr(s);
   }
 
-  return new If(cond, thenExpr, elseExpr, loc);
+  return new IfNode(cond, thenExpr, elseExpr, loc);
 }
 
-function parseSwitch(s: ITokenStream): Switch {
+function parseSwitch(s: ITokenStream): SwitchNode {
   const loc = s.getToken().loc;
 
   s.nextWith(TokenKind.Switch);
@@ -305,34 +305,34 @@ function parseSwitch(s: ITokenStream): Switch {
     if (s.getKind() == TokenKind.Default) {
       s.next();
       const defaultArmLoc = s.getToken().loc;
-      defaultBlock = new Block(parseBlock(s), defaultArmLoc);
+      defaultBlock = new BlockNode(parseBlock(s), defaultArmLoc);
       break;
     }
     s.nextWith(TokenKind.Case);
     const armCond = parseExpr(s);
     const armLoc = s.getToken().loc;
-    const armBlock = new Block(parseBlock(s), armLoc);
+    const armBlock = new BlockNode(parseBlock(s), armLoc);
     arms.push({ cond: armCond, thenBlock: armBlock });
   }
   s.nextWith(TokenKind.CloseBrace);
 
-  return new Switch(expr, arms, defaultBlock, loc);
+  return new SwitchNode(expr, arms, defaultBlock, loc);
 }
 
-function parseWhile(s: ITokenStream): While {
+function parseWhile(s: ITokenStream): WhileNode {
   const loc = s.getToken().loc;
 
   if (s.getKind() == TokenKind.While) {
     s.nextWith(TokenKind.While);
     const cond = parseCond(s);
     const body = parseBlock(s);
-    return new While('while', cond, body, loc);
+    return new WhileNode('while', cond, body, loc);
   } else {
     s.nextWith(TokenKind.Do);
     const body = parseBlock(s);
     s.nextWith(TokenKind.While);
     const cond = parseCond(s);
-    return new While('do-while', cond, body, loc);
+    return new WhileNode('do-while', cond, body, loc);
   }
 }
 
@@ -396,12 +396,12 @@ const operators: OpInfo[] = [
   infixOp(TokenKind.Or2, 20, 21),
 ];
 
-function parsePratt(s: ITokenStream, minBp: number): Expression {
+function parsePratt(s: ITokenStream, minBp: number): ExpressionNode {
   // pratt parsing
   // https://matklad.github.io/2020/04/13/simple-but-powerful-pratt-parsing.html
   const kind = s.getKind();
   const prefix = operators.find((x): x is PrefixInfo => x.kind == 'prefix' && x.token == kind);
-  let left: Expression;
+  let left: ExpressionNode;
   if (prefix != null) {
     // prefix
     left = parsePrefix(s, prefix);
@@ -433,7 +433,7 @@ function parsePratt(s: ITokenStream, minBp: number): Expression {
   return left;
 }
 
-function parsePrefix(s: ITokenStream, info: PrefixInfo): Expression {
+function parsePrefix(s: ITokenStream, info: PrefixInfo): ExpressionNode {
   const loc = s.getToken().loc;
   s.next();
   const right = parsePratt(s, info.bp);
@@ -454,10 +454,10 @@ function parsePrefix(s: ITokenStream, info: PrefixInfo): Expression {
     }
   }
 
-  return new Unary(mode, right, loc);
+  return new UnaryNode(mode, right, loc);
 }
 
-function parsePostfix(s: ITokenStream, left: Expression, info: PostfixInfo): Expression {
+function parsePostfix(s: ITokenStream, left: ExpressionNode, info: PostfixInfo): ExpressionNode {
   const loc = s.getToken().loc;
   s.next();
   switch (info.token) {
@@ -469,7 +469,7 @@ function parsePostfix(s: ITokenStream, left: Expression, info: PostfixInfo): Exp
     // }
     case TokenKind.OpenParen: {
       // call
-      const args: Expression[] = [];
+      const args: ExpressionNode[] = [];
       if (s.getKind() != TokenKind.CloseParen) {
         args.push(parseExpr(s));
         while (s.getKind() == (TokenKind.Comma)) {
@@ -481,12 +481,12 @@ function parsePostfix(s: ITokenStream, left: Expression, info: PostfixInfo): Exp
         }
       }
       s.nextWith(TokenKind.CloseParen);
-      return new Call(left, args, loc);
+      return new CallNode(left, args, loc);
     }
   }
 }
 
-function parseInfix(s: ITokenStream, left: Expression, info: InfixInfo): Expression {
+function parseInfix(s: ITokenStream, left: ExpressionNode, info: InfixInfo): ExpressionNode {
   const loc = s.getToken().loc;
   s.next();
   const right = parsePratt(s, info.rbp);
@@ -558,7 +558,7 @@ function parseInfix(s: ITokenStream, left: Expression, info: InfixInfo): Express
     }
   }
 
-  return new Binary(mode, left, right, loc);
+  return new BinaryNode(mode, left, right, loc);
 }
 
 /**
@@ -566,19 +566,19 @@ function parseInfix(s: ITokenStream, left: Expression, info: InfixInfo): Express
  * <Atom> = <NumberLiteral> / <BoolLiteral> / <StringLiteral> / <StructExpr> / <Array> / <IfExpr> / <Identifier> / "(" <Expr> ")"
  * ```
 */
-function parseAtom(s: ITokenStream): Expression {
+function parseAtom(s: ITokenStream): ExpressionNode {
   const loc = s.getToken().loc;
   switch (s.getKind()) {
     case TokenKind.NumberLiteral: {
       const source = s.getToken().value!;
       s.next();
       const value = Number(source);
-      return new NumberLiteral(value, loc);
+      return new NumberLiteralNode(value, loc);
     }
     case TokenKind.Identifier: {
       const name = s.getToken().value!;
       s.next();
-      return new Reference(name, loc);
+      return new ReferenceNode(name, loc);
     }
     // case TokenKind.New: {
     //   s.next();
@@ -607,7 +607,7 @@ function parseAtom(s: ITokenStream): Expression {
       return parseSwitch(s);
     }
     case TokenKind.OpenBrace: {
-      return new Block(parseBlock(s), loc);
+      return new BlockNode(parseBlock(s), loc);
     }
     case TokenKind.OpenParen: {
       s.next();

@@ -1,17 +1,17 @@
 import {
-  Assign,
-  Expression,
-  Reference,
-  Return,
-  Statement,
+  AssignNode,
+  ExpressionNode,
+  ReferenceNode,
+  ReturnNode,
+  StatementNode,
   SyntaxNode,
-  Unit,
+  UnitNode,
   isContainerNode,
-  isExpression,
-} from './ast.js';
+  isExpressionNode,
+} from './syntax-node.js';
 import { Symbols } from './bind.js';
 
-export function lowering(node: Unit, symbols: Symbols): Unit {
+export function lowering(node: UnitNode, symbols: Symbols): UnitNode {
   // 全てのコンテナを見る
   visitContainer(node, ctx => {
     const cCtx = ctx.subCtx!;
@@ -36,26 +36,26 @@ function desugarIf(ctx: NodeVisitorContext<ContainerContext>): void {
   const cCtx = ctx.subCtx!;
   const node = cCtx.getNode();
   switch (node.kind) {
-    case 'VariableDecl': {
+    case 'VariableDeclNode': {
       const expr = node.expr;
-      if (expr != null && expr.kind == 'If') {
+      if (expr != null && expr.kind == 'IfNode') {
         // 初期化式のない変数宣言にする
         node.expr = undefined;
         replaceLastExprInContainer(expr, (e, _parent, release) => {
-          if (e.kind == 'If') return release(e);
-          return new Assign('simple', new Reference(node.name, e.loc), e, e.loc);
-        }, node => (node.kind != 'VariableDecl'));
+          if (e.kind == 'IfNode') return release(e);
+          return new AssignNode('simple', new ReferenceNode(node.name, e.loc), e, e.loc);
+        }, node => (node.kind != 'VariableDeclNode'));
         // 変数宣言の次のステップにif式を生成
         cCtx.insertNext(expr);
       }
       break;
     }
-    case 'Return': {
+    case 'ReturnNode': {
       const expr = node.expr;
-      if (expr != null && expr.kind == 'If') {
+      if (expr != null && expr.kind == 'IfNode') {
         replaceLastExprInContainer(expr, (e, _parent, release) => {
-          if (e.kind == 'If') return release(e);
-          return new Return(e, e.loc);
+          if (e.kind == 'IfNode') return release(e);
+          return new ReturnNode(e, e.loc);
         });
         // return文を置き換える
         cCtx.replace(expr);
@@ -103,40 +103,40 @@ export function visitNode<T, U extends SyntaxNode>(
   if (handler(ctx)) {
     const vNode = ctx.getNode();
     switch (vNode.kind) {
-      case 'Unit': {
+      case 'UnitNode': {
         for (let i = 0; i < vNode.decls.length; i++) {
           vNode.decls[i] = visitNode(vNode.decls[i], handler);
         }
         break;
       }
-      case 'FunctionDecl': {
+      case 'FunctionDeclNode': {
         for (let i = 0; i < vNode.body.length; i++) {
           vNode.body[i] = visitNode(vNode.body[i], handler);
         }
         break;
       }
-      case 'VariableDecl': {
+      case 'VariableDeclNode': {
         if (vNode.expr != null) {
           vNode.expr = visitNode(vNode.expr, handler);
         }
         break;
       }
-      case 'NumberLiteral': {
+      case 'NumberLiteralNode': {
         break;
       }
-      case 'Reference': {
+      case 'ReferenceNode': {
         break;
       }
-      case 'Binary': {
+      case 'BinaryNode': {
         vNode.left = visitNode(vNode.left, handler);
         vNode.right = visitNode(vNode.right, handler);
         break;
       }
-      case 'Unary': {
+      case 'UnaryNode': {
         vNode.expr = visitNode(vNode.expr, handler);
         break;
       }
-      case 'If': {
+      case 'IfNode': {
         vNode.cond = visitNode(vNode.cond, handler);
         vNode.thenExpr = visitNode(vNode.thenExpr, handler);
         if (vNode.elseExpr != null) {
@@ -144,44 +144,44 @@ export function visitNode<T, U extends SyntaxNode>(
         }
         break;
       }
-      case 'Block': {
+      case 'BlockNode': {
         for (let i = 0; i < vNode.body.length; i++) {
           vNode.body[i] = visitNode(vNode.body[i], handler);
         }
         break;
       }
-      case 'Call': {
+      case 'CallNode': {
         vNode.expr = visitNode(vNode.expr, handler);
         for (let i = 0; i < vNode.args.length; i++) {
           vNode.args[i] = visitNode(vNode.args[i], handler);
         }
         break;
       }
-      case 'Break': {
+      case 'BreakNode': {
         break;
       }
-      case 'Continue': {
+      case 'ContinueNode': {
         break;
       }
-      case 'Return': {
+      case 'ReturnNode': {
         if (vNode.expr != null) {
           vNode.expr = visitNode(vNode.expr, handler);
         }
         break;
       }
-      case 'Assign': {
+      case 'AssignNode': {
         vNode.target = visitNode(vNode.target, handler);
         vNode.expr = visitNode(vNode.expr, handler);
         break;
       }
-      case 'While': {
+      case 'WhileNode': {
         vNode.expr = visitNode(vNode.expr, handler);
         for (let i = 0; i < vNode.body.length; i++) {
           vNode.body[i] = visitNode(vNode.body[i], handler);
         }
         break;
       }
-      case 'Switch': {
+      case 'SwitchNode': {
         vNode.expr = visitNode(vNode.expr, handler);
         for (let i = 0; i < vNode.arms.length; i++) {
           vNode.arms[i].cond = visitNode(vNode.arms[i].cond, handler);
@@ -192,7 +192,7 @@ export function visitNode<T, U extends SyntaxNode>(
         }
         break;
       }
-      case 'ExpressionStatement': {
+      case 'ExpressionStatementNode': {
         vNode.expr = visitNode(vNode.expr, handler);
         break;
       }
@@ -242,9 +242,9 @@ function visitContainer<T extends SyntaxNode = SyntaxNode>(
   visitNode<ContainerContext, T>(node, ctx => {
     const vNode = ctx.getNode();
     switch (vNode.kind) {
-      case 'FunctionDecl':
-      case 'While':
-      case 'Block': {
+      case 'FunctionDeclNode':
+      case 'WhileNode':
+      case 'BlockNode': {
         ctx.subCtx = new ContainerContext(vNode.body, 0);
         return handler(ctx);
       }
@@ -259,10 +259,10 @@ type LastExprReplacer =
    * @param release - 生成されたノードを再帰的に置換するための関数
    */
   (
-    expr: Expression,
+    expr: ExpressionNode,
     parent: SyntaxNode,
-    release: ((node: Expression | Statement) => Expression | Statement)
-  ) => Expression | Statement;
+    release: ((node: ExpressionNode | StatementNode) => ExpressionNode | StatementNode)
+  ) => ExpressionNode | StatementNode;
 
 /**
  * コンテナの最後に評価される式を置換する
@@ -282,7 +282,7 @@ function replaceLastExprInContainer(
       if (!pos) return filter?.(vNode) ?? true;
 
       switch (pos.node.kind) {
-        case "Return": {
+        case "ReturnNode": {
           if (pos.node.expr) {
             let res = fn(pos.node.expr, vNode, (n) => {
               replaceLastExprInContainer(n, fn, filter);
@@ -290,7 +290,7 @@ function replaceLastExprInContainer(
             });
 
             // 帰ってきたノードが式であるならreturnでラップする
-            if (isExpression(res)) {
+            if (isExpressionNode(res)) {
               pos.node.expr = res;
               res = pos.node;
             }
@@ -323,22 +323,22 @@ type FindLastExprContext = {
    * 式の位置
    */
   pos?: Readonly<{
-    container: (Expression | Statement)[];
+    container: (ExpressionNode | StatementNode)[];
     index: number;
-    node: Expression | Return;
+    node: ExpressionNode | ReturnNode;
   }>;
 };
 
 /**
  * コンテナの最後に評価される式を探す
  */
-function findLastExprInContainer(body: (Statement | Expression)[], filter?: (node: SyntaxNode) => boolean, ctx: FindLastExprContext = { }) {
+function findLastExprInContainer(body: (StatementNode | ExpressionNode)[], filter?: (node: SyntaxNode) => boolean, ctx: FindLastExprContext = { }) {
   loop: for (let i = 0; i < body.length; i++) {
     const child = body[i];
 
     // ループの終端であれば
     if (i == body.length - 1) {
-      if (isExpression(child)) {
+      if (isExpressionNode(child)) {
         ctx.pos = {
           container: body,
           index: i,
@@ -351,12 +351,12 @@ function findLastExprInContainer(body: (Statement | Expression)[], filter?: (nod
     // ブロックから抜け出す処理がある場合、その時に評価される式の位置を記録
     // そうでなければそのノードの内容から再帰的に記録していく
     switch (child.kind) {
-      case 'Continue':
-      case 'Break': {
+      case 'ContinueNode':
+      case 'BreakNode': {
         // 後ろにノードがあればその位置を記録
         if (i > 0) {
           const prevNode = body[i - 1];
-          if (isExpression(prevNode)) {
+          if (isExpressionNode(prevNode)) {
             ctx.pos = {
               container: body,
               index: i - 1,
@@ -368,7 +368,7 @@ function findLastExprInContainer(body: (Statement | Expression)[], filter?: (nod
         break;
       }
 
-      case 'Return': {
+      case 'ReturnNode': {
         if (child.expr != null) {
           ctx.pos = {
             container: body,
@@ -378,7 +378,7 @@ function findLastExprInContainer(body: (Statement | Expression)[], filter?: (nod
           break loop;
         } else if (i > 0) {
           const prevNode = body[i - 1];
-          if (isExpression(prevNode)) {
+          if (isExpressionNode(prevNode)) {
             ctx.pos = {
               container: body,
               index: i - 1,

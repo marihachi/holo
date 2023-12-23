@@ -1,30 +1,30 @@
-import { SyntaxNode, Unit } from './ast.js';
-import { FunctionSymbol, SemanticSymbol, VariableSymbol } from './symbol.js';
+import { SyntaxNode, UnitNode } from './syntax-node.js';
+import { HoloFunction, SemanticNode, Variable } from './semantic-node.js';
 
 export class Symbols {
-  table: Map<SyntaxNode, SemanticSymbol> = new Map();
+  table: Map<SyntaxNode, SemanticNode> = new Map();
 
-  set(node: SyntaxNode, symbol: SemanticSymbol): void {
+  set(node: SyntaxNode, symbol: SemanticNode): void {
     this.table.set(node, symbol);
   }
 
-  get(node: SyntaxNode): SemanticSymbol | undefined {
+  get(node: SyntaxNode): SemanticNode | undefined {
     return this.table.get(node);
   }
 }
 
 class Environment {
-  table: Map<string, SemanticSymbol> = new Map();
+  table: Map<string, SemanticNode> = new Map();
 
   constructor(
     public parent: Environment | undefined,
   ) {}
 
-  set(name: string, symbol: SemanticSymbol): void {
+  set(name: string, symbol: SemanticNode): void {
     this.table.set(name, symbol);
   }
 
-  get(name: string): SemanticSymbol | undefined {
+  get(name: string): SemanticNode | undefined {
     const symbol = this.table.get(name);
     if (symbol != null) {
       return symbol;
@@ -33,7 +33,7 @@ class Environment {
   }
 }
 
-export function bind(ast: Unit, symbols: Symbols): void {
+export function bind(ast: UnitNode, symbols: Symbols): void {
   const grobalEnv = new Environment(undefined);
   for (const child of ast.decls) {
     bindNode(child, grobalEnv, symbols);
@@ -42,8 +42,8 @@ export function bind(ast: Unit, symbols: Symbols): void {
 
 function bindNode(node: SyntaxNode, env: Environment, symbols: Symbols): void {
   switch (node.kind) {
-    case 'FunctionDecl': {
-      const symbol = new FunctionSymbol(node.name, node);
+    case 'FunctionDeclNode': {
+      const symbol = new HoloFunction(node.name, node, undefined);
       symbols.set(node, symbol);
       env.set(node.name, symbol);
 
@@ -53,8 +53,8 @@ function bindNode(node: SyntaxNode, env: Environment, symbols: Symbols): void {
       }
       break;
     }
-    case 'VariableDecl': {
-      const symbol = new VariableSymbol(node.name, node);
+    case 'VariableDeclNode': {
+      const symbol = new Variable(node.name, node, undefined);
       symbols.set(node, symbol);
       env.set(node.name, symbol);
 
@@ -63,10 +63,10 @@ function bindNode(node: SyntaxNode, env: Environment, symbols: Symbols): void {
       }
       break;
     }
-    case 'NumberLiteral': {
+    case 'NumberLiteralNode': {
       break;
     }
-    case 'Reference': {
+    case 'ReferenceNode': {
       const symbol = env.get(node.name);
       if (symbol == null) {
         throw new Error(`unknown identifier: ${node.name}`);
@@ -75,16 +75,16 @@ function bindNode(node: SyntaxNode, env: Environment, symbols: Symbols): void {
       symbols.set(node, symbol);
       break;
     }
-    case 'Binary': {
+    case 'BinaryNode': {
       bindNode(node.left, env, symbols);
       bindNode(node.right, env, symbols);
       break;
     }
-    case 'Unary': {
+    case 'UnaryNode': {
       bindNode(node.expr, env, symbols);
       break;
     }
-    case 'If': {
+    case 'IfNode': {
       bindNode(node.cond, env, symbols);
       bindNode(node.thenExpr, env, symbols);
       if (node.elseExpr != null) {
@@ -92,38 +92,38 @@ function bindNode(node: SyntaxNode, env: Environment, symbols: Symbols): void {
       }
       break;
     }
-    case 'Block': {
+    case 'BlockNode': {
       const blockEnv = new Environment(env);
       for (const child of node.body) {
         bindNode(child, blockEnv, symbols);
       }
       break;
     }
-    case 'Call': {
+    case 'CallNode': {
       bindNode(node.expr, env, symbols);
       for (const child of node.args) {
         bindNode(child, env, symbols);
       }
       break;
     }
-    case 'Break': {
+    case 'BreakNode': {
       break;
     }
-    case 'Continue': {
+    case 'ContinueNode': {
       break;
     }
-    case 'Return': {
+    case 'ReturnNode': {
       if (node.expr != null) {
         bindNode(node.expr, env, symbols);
       }
       break;
     }
-    case 'Assign': {
+    case 'AssignNode': {
       bindNode(node.target, env, symbols);
       bindNode(node.expr, env, symbols);
       break;
     }
-    case 'While': {
+    case 'WhileNode': {
       bindNode(node.expr, env, symbols);
       const blockEnv = new Environment(env);
       for (const child of node.body) {
@@ -131,7 +131,7 @@ function bindNode(node: SyntaxNode, env: Environment, symbols: Symbols): void {
       }
       break;
     }
-    case 'Switch': {
+    case 'SwitchNode': {
       bindNode(node.expr, env, symbols);
       for (const arm of node.arms) {
         bindNode(arm.cond, env, symbols);
@@ -142,7 +142,7 @@ function bindNode(node: SyntaxNode, env: Environment, symbols: Symbols): void {
       }
       break;
     }
-    case 'ExpressionStatement': {
+    case 'ExpressionStatementNode': {
       bindNode(node.expr, env, symbols);
       break;
     }
