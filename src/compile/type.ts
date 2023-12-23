@@ -1,7 +1,8 @@
 export type Type =
   | PremitiveType
   | PointerType
-  | ArrayType;
+  | ArrayType
+  | FunctionType;
 
 export type PrimitiveKind = 'int' | 'bool';
 
@@ -22,14 +23,22 @@ export class PremitiveType {
 export class PointerType {
   kind = 'PointerType' as const;
   constructor(
-    public innerType: Type | undefined,
+    public innerType: Type,
   ) {}
 }
 
 export class ArrayType {
   kind = 'ArrayType' as const;
   constructor(
-    public dimension: number,
-    public innerType: Type | undefined,
+    public innerType: Type,
+    public dimensions: { size: number | undefined }[],
+  ) {}
+}
+
+export class FunctionType {
+  kind = 'FunctionType' as const;
+  constructor(
+    public paramTypes: Type[],
+    public retType: Type,
   ) {}
 }
