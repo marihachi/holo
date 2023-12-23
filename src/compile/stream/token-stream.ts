@@ -26,6 +26,8 @@ export interface ITokenStream {
   */
   lookahead(offset: number): Token;
 
+  unexpectedToken(): Error;
+
   /**
    * カーソル位置にあるトークンが指定したトークンの種類と一致するかを確認します。
    * 一致しなかった場合には文法エラーを発生させます。
@@ -95,13 +97,17 @@ export class TokenStream implements ITokenStream {
     }
   }
 
+  public unexpectedToken(): Error {
+    return error(`unexpected token: ${TokenKind[this.getKind()]}`, this.getToken().loc);
+  }
+
   /**
    * カーソル位置にあるトークンが指定したトークンの種類と一致するかを確認します。
    * 一致しなかった場合には文法エラーを発生させます。
   */
   public expect(kind: TokenKind): void {
     if (this.getKind() !== kind) {
-      throw error(`unexpected token: ${TokenKind[this.getKind()]}`, this.getToken().loc);
+      throw this.unexpectedToken();
     }
   }
 

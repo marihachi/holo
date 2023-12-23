@@ -82,7 +82,7 @@ export class TypeRef {
   kind = 'TypeRef' as const;
   constructor(
     public name: string,
-    public suffixes: ({ kind: 'array', dimension: number } | { kind: 'pointer' })[],
+    public suffixes: ({ kind: 'array', dimensions: { size: number | undefined }[] } | { kind: 'pointer' })[],
     public loc: Loc,
   ) {}
 }

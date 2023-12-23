@@ -81,13 +81,21 @@ function parseTypeRef(s: ITokenStream): TypeRef {
     }
     else if (s.getKind() == TokenKind.OpenBracket) {
       s.next();
-      let dimension = 1;
+      const dimensions: { size: number | undefined }[] = [];
       while (s.getKind() != TokenKind.CloseBracket) {
-        s.nextWith(TokenKind.Comma);
-        dimension++;
+        if (dimensions.length > 0) {
+          s.nextWith(TokenKind.Comma);
+        }
+        const dimension: { size: number | undefined } = { size: undefined };
+        if (s.getKind() == TokenKind.NumberLiteral) {
+          const size = s.getToken().value!;
+          dimension.size = Number(size);
+          s.next();
+        }
+        dimensions.push(dimension);
       }
       s.nextWith(TokenKind.CloseBracket);
-      suffixes.push({ kind: 'array', dimension });
+      suffixes.push({ kind: 'array', dimensions });
     }
     else {
       break;
