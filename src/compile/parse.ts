@@ -1,11 +1,13 @@
 import { error } from './util/error.js';
-import { Assign, Binary, BinaryMode, Block, Break, Call, Continue, Expression, ExpressionStatement, FunctionDecl, If, NumberLiteral, Reference, Return, Statement, Switch, Unary, UnaryMode, Unit, VariableDecl, While } from './ast.js';
+import { Assign, Binary, BinaryMode, Block, Break, Call, Continue, Expression, ExpressionStatement, FuncParameter, FunctionDecl, If, NumberLiteral, Reference, Return, Statement, Switch, TypeRef, Unary, UnaryMode, Unit, VariableDecl, While } from './ast.js';
 import { Scanner } from './scan.js';
 import { ITokenStream } from './stream/token-stream.js';
 import { TokenKind } from './token.js';
 
 export function parse(input: string): Unit {
   const s = new Scanner(input);
+
+  const loc = s.getToken().loc;
 
   const decls = [];
   while (s.getKind() != TokenKind.EOF) {
@@ -20,20 +22,28 @@ export function parse(input: string): Unit {
     }
   }
 
-  return new Unit(decls, { line: 1, column: 1 });
+  return new Unit(decls, loc);
 }
 
-function parseParams(s: ITokenStream): string[] {
+function parseFuncParameters(s: ITokenStream): FuncParameter[] {
   s.nextWith(TokenKind.OpenParen);
   const items = [];
   while (s.getKind() != TokenKind.CloseParen) {
     if (items.length > 0) {
       s.nextWith(TokenKind.Comma);
     }
+
+    const loc = s.getToken().loc;
     s.expect(TokenKind.Identifier);
     const name = s.getToken().value!;
     s.next();
-    items.push(name);
+
+    let typeRef;
+    if (s.getKind() == TokenKind.Colon) {
+      s.next();
+      typeRef = parseTypeRef(s);
+    }
+    items.push(new FuncParameter(name, typeRef, loc));
   }
   s.nextWith(TokenKind.CloseParen);
   return items;
@@ -54,6 +64,45 @@ function parseBlock(s: ITokenStream): (Statement | Expression)[] {
   }
   s.nextWith(TokenKind.CloseBrace);
   return steps;
+}
+
+function parseTypeRef(s: ITokenStream): TypeRef {
+  const loc = s.getToken().loc;
+
+  s.expect(TokenKind.Identifier);
+  const name = s.getToken().value!;
+  s.next();
+
+  const suffixes: TypeRef['suffixes'] = [];
+  while (true) {
+    if (s.getKind() == TokenKind.Asterisk) {
+      s.next();
+      suffixes.push({ kind: 'pointer' });
+    }
+    else if (s.getKind() == TokenKind.OpenBracket) {
+      s.next();
+      const dimensions: { size: number | undefined }[] = [];
+      while (s.getKind() != TokenKind.CloseBracket) {
+        if (dimensions.length > 0) {
+          s.nextWith(TokenKind.Comma);
+        }
+        const dimension: { size: number | undefined } = { size: undefined };
+        if (s.getKind() == TokenKind.NumberLiteral) {
+          const size = s.getToken().value!;
+          dimension.size = Number(size);
+          s.next();
+        }
+        dimensions.push(dimension);
+      }
+      s.nextWith(TokenKind.CloseBracket);
+      suffixes.push({ kind: 'array', dimensions });
+    }
+    else {
+      break;
+    }
+  }
+
+  return new TypeRef(name, suffixes, loc);
 }
 
 function parseStep(s: ITokenStream): Statement | Expression {
@@ -192,10 +241,17 @@ function parseFunctionDecl(s: ITokenStream): FunctionDecl {
   const name = s.getToken().value!;
   s.next();
 
-  const params = parseParams(s);
+  const params = parseFuncParameters(s);
+
+  let retTypeRef;
+  if (s.getKind() == TokenKind.Colon) {
+    s.next();
+    retTypeRef = parseTypeRef(s);
+  }
+
   const body = parseBlock(s);
 
-  return new FunctionDecl(name, params, body, loc);
+  return new FunctionDecl(name, params, retTypeRef, body, loc);
 }
 
 function parseVariableDecl(s: ITokenStream): VariableDecl {
@@ -206,6 +262,12 @@ function parseVariableDecl(s: ITokenStream): VariableDecl {
   const name = s.getToken().value!;
   s.next();
 
+  let typeRef;
+  if (s.getKind() == TokenKind.Colon) {
+    s.next();
+    typeRef = parseTypeRef(s);
+  }
+
   let body;
   if (s.getKind() == TokenKind.Eq) {
     s.next();
@@ -213,7 +275,7 @@ function parseVariableDecl(s: ITokenStream): VariableDecl {
   }
 
   s.nextWith(TokenKind.SemiColon);
-  return new VariableDecl(name, body, loc);
+  return new VariableDecl(name, typeRef, body, loc);
 }
 
 function parseIf(s: ITokenStream): If {

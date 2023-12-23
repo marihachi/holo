@@ -1,73 +1,3 @@
-# ifの脱糖
-```
-var x = if (a) { 1 } else { 2 };
-```
-↓
-```c
-int x;
-if (a) {
-  x = 1;
-} else {
-  x = 2;
-}
-```
-
-# switchの脱糖
-```
-var x =
-  switch (a) {
-    case 0 || 2 {
-      0
-    }
-    case 1 || 3 {
-      1
-    }
-    case 4 {
-      2
-    }
-    default {
-      3
-    }
-  };
-```
-↓
-```c
-int x;
-switch (a) {
-  case 0:
-  case 2: {
-    x = 0;
-    break;
-  }
-  case 1:
-  case 3: {
-    x = 1;
-    break;
-  }
-  case 4: {
-    x = 2;
-    break;
-  }
-  default: {
-    x = 3;
-    break;
-  }
-}
-```
-
-# blockの脱糖
-```
-var x = { var a = 1; a };
-```
-↓
-```c
-int x;
-{
-  int a = 1;
-  x = a;
-}
-```
-
 # 式の脱糖
 式の途中に出てくるif式やswitch式などをC言語レベルのswitch文、if文などへ変換しやすいように変形します。  
 副作用のある処理の評価順が変わると評価結果にも影響が及ぶ可能性があるため、関数コールも式の脱糖の対象とします。  
@@ -180,27 +110,72 @@ void f() {
 }
 ```
 
-# 配列の脱糖
-全てポインタになる  
-
-配列の宣言
+# ifの脱糖
 ```
-var a: int[];
-var b: int[][];
-var c: int*[];
+var x = if (a) { 1 } else { 2 };
 ```
 ↓
 ```c
-int *a;
-int **b;
-int **c;
+int x;
+if (a) {
+  x = 1;
+} else {
+  x = 2;
+}
 ```
 
-配列のアクセス
+# switchの脱糖
 ```
-x[0];
+var x =
+  switch (a) {
+    case 0 || 2 {
+      0
+    }
+    case 1 || 3 {
+      1
+    }
+    case 4 {
+      2
+    }
+    default {
+      3
+    }
+  };
 ```
 ↓
 ```c
-*(x + 0);
+int x;
+switch (a) {
+  case 0:
+  case 2: {
+    x = 0;
+    break;
+  }
+  case 1:
+  case 3: {
+    x = 1;
+    break;
+  }
+  case 4: {
+    x = 2;
+    break;
+  }
+  default: {
+    x = 3;
+    break;
+  }
+}
+```
+
+# blockの脱糖
+```
+var x = { var a = 1; a };
+```
+↓
+```c
+int x;
+{
+  int a = 1;
+  x = a;
+}
 ```

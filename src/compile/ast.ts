@@ -1,15 +1,20 @@
-export type SyntaxNode = Unit | FunctionDecl | Statement | Expression;
+export type SyntaxNode = Unit | FunctionDecl | FuncParameter | TypeRef | Statement | Expression;
 export type Statement = VariableDecl | Break | Continue | Return | Assign | While | ExpressionStatement;
 export type Expression = NumberLiteral | Reference | Binary | Unary | If | Switch | Block | Call;
 export type ContainerNode = Block | FunctionDecl | While;
 
 export function isStatement(node: SyntaxNode): node is Statement {
   switch (node.kind) {
-    case 'Unit':
-    case 'FunctionDecl':
-      return false;
+    case 'VariableDecl':
+    case 'Break':
+    case 'Continue':
+    case 'Return':
+    case 'Assign':
+    case 'While':
+    case 'ExpressionStatement':
+      return true;
   }
-  return !isExpression(node);
+  return false;
 }
 
 export function isExpression(node: SyntaxNode): node is Expression {
@@ -53,12 +58,31 @@ export class Unit {
   ) {}
 }
 
+export class FuncParameter {
+  kind = 'FuncParameter' as const;
+  constructor(
+    public name: string,
+    public typeRef: TypeRef | undefined,
+    public loc: Loc,
+  ) {}
+}
+
 export class FunctionDecl {
   kind = 'FunctionDecl' as const;
   constructor(
     public name: string,
-    public paramNames: string[],
+    public parameters: FuncParameter[],
+    public typeRef: TypeRef | undefined,
     public body: (Expression | Statement)[],
+    public loc: Loc,
+  ) {}
+}
+
+export class TypeRef {
+  kind = 'TypeRef' as const;
+  constructor(
+    public name: string,
+    public suffixes: ({ kind: 'array', dimensions: { size: number | undefined }[] } | { kind: 'pointer' })[],
     public loc: Loc,
   ) {}
 }
@@ -69,6 +93,7 @@ export class VariableDecl {
   kind = 'VariableDecl' as const;
   constructor(
     public name: string,
+    public typeRef: TypeRef | undefined,
     public expr: Expression | undefined,
     public loc: Loc,
   ) {}

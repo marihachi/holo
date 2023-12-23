@@ -33,15 +33,11 @@ class Environment {
   }
 }
 
-export function bind(ast: Unit): Symbols {
-  const symbols = new Symbols();
-
+export function bind(ast: Unit, symbols: Symbols): void {
   const grobalEnv = new Environment(undefined);
   for (const child of ast.decls) {
     bindNode(child, grobalEnv, symbols);
   }
-
-  return symbols;
 }
 
 function bindNode(node: SyntaxNode, env: Environment, symbols: Symbols): void {

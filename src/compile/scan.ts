@@ -68,13 +68,17 @@ export class Scanner implements ITokenStream {
     return this._tokens[offset]!;
   }
 
+  public unexpectedToken(): Error {
+    return error(`unexpected token: ${TokenKind[this.getKind()]}`, this.getToken().loc);
+  }
+
   /**
    * カーソル位置にあるトークンが指定したトークンの種類と一致するかを確認します。
    * 一致しなかった場合には文法エラーを発生させます。
   */
   public expect(kind: TokenKind): void {
     if (this.getKind() !== kind) {
-      throw error(`unexpected token: ${TokenKind[this.getKind()]}`, this.getToken().loc);
+      throw this.unexpectedToken();
     }
   }
 
@@ -257,6 +261,16 @@ export class Scanner implements ITokenStream {
           } else {
             token = TOKEN(TokenKind.Gt, loc, { });
           }
+          break;
+        }
+        case '[': {
+          this.stream.next();
+          token = TOKEN(TokenKind.OpenBracket, loc, { });
+          break;
+        }
+        case ']': {
+          this.stream.next();
+          token = TOKEN(TokenKind.CloseBracket, loc, { });
           break;
         }
         case '{': {
