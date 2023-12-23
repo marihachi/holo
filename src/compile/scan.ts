@@ -110,7 +110,7 @@ export class Scanner implements ITokenStream {
         continue;
       }
 
-      // トークン位置を記憶
+      // store the token position
       const loc = this.stream.getPos();
 
       switch (this.stream.char) {
