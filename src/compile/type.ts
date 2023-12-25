@@ -1,13 +1,13 @@
 export type Type =
-  | PremitiveType
+  | PrimitiveType
   | PointerType
   | ArrayType
   | FunctionType;
 
 export type PrimitiveKind = 'int' | 'bool';
 
-export class PremitiveType {
-  kind = 'PremitiveType' as const;
+export class PrimitiveType {
+  kind = 'PrimitiveType' as const;
   constructor(
     public primitiveKind: PrimitiveKind,
   ) {}

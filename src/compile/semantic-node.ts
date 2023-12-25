@@ -4,7 +4,8 @@ import { Type } from './type.js';
 export type SemanticNode =
   | HoloFunction
   | Variable
-  | HoloFunctionParam;
+  | HoloFunctionParam
+  | TypeSymbol;
 
 export class HoloFunction {
   kind = 'HoloFunction' as const;
@@ -26,6 +27,14 @@ export class Variable {
 
 export class HoloFunctionParam {
   kind = 'HoloFunctionParam' as const;
+  constructor(
+    public name: string,
+    public type: Type | undefined,
+  ) {}
+}
+
+export class TypeSymbol {
+  kind = 'TypeSymbol' as const;
   constructor(
     public name: string,
     public type: Type | undefined,
