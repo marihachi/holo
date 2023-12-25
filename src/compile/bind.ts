@@ -1,7 +1,10 @@
 import { SyntaxNode, UnitNode } from './syntax-node.js';
 import { HoloFunction, SemanticNode, Variable } from './semantic-node.js';
 
-export class Symbols {
+// 宣言ノードに対してsemantic nodeを生成します。
+// 参照ノードの名前を解決しsemantic nodeと関連付けます。
+
+export class SemanticTable {
   table: Map<SyntaxNode, SemanticNode> = new Map();
 
   set(node: SyntaxNode, symbol: SemanticNode): void {
@@ -13,11 +16,11 @@ export class Symbols {
   }
 }
 
-class Environment {
+class NameTable {
   table: Map<string, SemanticNode> = new Map();
 
   constructor(
-    public parent: Environment | undefined,
+    public parent: NameTable | undefined,
   ) {}
 
   set(name: string, symbol: SemanticNode): void {
@@ -33,33 +36,33 @@ class Environment {
   }
 }
 
-export function bind(ast: UnitNode, symbols: Symbols): void {
-  const grobalEnv = new Environment(undefined);
+export function bind(ast: UnitNode, semanticTable: SemanticTable): void {
+  const nameTable = new NameTable(undefined);
   for (const child of ast.decls) {
-    bindNode(child, grobalEnv, symbols);
+    visitNode(child, nameTable, semanticTable);
   }
 }
 
-function bindNode(node: SyntaxNode, env: Environment, symbols: Symbols): void {
+function visitNode(node: SyntaxNode, nameTable: NameTable, semanticTable: SemanticTable): void {
   switch (node.kind) {
     case 'FunctionDeclNode': {
       const symbol = new HoloFunction(node.name, node, undefined);
-      symbols.set(node, symbol);
-      env.set(node.name, symbol);
+      semanticTable.set(node, symbol);
+      nameTable.set(node.name, symbol);
 
-      const funcEnv = new Environment(env);
+      const innerNameTable = new NameTable(nameTable);
       for (const child of node.body) {
-        bindNode(child, funcEnv, symbols);
+        visitNode(child, innerNameTable, semanticTable);
       }
       break;
     }
     case 'VariableDeclNode': {
       const symbol = new Variable(node.name, node, undefined);
-      symbols.set(node, symbol);
-      env.set(node.name, symbol);
+      semanticTable.set(node, symbol);
+      nameTable.set(node.name, symbol);
 
       if (node.expr != null) {
-        bindNode(node.expr, env, symbols);
+        visitNode(node.expr, nameTable, semanticTable);
       }
       break;
     }
@@ -67,42 +70,42 @@ function bindNode(node: SyntaxNode, env: Environment, symbols: Symbols): void {
       break;
     }
     case 'ReferenceNode': {
-      const symbol = env.get(node.name);
-      if (symbol == null) {
+      const semantic = nameTable.get(node.name);
+      if (semantic == null) {
         throw new Error(`unknown identifier: ${node.name}`);
       }
       // 参照ノードにも宣言と同じシンボルを使ってもよいか？
-      symbols.set(node, symbol);
+      semanticTable.set(node, semantic);
       break;
     }
     case 'BinaryNode': {
-      bindNode(node.left, env, symbols);
-      bindNode(node.right, env, symbols);
+      visitNode(node.left, nameTable, semanticTable);
+      visitNode(node.right, nameTable, semanticTable);
       break;
     }
     case 'UnaryNode': {
-      bindNode(node.expr, env, symbols);
+      visitNode(node.expr, nameTable, semanticTable);
       break;
     }
     case 'IfNode': {
-      bindNode(node.cond, env, symbols);
-      bindNode(node.thenExpr, env, symbols);
+      visitNode(node.cond, nameTable, semanticTable);
+      visitNode(node.thenExpr, nameTable, semanticTable);
       if (node.elseExpr != null) {
-        bindNode(node.elseExpr, env, symbols);
+        visitNode(node.elseExpr, nameTable, semanticTable);
       }
       break;
     }
     case 'BlockNode': {
-      const blockEnv = new Environment(env);
+      const innerNameTable = new NameTable(nameTable);
       for (const child of node.body) {
-        bindNode(child, blockEnv, symbols);
+        visitNode(child, innerNameTable, semanticTable);
       }
       break;
     }
     case 'CallNode': {
-      bindNode(node.expr, env, symbols);
+      visitNode(node.expr, nameTable, semanticTable);
       for (const child of node.args) {
-        bindNode(child, env, symbols);
+        visitNode(child, nameTable, semanticTable);
       }
       break;
     }
@@ -114,36 +117,36 @@ function bindNode(node: SyntaxNode, env: Environment, symbols: Symbols): void {
     }
     case 'ReturnNode': {
       if (node.expr != null) {
-        bindNode(node.expr, env, symbols);
+        visitNode(node.expr, nameTable, semanticTable);
       }
       break;
     }
     case 'AssignNode': {
-      bindNode(node.target, env, symbols);
-      bindNode(node.expr, env, symbols);
+      visitNode(node.target, nameTable, semanticTable);
+      visitNode(node.expr, nameTable, semanticTable);
       break;
     }
     case 'WhileNode': {
-      bindNode(node.expr, env, symbols);
-      const blockEnv = new Environment(env);
+      visitNode(node.expr, nameTable, semanticTable);
+      const innerNameTable = new NameTable(nameTable);
       for (const child of node.body) {
-        bindNode(child, blockEnv, symbols);
+        visitNode(child, innerNameTable, semanticTable);
       }
       break;
     }
     case 'SwitchNode': {
-      bindNode(node.expr, env, symbols);
+      visitNode(node.expr, nameTable, semanticTable);
       for (const arm of node.arms) {
-        bindNode(arm.cond, env, symbols);
-        bindNode(arm.thenBlock, env, symbols);
+        visitNode(arm.cond, nameTable, semanticTable);
+        visitNode(arm.thenBlock, nameTable, semanticTable);
       }
       if (node.defaultBlock != null) {
-        bindNode(node.defaultBlock, env, symbols);
+        visitNode(node.defaultBlock, nameTable, semanticTable);
       }
       break;
     }
     case 'ExpressionStatementNode': {
-      bindNode(node.expr, env, symbols);
+      visitNode(node.expr, nameTable, semanticTable);
       break;
     }
   }

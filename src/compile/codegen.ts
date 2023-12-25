@@ -1,5 +1,5 @@
 import { SyntaxNode, UnitNode, isExpressionNode } from './syntax-node.js';
-import { Symbols } from './bind.js';
+import { SemanticTable } from './bind.js';
 
 export class Emitter {
   code: string;
@@ -23,7 +23,7 @@ export class Emitter {
   }
 }
 
-export function generate(node: UnitNode, symbols: Symbols) {
+export function generate(node: UnitNode, semanticTable: SemanticTable) {
   const e = new Emitter();
   emit(e, node);
   return e.code;

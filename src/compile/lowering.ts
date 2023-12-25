@@ -9,9 +9,9 @@ import {
   isContainerNode,
   isExpressionNode,
 } from './syntax-node.js';
-import { Symbols } from './bind.js';
+import { SemanticTable } from './bind.js';
 
-export function lowering(node: UnitNode, symbols: Symbols): UnitNode {
+export function lowering(node: UnitNode, semanticTable: SemanticTable): UnitNode {
   // 全てのコンテナを見る
   visitContainer(node, ctx => {
     const cCtx = ctx.subCtx!;
