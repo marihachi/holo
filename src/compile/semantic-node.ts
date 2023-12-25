@@ -2,13 +2,13 @@ import { FunctionDeclNode, VariableDeclNode } from './syntax-node.js';
 import { Type } from './type.js';
 
 export type SemanticNode =
-  | HoloFunction
-  | Variable
-  | HoloFunctionParam
+  | FunctionSymbol
+  | VariableSymbol
+  | FunctionParamSymbol
   | TypeSymbol;
 
-export class HoloFunction {
-  kind = 'HoloFunction' as const;
+export class FunctionSymbol {
+  kind = 'FunctionSymbol' as const;
   constructor(
     public name: string,
     public node: FunctionDeclNode,
@@ -16,8 +16,8 @@ export class HoloFunction {
   ) {}
 }
 
-export class Variable {
-  kind = 'Variable' as const;
+export class VariableSymbol {
+  kind = 'VariableSymbol' as const;
   constructor(
     public name: string,
     public node: VariableDeclNode,
@@ -25,8 +25,8 @@ export class Variable {
   ) {}
 }
 
-export class HoloFunctionParam {
-  kind = 'HoloFunctionParam' as const;
+export class FunctionParamSymbol {
+  kind = 'FunctionParamSymbol' as const;
   constructor(
     public name: string,
     public type: Type | undefined,

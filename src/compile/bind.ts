@@ -1,5 +1,5 @@
 import { SyntaxNode, UnitNode } from './syntax-node.js';
-import { HoloFunction, SemanticNode, TypeSymbol, Variable } from './semantic-node.js';
+import { FunctionSymbol, SemanticNode, TypeSymbol, VariableSymbol } from './semantic-node.js';
 import { PrimitiveType } from './type.js';
 
 // 宣言ノードに対してsemantic nodeを生成します。
@@ -55,7 +55,7 @@ function declarePrimitiveTypes(typeTable: NameTable) {
 function visitNode(node: SyntaxNode, nameTable: NameTable, typeTable: NameTable, semanticTable: SemanticTable): void {
   switch (node.kind) {
     case 'FunctionDeclNode': {
-      const symbol = new HoloFunction(node.name, node, undefined);
+      const symbol = new FunctionSymbol(node.name, node, undefined);
       semanticTable.set(node, symbol);
       nameTable.set(node.name, symbol);
 
@@ -67,7 +67,7 @@ function visitNode(node: SyntaxNode, nameTable: NameTable, typeTable: NameTable,
       break;
     }
     case 'VariableDeclNode': {
-      const symbol = new Variable(node.name, node, undefined);
+      const symbol = new VariableSymbol(node.name, node, undefined);
       semanticTable.set(node, symbol);
       nameTable.set(node.name, symbol);
 
