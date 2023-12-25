@@ -50,6 +50,8 @@ export function bind(ast: UnitNode, semanticTable: SemanticTable): void {
 
 function declarePrimitiveTypes(typeTable: NameTable) {
   typeTable.set('int', new TypeSymbol('int', new PrimitiveType('int')));
+  typeTable.set('uint', new TypeSymbol('uint', new PrimitiveType('uint')));
+  typeTable.set('bool', new TypeSymbol('bool', new PrimitiveType('bool')));
 }
 
 function visitNode(node: SyntaxNode, nameTable: NameTable, typeTable: NameTable, semanticTable: SemanticTable): void {
