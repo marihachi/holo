@@ -1,5 +1,5 @@
 import { SyntaxNode, UnitNode } from './syntax-node.js';
-import { FunctionSymbol, SemanticNode, TypeSymbol, VariableSymbol } from './semantic-node.js';
+import { FunctionParamSymbol, FunctionSymbol, SemanticNode, TypeSymbol, VariableSymbol } from './semantic-node.js';
 import { PrimitiveType } from './type.js';
 
 // 宣言ノードに対してsemantic nodeを生成します。
@@ -55,10 +55,22 @@ function declarePrimitiveTypes(typeTable: NameTable) {
 function visitNode(node: SyntaxNode, nameTable: NameTable, typeTable: NameTable, semanticTable: SemanticTable): void {
   switch (node.kind) {
     case 'FunctionDeclNode': {
-      const symbol = new FunctionSymbol(node.name, node, undefined);
+      const symbol = new FunctionSymbol(node.name, node);
       semanticTable.set(node, symbol);
       nameTable.set(node.name, symbol);
 
+      // return type
+      if (node.typeRef == null) {
+        throw new Error('return type is missing');
+      }
+      visitNode(node.typeRef, nameTable, typeTable, semanticTable);
+
+      // parameters
+      for (const parameter of node.parameters) {
+        visitNode(parameter, nameTable, typeTable, semanticTable);
+      }
+
+      // body
       const innerNameTable = new NameTable(nameTable);
       const innerTypeTable = new NameTable(typeTable);
       for (const child of node.body) {
@@ -66,11 +78,30 @@ function visitNode(node: SyntaxNode, nameTable: NameTable, typeTable: NameTable,
       }
       break;
     }
-    case 'VariableDeclNode': {
-      const symbol = new VariableSymbol(node.name, node, undefined);
+    case 'FuncParameterNode': {
+      const symbol = new FunctionParamSymbol(node.name, node);
       semanticTable.set(node, symbol);
       nameTable.set(node.name, symbol);
 
+      // type
+      if (node.typeRef == null) {
+        throw new Error('parameter type is missing');
+      }
+      visitNode(node.typeRef, nameTable, typeTable, semanticTable);
+      break;
+    }
+    case 'VariableDeclNode': {
+      const symbol = new VariableSymbol(node.name, node);
+      semanticTable.set(node, symbol);
+      nameTable.set(node.name, symbol);
+
+      // type
+      if (node.typeRef == null) {
+        throw new Error('return type is missing');
+      }
+      visitNode(node.typeRef, nameTable, typeTable, semanticTable);
+
+      // expr
       if (node.expr != null) {
         visitNode(node.expr, nameTable, typeTable, semanticTable);
       }
@@ -85,6 +116,14 @@ function visitNode(node: SyntaxNode, nameTable: NameTable, typeTable: NameTable,
         throw new Error(`unknown identifier: ${node.name}`);
       }
       // 参照ノードにも宣言と同じシンボルを使ってもよいか？
+      semanticTable.set(node, semantic);
+      break;
+    }
+    case 'TypeRefNode': {
+      const semantic = typeTable.get(node.name);
+      if (semantic == null) {
+        throw new Error(`unknown type name: ${node.name}`);
+      }
       semanticTable.set(node, semantic);
       break;
     }
