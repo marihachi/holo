@@ -15,6 +15,7 @@
   },
   "scripts": {
     "build": "tsc",
+    "rebuild": "rm -r ./dist && tsc",
     "holo": "node ./dist/main.js"
   },
   "author": "marihachi",
