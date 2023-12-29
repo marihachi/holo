@@ -5,22 +5,22 @@ import { PrimitiveType } from './type.js';
 // 宣言ノードに対してsemantic nodeを生成します。
 // 参照ノードの名前を解決しsemantic nodeと関連付けます。
 
-export function bind(ast: UnitNode): UnitSymbol {
+export function resolve(ast: UnitNode): UnitSymbol {
   const symbol = new UnitSymbol();
-  declarePrimitiveTypes(symbol);
+  setPrimitiveTypes(symbol);
   for (const child of ast.decls) {
-    visitNode(child, symbol, symbol.nodeTable);
+    resolveNode(child, symbol, symbol.nodeTable);
   }
   return symbol;
 }
 
-function declarePrimitiveTypes(symbol: ContainerSymbol) {
+function setPrimitiveTypes(symbol: ContainerSymbol) {
   symbol.typeNameTable.set('int', new TypeSymbol('int', new PrimitiveType('int')));
   symbol.typeNameTable.set('uint', new TypeSymbol('uint', new PrimitiveType('uint')));
   symbol.typeNameTable.set('bool', new TypeSymbol('bool', new PrimitiveType('bool')));
 }
 
-function visitNode(node: SyntaxNode, parent: ContainerSymbol, nodeTable: SymbolTable<SyntaxNode>): void {
+function resolveNode(node: SyntaxNode, parent: ContainerSymbol, nodeTable: SymbolTable<SyntaxNode>): void {
   switch (node.kind) {
     case 'FunctionDeclNode': {
       if (parent.nameTable.get(node.name) != null) {
@@ -35,16 +35,16 @@ function visitNode(node: SyntaxNode, parent: ContainerSymbol, nodeTable: SymbolT
       if (node.typeRef == null) {
         throw new Error('return type is missing');
       }
-      visitNode(node.typeRef, symbol, nodeTable);
+      resolveNode(node.typeRef, symbol, nodeTable);
 
       // parameters
       for (const parameter of node.parameters) {
-        visitNode(parameter, symbol, nodeTable);
+        resolveNode(parameter, symbol, nodeTable);
       }
 
       // body
       for (const child of node.body) {
-        visitNode(child, symbol, nodeTable);
+        resolveNode(child, symbol, nodeTable);
       }
       break;
     }
@@ -61,7 +61,7 @@ function visitNode(node: SyntaxNode, parent: ContainerSymbol, nodeTable: SymbolT
       if (node.typeRef == null) {
         throw new Error('parameter type is missing');
       }
-      visitNode(node.typeRef, parent, nodeTable);
+      resolveNode(node.typeRef, parent, nodeTable);
       break;
     }
     case 'VariableDeclNode': {
@@ -77,11 +77,11 @@ function visitNode(node: SyntaxNode, parent: ContainerSymbol, nodeTable: SymbolT
       if (node.typeRef == null) {
         throw new Error('return type is missing');
       }
-      visitNode(node.typeRef, parent, nodeTable);
+      resolveNode(node.typeRef, parent, nodeTable);
 
       // expr
       if (node.expr != null) {
-        visitNode(node.expr, parent, nodeTable);
+        resolveNode(node.expr, parent, nodeTable);
       }
       break;
     }
@@ -103,33 +103,33 @@ function visitNode(node: SyntaxNode, parent: ContainerSymbol, nodeTable: SymbolT
       break;
     }
     case 'BinaryNode': {
-      visitNode(node.left, parent, nodeTable);
-      visitNode(node.right, parent, nodeTable);
+      resolveNode(node.left, parent, nodeTable);
+      resolveNode(node.right, parent, nodeTable);
       break;
     }
     case 'UnaryNode': {
-      visitNode(node.expr, parent, nodeTable);
+      resolveNode(node.expr, parent, nodeTable);
       break;
     }
     case 'IfNode': {
-      visitNode(node.cond, parent, nodeTable);
-      visitNode(node.thenExpr, parent, nodeTable);
+      resolveNode(node.cond, parent, nodeTable);
+      resolveNode(node.thenExpr, parent, nodeTable);
       if (node.elseExpr != null) {
-        visitNode(node.elseExpr, parent, nodeTable);
+        resolveNode(node.elseExpr, parent, nodeTable);
       }
       break;
     }
     case 'BlockNode': {
       const symbol = new BlockSymbol(parent);
       for (const child of node.body) {
-        visitNode(child, symbol, nodeTable);
+        resolveNode(child, symbol, nodeTable);
       }
       break;
     }
     case 'CallNode': {
-      visitNode(node.expr, parent, nodeTable);
+      resolveNode(node.expr, parent, nodeTable);
       for (const child of node.args) {
-        visitNode(child, parent, nodeTable);
+        resolveNode(child, parent, nodeTable);
       }
       break;
     }
@@ -141,36 +141,36 @@ function visitNode(node: SyntaxNode, parent: ContainerSymbol, nodeTable: SymbolT
     }
     case 'ReturnNode': {
       if (node.expr != null) {
-        visitNode(node.expr, parent, nodeTable);
+        resolveNode(node.expr, parent, nodeTable);
       }
       break;
     }
     case 'AssignNode': {
-      visitNode(node.target, parent, nodeTable);
-      visitNode(node.expr, parent, nodeTable);
+      resolveNode(node.target, parent, nodeTable);
+      resolveNode(node.expr, parent, nodeTable);
       break;
     }
     case 'WhileNode': {
       const symbol = new WhileSymbol(parent);
-      visitNode(node.expr, parent, nodeTable);
+      resolveNode(node.expr, parent, nodeTable);
       for (const child of node.body) {
-        visitNode(child, symbol, nodeTable);
+        resolveNode(child, symbol, nodeTable);
       }
       break;
     }
     case 'SwitchNode': {
-      visitNode(node.expr, parent, nodeTable);
+      resolveNode(node.expr, parent, nodeTable);
       for (const arm of node.arms) {
-        visitNode(arm.cond, parent, nodeTable);
-        visitNode(arm.thenBlock, parent, nodeTable);
+        resolveNode(arm.cond, parent, nodeTable);
+        resolveNode(arm.thenBlock, parent, nodeTable);
       }
       if (node.defaultBlock != null) {
-        visitNode(node.defaultBlock, parent, nodeTable);
+        resolveNode(node.defaultBlock, parent, nodeTable);
       }
       break;
     }
     case 'ExpressionStatementNode': {
-      visitNode(node.expr, parent, nodeTable);
+      resolveNode(node.expr, parent, nodeTable);
       break;
     }
   }

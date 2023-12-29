@@ -4,7 +4,7 @@ import { generate } from './compile/codegen.js';
 import { typecheck } from './compile/typecheck.js';
 import { parse } from './compile/parse.js';
 import { lowering } from './compile/lowering.js';
-import { bind } from './compile/bind.js';
+import { resolve } from './compile/resolve.js';
 
 function entry() {
   // load file
@@ -18,7 +18,7 @@ function entry() {
   let ast = parse(sourceCode);
   // console.log(inspect(ast, { depth: 30 }));
   // console.log('----');
-  const unitSymbol = bind(ast);
+  const unitSymbol = resolve(ast);
   // console.log(inspect(semanticTable, { depth: 5 }));
   typecheck(ast, unitSymbol);
   ast = lowering(ast, unitSymbol);
