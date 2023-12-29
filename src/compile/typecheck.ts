@@ -1,6 +1,6 @@
+import { UnitSymbol } from './semantic-node.js';
 import { UnitNode } from './syntax-node.js';
-import { SemanticTable } from './bind.js';
 
-export function typecheck(ast: UnitNode, semanticTable: SemanticTable): void {
+export function typecheck(ast: UnitNode, unitSymbol: UnitSymbol): void {
   // TODO
 }

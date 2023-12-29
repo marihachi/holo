@@ -4,7 +4,7 @@ import { generate } from './compile/codegen.js';
 import { typecheck } from './compile/typecheck.js';
 import { parse } from './compile/parse.js';
 import { lowering } from './compile/lowering.js';
-import { bind, SemanticTable } from './compile/bind.js';
+import { bind } from './compile/bind.js';
 
 function entry() {
   // load file
@@ -18,14 +18,13 @@ function entry() {
   let ast = parse(sourceCode);
   // console.log(inspect(ast, { depth: 30 }));
   // console.log('----');
-  const semanticTable = new SemanticTable();
-  bind(ast, semanticTable);
+  const unitSymbol = bind(ast);
   // console.log(inspect(semanticTable, { depth: 5 }));
-  typecheck(ast, semanticTable);
-  ast = lowering(ast, semanticTable);
+  typecheck(ast, unitSymbol);
+  ast = lowering(ast, unitSymbol);
   // console.log(inspect(ast, { depth: 30 }));
   // console.log('----');
-  const code = generate(ast, semanticTable);
+  const code = generate(ast, unitSymbol);
   // console.log(code);
 }
 entry();
