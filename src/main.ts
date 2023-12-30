@@ -1,6 +1,6 @@
 import fs from 'fs';
 import { inspect } from 'util';
-import { emit } from './compile/codegen.js';
+import { emit } from './compile/emit.js';
 import { typecheck } from './compile/typecheck.js';
 import { parse } from './compile/parse.js';
 import { lowering } from './compile/lowering.js';
