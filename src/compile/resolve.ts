@@ -6,7 +6,7 @@ import { PrimitiveType } from './type.js';
 // 参照ノードの名前を解決しsemantic nodeと関連付けます。
 
 export function resolve(ast: UnitNode): UnitSymbol {
-  const symbol = new UnitSymbol();
+  const symbol = new UnitSymbol(ast);
   setPrimitiveTypes(symbol);
   for (const child of ast.decls) {
     resolveNode(child, symbol, symbol.nodeTable);
@@ -27,7 +27,7 @@ function resolveNode(node: SyntaxNode, parent: ContainerSymbol, nodeTable: Symbo
         throw new Error(`identifier "${node.name}" is already exists`);
       }
 
-      const symbol = new FunctionSymbol(node.name, parent);
+      const symbol = new FunctionSymbol(node.name, parent, node);
       parent.nameTable.set(node.name, symbol);
       nodeTable.set(node, symbol);
 
@@ -53,7 +53,7 @@ function resolveNode(node: SyntaxNode, parent: ContainerSymbol, nodeTable: Symbo
         throw new Error(`identifier "${node.name}" is already exists`);
       }
 
-      const symbol = new FunctionParamSymbol(node.name);
+      const symbol = new FunctionParamSymbol(node.name, node);
       parent.nameTable.set(node.name, symbol);
       nodeTable.set(node, symbol);
 
@@ -69,7 +69,7 @@ function resolveNode(node: SyntaxNode, parent: ContainerSymbol, nodeTable: Symbo
         throw new Error(`identifier "${node.name}" is already exists`);
       }
 
-      const symbol = new VariableSymbol(node.name);
+      const symbol = new VariableSymbol(node.name, node);
       parent.nameTable.set(node.name, symbol);
       nodeTable.set(node, symbol);
 
@@ -120,7 +120,7 @@ function resolveNode(node: SyntaxNode, parent: ContainerSymbol, nodeTable: Symbo
       break;
     }
     case 'BlockNode': {
-      const symbol = new BlockSymbol(parent);
+      const symbol = new BlockSymbol(parent, node);
       for (const child of node.body) {
         resolveNode(child, symbol, nodeTable);
       }
@@ -151,7 +151,7 @@ function resolveNode(node: SyntaxNode, parent: ContainerSymbol, nodeTable: Symbo
       break;
     }
     case 'WhileNode': {
-      const symbol = new WhileSymbol(parent);
+      const symbol = new WhileSymbol(parent, node);
       resolveNode(node.expr, parent, nodeTable);
       for (const child of node.body) {
         resolveNode(child, symbol, nodeTable);

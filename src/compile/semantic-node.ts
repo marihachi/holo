@@ -1,4 +1,4 @@
-import { SyntaxNode } from './syntax-node.js';
+import { BlockNode, FuncParameterNode, FunctionDeclNode, SyntaxNode, UnitNode, VariableDeclNode, WhileNode } from './syntax-node.js';
 import { Type } from './type.js';
 
 export class SymbolTable<T> {
@@ -41,6 +41,9 @@ export class UnitSymbol {
   nameTable: SymbolTable<string> = new SymbolTable(undefined);
   typeNameTable: SymbolTable<string> = new SymbolTable(undefined);
   nodeTable: SymbolTable<SyntaxNode> = new SymbolTable(undefined);
+  constructor(
+    public node: UnitNode,
+  ) {}
 }
 
 export class FunctionSymbol {
@@ -50,6 +53,7 @@ export class FunctionSymbol {
   constructor(
     public name: string,
     parent: ContainerSymbol,
+    public node: FunctionDeclNode,
   ) {
     this.nameTable = new SymbolTable(parent.nameTable);
     this.typeNameTable = new SymbolTable(parent.typeNameTable);
@@ -60,6 +64,7 @@ export class VariableSymbol {
   kind = 'VariableSymbol' as const;
   constructor(
     public name: string,
+    public node: VariableDeclNode,
   ) {}
 }
 
@@ -67,6 +72,7 @@ export class FunctionParamSymbol {
   kind = 'FunctionParamSymbol' as const;
   constructor(
     public name: string,
+    public node: FuncParameterNode,
   ) {}
 }
 
@@ -84,6 +90,7 @@ export class BlockSymbol {
   typeNameTable: SymbolTable<string>;
   constructor(
     parent: ContainerSymbol,
+    public node: BlockNode,
   ) {
     this.nameTable = new SymbolTable(parent.nameTable);
     this.typeNameTable = new SymbolTable(parent.typeNameTable);
@@ -96,6 +103,7 @@ export class WhileSymbol {
   typeNameTable: SymbolTable<string>;
   constructor(
     parent: ContainerSymbol,
+    public node: WhileNode,
   ) {
     this.nameTable = new SymbolTable(parent.nameTable);
     this.typeNameTable = new SymbolTable(parent.typeNameTable);
