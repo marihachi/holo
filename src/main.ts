@@ -18,12 +18,11 @@ function entry() {
   let ast = parse(sourceCode);
   // console.log(inspect(ast, { depth: 30 }));
   // console.log('----');
-  const unitSymbol = resolve(ast);
-  // console.log(inspect(semanticTable, { depth: 5 }));
-  typecheck(ast, unitSymbol);
-  ast = lowering(ast, unitSymbol);
+  ast = lowering(ast);
   // console.log(inspect(ast, { depth: 30 }));
   // console.log('----');
+  const unitSymbol = resolve(ast);
+  typecheck(ast, unitSymbol);
   const code = emit(unitSymbol);
   // console.log(code);
 }
