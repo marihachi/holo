@@ -16,20 +16,22 @@ class BasicBlock {
   instructions: number[] = [];
 }
 
-export function emit(syntaxNode: UnitNode) {
+export function emit(syntaxNode: UnitNode): string {
+  let code = '';
   for (const decl of syntaxNode.decls) {
     switch (decl.kind) {
       case 'FunctionDeclNode': {
         const f = new FunctionContext();
-        emitFunction(f, decl);
+        code += emitFunction(f, decl);
         break;
       }
     }
   }
+  return code;
 }
 
 function emitFunction(f: FunctionContext, syntaxNode: FunctionDeclNode): string {
-  let code: string = '';
+  let code = '';
   code += `define @${ syntaxNode.name }{\n`;
   // syntaxNode.body
   code += '}\n';
