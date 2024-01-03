@@ -113,8 +113,8 @@ function makeFnInstructions(f: FunctionContext, body: (ExpressionNode | Statemen
 }
 
 /**
- * returnの式ノードを解析してret命令を生成する。  
- * 返される式が単純な値ではない場合は最終的な値を返すための命令列も一緒に生成する。
+ * 式ノードを解析して式全体としての値を返す。  
+ * 返される式が単純な値ではない場合は値を返すための命令列を生成する。
 */
 function emitExprInReturn(f: FunctionContext, expr: ExpressionNode): { type: string, value: string } {
   switch (expr.kind) {
@@ -124,8 +124,21 @@ function emitExprInReturn(f: FunctionContext, expr: ExpressionNode): { type: str
     case 'BinaryNode': {
       const left = emitExprInReturn(f, expr.left);
       const right = emitExprInReturn(f, expr.right);
+
+      let inst;
+      switch (expr.mode) {
+        case 'add': inst = expr.mode; break;
+        case 'sub': inst = expr.mode; break;
+        case 'mul': inst = expr.mode; break;
+        case 'div': inst = 'sdiv'; break;
+        case 'rem': inst = 'srem'; break;
+        default: {
+          throw new Error('unsupported operation mode');
+        }
+      }
+
       const localId = f.createLocalId();
-      f.writeInst(`%${localId} = add i32 ${left.value}, ${right.value}`);
+      f.writeInst(`%${localId} = ${inst} i32 ${left.value}, ${right.value}`);
       return { type: 'i32', value: `%${localId}` };
     }
   }
