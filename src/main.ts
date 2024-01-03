@@ -1,6 +1,6 @@
 import fs from 'fs';
 import { inspect } from 'util';
-import { emit } from './compile/emit.js';
+import { emit } from './compile/emit-llvm.js';
 import { typecheck } from './compile/typecheck.js';
 import { parse } from './compile/parse.js';
 import { lowering } from './compile/lowering.js';
@@ -24,7 +24,7 @@ function entry() {
   ast = lowering(ast, unitSymbol);
   // console.log(inspect(ast, { depth: 30 }));
   // console.log('----');
-  const code = emit(ast, unitSymbol);
+  const code = emit(unitSymbol);
   // console.log(code);
 }
 entry();

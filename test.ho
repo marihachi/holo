@@ -1,17 +1,3 @@
-fn main(a: int, b: int, c: int): int {
-  var hoge: int = if (1) {
-    if (1) {
-      1;
-    } else {
-      0;
-    };
-    var t: int = if (1) {
-      1
-    } else {
-      0
-    };
-    t
-  } else {
-    0
-  };
+fn main(): int {
+  return 0;
 }
