@@ -5,10 +5,17 @@ class FunctionContext {
   blocks: Map<string, BasicBlock> = new Map();
   nextBlockId: number = 1;
   currentBlock: BasicBlock | undefined;
+  nextLocalId: number = 0;
 
   createBlockId(): string {
     const id = `b${this.nextBlockId}`;
     this.nextBlockId += 1;
+    return id;
+  }
+
+  createLocalId(): string {
+    const id = `${this.nextLocalId}`;
+    this.nextLocalId += 1;
     return id;
   }
 
@@ -66,7 +73,7 @@ function emitFunction(f: FunctionContext, funcSymbol: FunctionSymbol): string {
 
   // emit code
   let code = '';
-  code += `define i32 @${ funcSymbol.name } {\n`;
+  code += `define i32 @${ funcSymbol.name }() {\n`;
   for (const [blockId, block] of f.blocks) {
     code += `${blockId}:\n`;
     for (const inst of block.instructions) {
@@ -94,7 +101,8 @@ function makeFnInstructions(f: FunctionContext, body: (ExpressionNode | Statemen
       }
       case 'ReturnNode': {
         if (step.expr != null) {
-          emitExprInReturn(f, step.expr);
+          const { type, value } = emitExprInReturn(f, step.expr);
+          f.writeInst(`ret ${type} ${value}`);
         } else {
           f.writeInst('ret void');
         }
@@ -108,7 +116,18 @@ function makeFnInstructions(f: FunctionContext, body: (ExpressionNode | Statemen
  * returnの式ノードを解析してret命令を生成する。  
  * 返される式が単純な値ではない場合は最終的な値を返すための命令列も一緒に生成する。
 */
-function emitExprInReturn(f: FunctionContext, expr: ExpressionNode): void {
-  // TODO
-  f.writeInst('ret i32 0');
+function emitExprInReturn(f: FunctionContext, expr: ExpressionNode): { type: string, value: string } {
+  switch (expr.kind) {
+    case 'NumberLiteralNode': {
+      return { type: 'i32', value: expr.value.toString() };
+    }
+    case 'BinaryNode': {
+      const left = emitExprInReturn(f, expr.left);
+      const right = emitExprInReturn(f, expr.right);
+      const localId = f.createLocalId();
+      f.writeInst(`%${localId} = add i32 ${left.value}, ${right.value}`);
+      return { type: 'i32', value: `%${localId}` };
+    }
+  }
+  throw new Error('generate code failure');
 }
