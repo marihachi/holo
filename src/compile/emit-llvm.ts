@@ -1,5 +1,9 @@
 import { FunctionSymbol, UnitSymbol } from './semantic-node.js';
-import { ExpressionNode, StatementNode } from './syntax-node.js';
+import { SyntaxNode } from './syntax-node.js';
+
+// 式の最後でもreturnしてしまう問題がある
+// desugarFuncReturnExprがまずそう
+// AST変形は面倒なため、コード生成でうまくやれないか
 
 class FunctionContext {
   blocks: Map<string, BasicBlock> = new Map();
@@ -14,7 +18,7 @@ class FunctionContext {
   }
 
   createLocalId(): string {
-    const id = `${this.nextLocalId}`;
+    const id = `L${this.nextLocalId}`;
     this.nextLocalId += 1;
     return id;
   }
@@ -69,7 +73,9 @@ function emitFunction(f: FunctionContext, funcSymbol: FunctionSymbol): string {
   const startBlock = f.createBlock('entry');
   f.setCurrentBlock(startBlock);
 
-  makeFnInstructions(f, funcSymbol.node.body);
+  for (const step of funcSymbol.node.body) {
+    emitInstruction(f, step, undefined);
+  }
 
   // emit code
   let code = '';
@@ -86,60 +92,83 @@ function emitFunction(f: FunctionContext, funcSymbol: FunctionSymbol): string {
 }
 
 /**
- * 関数の命令列を生成する。
+ * 命令を生成する。
 */
-function makeFnInstructions(f: FunctionContext, body: (ExpressionNode | StatementNode)[]): void {
-  for (const step of body) {
-    switch (step.kind) {
-      case 'VariableDeclNode': {
-        // TODO
-        break;
-      }
-      case 'AssignNode': {
-        // TODO
-        break;
-      }
-      case 'ReturnNode': {
-        if (step.expr != null) {
-          const { type, value } = emitExprInReturn(f, step.expr);
-          f.writeInst(`ret ${type} ${value}`);
-        } else {
-          f.writeInst('ret void');
-        }
-        break;
-      }
+function emitInstruction(f: FunctionContext, node: SyntaxNode, retVarId: string | undefined): { type: string, value: string } | undefined {
+  switch (node.kind) {
+    case 'VariableDeclNode': {
+      // TODO
+      return;
     }
-  }
-}
+    case 'AssignNode': {
+      // TODO
+      return;
+    }
+    case 'ReturnNode': {
+      if (node.expr != null) {
+        const expr = emitInstruction(f, node.expr, undefined);
+        f.writeInst(`ret ${expr.type} ${expr.value}`);
+      } else {
+        f.writeInst('ret void');
+      }
+      return;
+    }
 
-/**
- * 式ノードを解析して式全体としての値を返す。  
- * 返される式が単純な値ではない場合は値を返すための命令列を生成する。
-*/
-function emitExprInReturn(f: FunctionContext, expr: ExpressionNode): { type: string, value: string } {
-  switch (expr.kind) {
     case 'NumberLiteralNode': {
-      return { type: 'i32', value: expr.value.toString() };
+      return { type: 'i32', value: node.value.toString() };
     }
     case 'BinaryNode': {
-      const left = emitExprInReturn(f, expr.left);
-      const right = emitExprInReturn(f, expr.right);
-
+      const left = emitInstruction(f, node.left, undefined);
+      const right = emitInstruction(f, node.right, undefined);
       let inst;
-      switch (expr.mode) {
-        case 'add': inst = expr.mode; break;
-        case 'sub': inst = expr.mode; break;
-        case 'mul': inst = expr.mode; break;
+      switch (node.mode) {
+        case 'add': inst = node.mode; break;
+        case 'sub': inst = node.mode; break;
+        case 'mul': inst = node.mode; break;
         case 'div': inst = 'sdiv'; break;
         case 'rem': inst = 'srem'; break;
+        case 'eq': inst = 'icmp eq'; break;
+        case 'neq': inst = 'icmp ne'; break;
+        case 'gt': inst = 'icmp sgt'; break;
+        case 'gte': inst = 'icmp sge'; break;
+        case 'lt': inst = 'icmp slt'; break;
+        case 'lte': inst = 'icmp sle'; break;
         default: {
           throw new Error('unsupported operation mode');
         }
       }
-
       const localId = f.createLocalId();
       f.writeInst(`%${localId} = ${inst} i32 ${left.value}, ${right.value}`);
       return { type: 'i32', value: `%${localId}` };
+    }
+    case 'IfNode': {
+      const cond = emitInstruction(f, node.cond, undefined);
+
+      const thenBlockId = f.createBlockId();
+      const elseBlockId = f.createBlockId();
+      const contBlockId = f.createBlockId();
+
+      f.writeInst(`br i1 ${cond.value}, label %${thenBlockId}, %${elseBlockId}`);
+
+      const retVarId = f.createLocalId();
+
+      f.setCurrentBlock(f.createBlock(thenBlockId));
+      emitInstruction(f, node.thenExpr, retVarId);
+      f.writeInst(`br label %${contBlockId}`);
+
+      f.setCurrentBlock(f.createBlock(elseBlockId));
+      emitInstruction(f, node.elseExpr, retVarId);
+      f.writeInst(`br label %${contBlockId}`);
+
+      f.setCurrentBlock(f.createBlock(contBlockId));
+
+      return { type: 'i32', value: `%${retVarId}` };
+    }
+    case 'BlockNode': {
+      for (const step of node.body) {
+        emitInstruction(f, step, retVarId);
+      }
+      return { type: 'i32', value: `%${retVarId}` };
     }
   }
   throw new Error('generate code failure');
