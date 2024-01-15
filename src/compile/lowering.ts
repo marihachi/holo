@@ -12,19 +12,17 @@ import {
 } from './syntax-node.js';
 
 export function lowering(node: UnitNode): UnitNode {
-  desugarFuncReturnExpr(node);
-
-  // 全てのコンテナを見る
-  visitContainer(node, ctx => {
-    const cCtx = ctx.subCtx!;
-    while (!cCtx.endOfStream()) {
-      desugarSwitch(ctx);
-      desugarIf(ctx);
-      desugarBlock(ctx);
-      cCtx.seek(1);
-    }
-    return true;
-  });
+  // // 全てのコンテナを見る
+  // visitContainer(node, ctx => {
+  //   const cCtx = ctx.subCtx!;
+  //   while (!cCtx.endOfStream()) {
+  //     desugarSwitch(ctx);
+  //     desugarIf(ctx);
+  //     desugarBlock(ctx);
+  //     cCtx.seek(1);
+  //   }
+  //   return true;
+  // });
 
   return node;
 }

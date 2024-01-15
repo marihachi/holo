@@ -1,9 +1,8 @@
 import { FunctionSymbol, UnitSymbol } from './semantic-node.js';
-import { SyntaxNode } from './syntax-node.js';
+import { SyntaxNode, isExpressionNode } from './syntax-node.js';
 
-// 式の最後でもreturnしてしまう問題がある
-// desugarFuncReturnExprがまずそう
-// AST変形は面倒なため、コード生成でうまくやれないか
+// スタックのアロケートが必要
+// 関数の最後の式をreturnする処理が必要
 
 class FunctionContext {
   blocks: Map<string, BasicBlock> = new Map();
@@ -148,25 +147,39 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, retVarId: string 
       const elseBlockId = f.createBlockId();
       const contBlockId = f.createBlockId();
 
-      f.writeInst(`br i1 ${cond.value}, label %${thenBlockId}, %${elseBlockId}`);
+      f.writeInst(`br i1 ${cond.value}, label %${thenBlockId}, label %${elseBlockId}`);
 
-      const retVarId = f.createLocalId();
+      const retId = f.createLocalId();
 
       f.setCurrentBlock(f.createBlock(thenBlockId));
-      emitInstruction(f, node.thenExpr, retVarId);
+      if (node.thenExpr.kind == 'BlockNode') {
+        emitInstruction(f, node.thenExpr, retId);
+      } else {
+        const expr = emitInstruction(f, node.thenExpr, undefined);
+        f.writeInst(`store ${expr!.type} ${expr!.value}, ptr %${retId}`);
+      }
       f.writeInst(`br label %${contBlockId}`);
 
       f.setCurrentBlock(f.createBlock(elseBlockId));
-      emitInstruction(f, node.elseExpr, retVarId);
+      if (node.elseExpr.kind == 'BlockNode') {
+        emitInstruction(f, node.elseExpr, retId);
+      } else {
+        const expr = emitInstruction(f, node.elseExpr, undefined);
+        f.writeInst(`store ${expr!.type} ${expr!.value}, ptr %${retId}`);
+      }
       f.writeInst(`br label %${contBlockId}`);
 
       f.setCurrentBlock(f.createBlock(contBlockId));
 
-      return { type: 'i32', value: `%${retVarId}` };
+      return { type: 'i32', value: `%${retId}` };
     }
     case 'BlockNode': {
-      for (const step of node.body) {
-        emitInstruction(f, step, retVarId);
+      for (let i = 0; i < node.body.length; i++) {
+        const step = node.body[i];
+        const expr = emitInstruction(f, step, undefined);
+        if (isExpressionNode(step) && i == node.body.length - 1) {
+          f.writeInst(`store ${expr!.type} ${expr!.value}, ptr %${retVarId}`);
+        }
       }
       return { type: 'i32', value: `%${retVarId}` };
     }
