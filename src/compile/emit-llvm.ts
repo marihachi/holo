@@ -6,9 +6,10 @@ import { SyntaxNode, isExpressionNode } from './syntax-node.js';
 
 class FunctionContext {
   blocks: Map<string, BasicBlock> = new Map();
-  nextBlockId: number = 1;
+  entryBlock: BasicBlock | undefined;
   currentBlock: BasicBlock | undefined;
-  nextLocalId: number = 0;
+  private nextBlockId: number = 1;
+  private nextLocalId: number = 0;
 
   createBlockId(): string {
     const id = `b${this.nextBlockId}`;
@@ -26,22 +27,24 @@ class FunctionContext {
     if (blockId == null) {
       blockId = this.createBlockId();
     }
-    let block = new BasicBlock();
+    let block = new BasicBlock(blockId);
     this.blocks.set(blockId, block);
     return block;
   }
 
-  setCurrentBlock(block: BasicBlock): void {
-    this.currentBlock = block;
-  }
-
   writeInst(inst: string) {
-    this.currentBlock?.instructions.push(inst);
+    if (this.currentBlock == null) return;
+    this.currentBlock.instructions.push(inst);
   }
 }
 
 class BasicBlock {
+  stackAlloc: { name: string, type: string }[] = [];
   instructions: string[] = [];
+
+  constructor(
+    public blockId: string
+  ) {}
 }
 
 export function emit(unitSymbol: UnitSymbol): string {
@@ -69,8 +72,9 @@ export function emit(unitSymbol: UnitSymbol): string {
 
 function emitFunction(f: FunctionContext, funcSymbol: FunctionSymbol): string {
   // add entry block
-  const startBlock = f.createBlock('entry');
-  f.setCurrentBlock(startBlock);
+  const entryBlock = f.createBlock('entry');
+  f.entryBlock = entryBlock;
+  f.currentBlock = entryBlock;
 
   for (const step of funcSymbol.node.body) {
     emitInstruction(f, step, undefined);
@@ -81,6 +85,9 @@ function emitFunction(f: FunctionContext, funcSymbol: FunctionSymbol): string {
   code += `define i32 @${ funcSymbol.name }() {\n`;
   for (const [blockId, block] of f.blocks) {
     code += `${blockId}:\n`;
+    for (const local of block.stackAlloc) {
+      code += `  %${local.name} = alloca ${local.type}\n`;
+    }
     for (const inst of block.instructions) {
       code += `  ${inst}\n`;
     }
@@ -150,8 +157,9 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, retVarId: string 
       f.writeInst(`br i1 ${cond.value}, label %${thenBlockId}, label %${elseBlockId}`);
 
       const retId = f.createLocalId();
+      f.entryBlock!.stackAlloc.push({ name: retId, type: 'i32' });
 
-      f.setCurrentBlock(f.createBlock(thenBlockId));
+      f.currentBlock = f.createBlock(thenBlockId);
       if (node.thenExpr.kind == 'BlockNode') {
         emitInstruction(f, node.thenExpr, retId);
       } else {
@@ -160,7 +168,7 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, retVarId: string 
       }
       f.writeInst(`br label %${contBlockId}`);
 
-      f.setCurrentBlock(f.createBlock(elseBlockId));
+      f.currentBlock = f.createBlock(elseBlockId);
       if (node.elseExpr.kind == 'BlockNode') {
         emitInstruction(f, node.elseExpr, retId);
       } else {
@@ -169,7 +177,7 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, retVarId: string 
       }
       f.writeInst(`br label %${contBlockId}`);
 
-      f.setCurrentBlock(f.createBlock(contBlockId));
+      f.currentBlock = f.createBlock(contBlockId);
 
       return { type: 'i32', value: `%${retId}` };
     }
