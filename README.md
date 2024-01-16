@@ -4,7 +4,7 @@ A better C-like programming language.
 WIP!
 
 ## Concept
-- Compile to generate C code
+- Compile to generate LLVM IR
 - Improved C-based syntax
   - if式やswitch式のサポート
   - ブロック式による値のReturn
