@@ -1,7 +1,6 @@
 import { FunctionSymbol, UnitSymbol } from './semantic-node.js';
 import { SyntaxNode, isExpressionNode } from './syntax-node.js';
 
-// スタックのアロケートが必要
 // 関数の最後の式をreturnする処理が必要
 
 class FunctionContext {
