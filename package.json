@@ -16,7 +16,7 @@
   "scripts": {
     "build": "tsc",
     "rebuild": "rm -r ./dist && tsc",
-    "holo": "node ./dist/main.js"
+    "holo": "node ./dist/main.js && clang ./obj/test.ll -o build/test"
   },
   "author": "marihachi",
   "license": "MIT",
