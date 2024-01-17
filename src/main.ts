@@ -25,5 +25,6 @@ function entry() {
   typecheck(ast, unitSymbol);
   const code = emit(unitSymbol);
   // console.log(code);
+  fs.writeFileSync('temp/test.ll', code, { encoding: 'utf-8' });
 }
 entry();

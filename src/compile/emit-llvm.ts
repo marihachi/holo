@@ -17,7 +17,7 @@ class FunctionContext {
   }
 
   createLocalId(): string {
-    const id = `L${this.nextLocalId}`;
+    const id = `l${this.nextLocalId}`;
     this.nextLocalId += 1;
     return id;
   }
@@ -112,7 +112,7 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, retVarId: string 
     case 'ReturnNode': {
       if (node.expr != null) {
         const expr = emitInstruction(f, node.expr, undefined);
-        f.writeInst(`ret ${expr.type} ${expr.value}`);
+        f.writeInst(`ret ${expr!.type} ${expr!.value}`);
       } else {
         f.writeInst('ret void');
       }
@@ -143,7 +143,7 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, retVarId: string 
         }
       }
       const localId = f.createLocalId();
-      f.writeInst(`%${localId} = ${inst} i32 ${left.value}, ${right.value}`);
+      f.writeInst(`%${localId} = ${inst} i32 ${left!.value}, ${right!.value}`);
       return { type: 'i32', value: `%${localId}` };
     }
     case 'IfNode': {
@@ -153,10 +153,10 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, retVarId: string 
       const elseBlockId = f.createBlockId();
       const contBlockId = f.createBlockId();
 
-      f.writeInst(`br i1 ${cond.value}, label %${thenBlockId}, label %${elseBlockId}`);
+      f.writeInst(`br i1 ${cond!.value}, label %${thenBlockId}, label %${elseBlockId}`);
 
       const retId = f.createLocalId();
-      f.entryBlock!.stackAlloc.push({ name: retId, type: 'i32' });
+      f.entryBlock?.stackAlloc.push({ name: retId, type: 'i32' });
 
       f.currentBlock = f.createBlock(thenBlockId);
       if (node.thenExpr.kind == 'BlockNode') {
@@ -168,11 +168,13 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, retVarId: string 
       f.writeInst(`br label %${contBlockId}`);
 
       f.currentBlock = f.createBlock(elseBlockId);
-      if (node.elseExpr.kind == 'BlockNode') {
-        emitInstruction(f, node.elseExpr, retId);
-      } else {
-        const expr = emitInstruction(f, node.elseExpr, undefined);
-        f.writeInst(`store ${expr!.type} ${expr!.value}, ptr %${retId}`);
+      if (node.elseExpr != null) {
+        if (node.elseExpr.kind == 'BlockNode') {
+          emitInstruction(f, node.elseExpr, retId);
+        } else {
+          const expr = emitInstruction(f, node.elseExpr, undefined);
+          f.writeInst(`store ${expr!.type} ${expr!.value}, ptr %${retId}`);
+        }
       }
       f.writeInst(`br label %${contBlockId}`);
 
