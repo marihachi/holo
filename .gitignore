@@ -7,3 +7,4 @@
 # user
 /dist
 /temp
+/obj/*
