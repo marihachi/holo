@@ -4,7 +4,10 @@
 # editor
 /.vscode
 
+# holo
+/obj/*
+/build/*
+
 # user
 /dist
 /temp
-/obj/*
