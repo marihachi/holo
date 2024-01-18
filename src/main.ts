@@ -10,7 +10,7 @@ function entry() {
   // load file
   let sourceCode;
   try {
-    sourceCode = fs.readFileSync('test.ho', { encoding: 'utf8' });
+    sourceCode = fs.readFileSync('test.ho', { encoding: 'utf-8' });
   } catch (err) {
     throw new Error('Failed to load a source file.');
   }
