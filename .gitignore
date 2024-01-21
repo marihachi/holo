@@ -4,6 +4,10 @@
 # editor
 /.vscode
 
+# holo
+/debug/*
+!/debug/*.ho
+
 # user
 /dist
 /temp

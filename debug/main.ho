@@ -1,0 +1,3 @@
+fn main(): int {
+  return if (1) 0 else 1;
+}

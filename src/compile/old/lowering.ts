@@ -1,7 +1,7 @@
-import { UnitSymbol } from './semantic-node.js';
 import {
   AssignNode,
   ExpressionNode,
+  FunctionDeclNode,
   ReferenceNode,
   ReturnNode,
   StatementNode,
@@ -9,22 +9,47 @@ import {
   UnitNode,
   isContainerNode,
   isExpressionNode,
-} from './syntax-node.js';
+} from '../syntax-node.js';
 
-export function lowering(node: UnitNode, unitSymbol: UnitSymbol): UnitNode {
-  // 全てのコンテナを見る
-  visitContainer(node, ctx => {
-    const cCtx = ctx.subCtx!;
-    while (!cCtx.endOfStream()) {
-      desugarSwitch(ctx);
-      desugarIf(ctx);
-      desugarBlock(ctx);
-      cCtx.seek(1);
-    }
-    return true;
-  });
+export function lowering(node: UnitNode): UnitNode {
+  // // 全てのコンテナを見る
+  // visitContainer(node, ctx => {
+  //   const cCtx = ctx.subCtx!;
+  //   while (!cCtx.endOfStream()) {
+  //     desugarSwitch(ctx);
+  //     desugarIf(ctx);
+  //     desugarBlock(ctx);
+  //     cCtx.seek(1);
+  //   }
+  //   return true;
+  // });
 
   return node;
+}
+
+/**
+ * 関数直下にある式をreturn文に置き換える。  
+ * ただし、式が関数の最後のステップにない場合は文法エラーを生成する。
+*/
+function desugarFuncReturnExpr(node: UnitNode) {
+  function desugarFunc(decl: FunctionDeclNode) {
+    for (let i = 0; i < decl.body.length; i++) {
+      const step = decl.body[i];
+      if (isExpressionNode(step)) {
+        if (i == decl.body.length - 1) {
+          decl.body[i] = new ReturnNode(step, step.loc);
+        } else {
+          throw new Error('statement expected.');
+        }
+      }
+    }
+  }
+
+  for (const decl of node.decls) {
+    if (decl.kind == 'FunctionDeclNode') {
+      desugarFunc(decl);
+    }
+  }
 }
 
 function desugarSwitch(ctx: NodeVisitorContext<ContainerContext>): void {

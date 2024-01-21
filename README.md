@@ -4,7 +4,7 @@ A better C-like programming language.
 WIP!
 
 ## Concept
-- Compile to generate C code
+- Compile to generate LLVM IR
 - Improved C-based syntax
   - if式やswitch式のサポート
   - ブロック式による値のReturn
@@ -22,6 +22,20 @@ fn main(argc: int, argv: char*[]): int {
 
   return 0;
 }
+```
+
+## How to compile
+```sh
+# install holo
+npm i
+npm run build
+
+# compile
+npm run holoc ./debug/main.ho
+clang ./debug/main.ll -o ./debug/main
+
+# run
+./debug/main
 ```
 
 ## Contributors
