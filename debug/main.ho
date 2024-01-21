@@ -1,3 +1,4 @@
 fn main(): int {
-  return if (1) 0 else 1;
+  var a: int = 1;
+  return if (a == 1) 0 else 1;
 }

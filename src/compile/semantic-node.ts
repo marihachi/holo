@@ -62,6 +62,7 @@ export class FunctionSymbol {
 
 export class VariableSymbol {
   kind = 'VariableSymbol' as const;
+  registerName: string | undefined;
   constructor(
     public name: string,
     public node: VariableDeclNode,

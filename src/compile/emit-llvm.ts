@@ -1,4 +1,4 @@
-import { FunctionSymbol, UnitSymbol } from './semantic-node.js';
+import { FunctionSymbol, UnitSymbol, VariableSymbol } from './semantic-node.js';
 import { SyntaxNode, isExpressionNode } from './syntax-node.js';
 
 // 関数の最後の式をreturnする処理が必要
@@ -79,7 +79,7 @@ export function emit(unitSymbol: UnitSymbol): string {
         const funcSymbol = unitSymbol.nameTable.get(decl.name)! as FunctionSymbol;
         const f = new FunctionContext();
         code += '\n' + emitFunction(f, funcSymbol);
-                break;
+        break;
       }
       case 'VariableDeclNode': {
         // TODO
@@ -97,7 +97,7 @@ function emitFunction(f: FunctionContext, funcSymbol: FunctionSymbol): string {
   f.currentBlock = entryBlock;
 
   for (const step of funcSymbol.node.body) {
-    emitInstruction(f, step, undefined);
+    emitInstruction(f, step, undefined, funcSymbol);
   }
 
   // emit code
@@ -120,10 +120,17 @@ function emitFunction(f: FunctionContext, funcSymbol: FunctionSymbol): string {
 /**
  * 命令を生成する。
 */
-function emitInstruction(f: FunctionContext, node: SyntaxNode, parentPtrId: string | undefined): { type: string, value: string } | undefined {
+function emitInstruction(f: FunctionContext, node: SyntaxNode, parentPtrId: string | undefined, funcSymbol: FunctionSymbol): { type: string, value: string } | undefined {
   switch (node.kind) {
     case 'VariableDeclNode': {
-      // TODO
+      const stackMemId = f.createLocalId('p');
+      f.entryBlock?.stackAlloc.push({ name: stackMemId, type: 'i32' });
+      if (node.expr != null) {
+        const expr = emitInstruction(f, node.expr, undefined, funcSymbol);
+        f.writeInst(`store ${expr!.type} ${expr!.value}, ptr %${stackMemId}`);
+      }
+      const variableSymbol = funcSymbol.nameTable.get(node.name)! as VariableSymbol;
+      variableSymbol.registerName = stackMemId;
       return;
     }
     case 'AssignNode': {
@@ -132,7 +139,7 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, parentPtrId: stri
     }
     case 'ReturnNode': {
       if (node.expr != null) {
-        const expr = emitInstruction(f, node.expr, undefined);
+        const expr = emitInstruction(f, node.expr, undefined, funcSymbol);
         f.writeInst(`ret ${expr!.type} ${expr!.value}`);
       } else {
         f.writeInst('ret void');
@@ -143,9 +150,15 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, parentPtrId: stri
     case 'NumberLiteralNode': {
       return { type: 'i32', value: node.value.toString() };
     }
+    case 'ReferenceNode': {
+      const symbol = funcSymbol.nameTable.get(node.name)! as VariableSymbol;
+      const refValue = f.createLocalId('ref_v');
+      f.writeInst(`%${refValue} = load i32, ptr %${symbol.registerName}`);
+      return { type: 'i32', value: `%${refValue}` };
+    }
     case 'BinaryNode': {
-      const left = emitInstruction(f, node.left, undefined);
-      const right = emitInstruction(f, node.right, undefined);
+      const left = emitInstruction(f, node.left, undefined, funcSymbol);
+      const right = emitInstruction(f, node.right, undefined, funcSymbol);
       let inst;
       switch (node.mode) {
         case 'add': inst = node.mode; break;
@@ -168,7 +181,7 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, parentPtrId: stri
       return { type: 'i32', value: `%${localId}` };
     }
     case 'IfNode': {
-      const cond = emitInstruction(f, node.cond, undefined);
+      const cond = emitInstruction(f, node.cond, undefined, funcSymbol);
 
       const thenBlockId = f.createBlockId('then');
       const elseBlockId = f.createBlockId('else');
@@ -181,9 +194,9 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, parentPtrId: stri
 
       f.currentBlock = f.createBlock(thenBlockId);
       if (node.thenExpr.kind == 'BlockNode') {
-        emitInstruction(f, node.thenExpr, stackMemId);
+        emitInstruction(f, node.thenExpr, stackMemId, funcSymbol);
       } else {
-        const expr = emitInstruction(f, node.thenExpr, undefined);
+        const expr = emitInstruction(f, node.thenExpr, undefined, funcSymbol);
         f.writeInst(`store ${expr!.type} ${expr!.value}, ptr %${stackMemId}`);
       }
       f.writeInst(`br label %${contBlockId}`);
@@ -191,9 +204,9 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, parentPtrId: stri
       f.currentBlock = f.createBlock(elseBlockId);
       if (node.elseExpr != null) {
         if (node.elseExpr.kind == 'BlockNode') {
-          emitInstruction(f, node.elseExpr, stackMemId);
+          emitInstruction(f, node.elseExpr, stackMemId, funcSymbol);
         } else {
-          const expr = emitInstruction(f, node.elseExpr, undefined);
+          const expr = emitInstruction(f, node.elseExpr, undefined, funcSymbol);
           f.writeInst(`store ${expr!.type} ${expr!.value}, ptr %${stackMemId}`);
         }
       }
@@ -217,7 +230,7 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, parentPtrId: stri
 
       for (let i = 0; i < node.body.length; i++) {
         const step = node.body[i];
-        const expr = emitInstruction(f, step, undefined);
+        const expr = emitInstruction(f, step, undefined, funcSymbol);
         if (isExpressionNode(step) && i == node.body.length - 1) {
           f.writeInst(`store ${expr!.type} ${expr!.value}, ptr %${stackMemId}`);
         }
