@@ -24,6 +24,20 @@ fn main(argc: int, argv: char*[]): int {
 }
 ```
 
+## How to compile
+```sh
+# install holo
+npm i
+npm run build
+
+# compile
+node ./ ./debug/main.ho
+clang ./debug/main.ll -o ./debug/main
+
+# run
+./debug/main
+```
+
 ## Contributors
 - [@marihachi](https://github.com/marihachi) - [Details](https://github.com/marihachi/holo/issues?q=author%3Amarihachi)
 - [@ikasoba](https://github.com/ikasoba) - [Details](https://github.com/marihachi/holo/issues?q=author%3Aikasoba)
