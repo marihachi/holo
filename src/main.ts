@@ -21,7 +21,6 @@ function entry() {
   }
 
   let ast = parse(sourceCode);
-  // ast = lowering(ast);
   const unitSymbol = resolve(ast);
   typecheck(ast, unitSymbol);
   const code = emit(unitSymbol);
