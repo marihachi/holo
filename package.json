@@ -10,20 +10,16 @@
     "type": "git",
     "url": "git+https://github.com/marihachi/holo.git"
   },
-  "bin": {
-    "holo": "./dist/main.js"
-  },
   "scripts": {
     "build": "tsc",
-    "rebuild": "rm -r ./dist && tsc",
-    "holo": "node ./dist/main.js && clang ./obj/test.ll -o build/test"
+    "rebuild": "rm -r ./dist && tsc"
   },
   "author": "marihachi",
   "license": "MIT",
   "dependencies": {
-    "typescript": "^5.2.2"
+    "typescript": "5.3.x"
   },
   "devDependencies": {
-    "@types/node": "^20.8.8"
+    "@types/node": "20.11.x"
   }
 }

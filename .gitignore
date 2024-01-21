@@ -5,8 +5,7 @@
 /.vscode
 
 # holo
-/obj/*
-/build/*
+/debug/*.ll
 
 # user
 /dist

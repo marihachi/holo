@@ -1,30 +1,30 @@
 import fs from 'fs';
-import { inspect } from 'util';
+import path from 'path';
 import { emit } from './compile/emit-llvm.js';
 import { typecheck } from './compile/typecheck.js';
 import { parse } from './compile/parse.js';
-import { lowering } from './compile/lowering.js';
 import { resolve } from './compile/resolve.js';
 
 function entry() {
+  if (process.argv.length < 3) {
+    throw new Error('no input files');
+  }
+  const filepath = process.argv[2];
+  const fileInfo = path.parse(filepath);
+
   // load file
   let sourceCode;
   try {
-    sourceCode = fs.readFileSync('test.ho', { encoding: 'utf-8' });
+    sourceCode = fs.readFileSync(filepath, { encoding: 'utf-8' });
   } catch (err) {
     throw new Error('Failed to load a source file.');
   }
 
   let ast = parse(sourceCode);
-  // console.log(inspect(ast, { depth: 30 }));
-  // console.log('----');
-  ast = lowering(ast);
-  // console.log(inspect(ast, { depth: 30 }));
-  // console.log('----');
+  // ast = lowering(ast);
   const unitSymbol = resolve(ast);
   typecheck(ast, unitSymbol);
   const code = emit(unitSymbol);
-  // console.log(code);
-  fs.writeFileSync('obj/test.ll', code, { encoding: 'utf-8' });
+  fs.writeFileSync(path.join(fileInfo.dir, `${fileInfo.name}.ll`), code, { encoding: 'utf-8' });
 }
 entry();

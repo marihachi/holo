@@ -9,7 +9,7 @@ import {
   UnitNode,
   isContainerNode,
   isExpressionNode,
-} from './syntax-node.js';
+} from '../syntax-node.js';
 
 export function lowering(node: UnitNode): UnitNode {
   // // 全てのコンテナを見る
