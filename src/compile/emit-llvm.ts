@@ -7,25 +7,46 @@ class FunctionContext {
   blocks: Map<string, BasicBlock> = new Map();
   entryBlock: BasicBlock | undefined;
   currentBlock: BasicBlock | undefined;
-  private nextBlockId: number = 1;
-  private nextLocalId: number = 0;
+  private localIdSet: Set<string> = new Set();
+  private localIdCache: { name: string, index: number } | undefined;
+  private blockIdSet: Set<string> = new Set();
+  private blockIdCache: { name: string, index: number } | undefined;
 
-  createBlockId(): string {
-    const id = `b${this.nextBlockId}`;
-    this.nextBlockId += 1;
-    return id;
-  }
-
-  createLocalId(): string {
-    const id = `l${this.nextLocalId}`;
-    this.nextLocalId += 1;
-    return id;
-  }
-
-  createBlock(blockId?: string): BasicBlock {
-    if (blockId == null) {
-      blockId = this.createBlockId();
+  createLocalId(name: string): string {
+    if (!this.localIdSet.has(name)) {
+      this.localIdSet.add(name);
+      return name;
     }
+    let index = 0;
+    if (this.localIdCache?.name == name) {
+      index = this.localIdCache.index + 1;
+    }
+    while (this.localIdSet.has(name + index)) {
+      index++;
+    }
+    this.localIdSet.add(name + index);
+    this.localIdCache = { name, index };
+    return name + index;
+  }
+
+  createBlockId(name: string): string {
+    if (!this.blockIdSet.has(name)) {
+      this.blockIdSet.add(name);
+      return name;
+    }
+    let index = 0;
+    if (this.blockIdCache?.name == name) {
+      index = this.blockIdCache.index + 1;
+    }
+    while (this.blockIdSet.has(name + index)) {
+      index++;
+    }
+    this.blockIdSet.add(name + index);
+    this.blockIdCache = { name, index };
+    return name + index;
+  }
+
+  createBlock(blockId: string): BasicBlock {
     let block = new BasicBlock(blockId);
     this.blocks.set(blockId, block);
     return block;
@@ -50,15 +71,15 @@ export function emit(unitSymbol: UnitSymbol): string {
   let code = '';
 
   // setup ISA
-  code += 'target triple = "x86_64-unknown-linux-gnu"\n\n';
+  code += 'target triple = "x86_64-unknown-linux-gnu"\n';
 
   for (const decl of unitSymbol.node.decls) {
     switch (decl.kind) {
       case 'FunctionDeclNode': {
         const funcSymbol = unitSymbol.nameTable.get(decl.name)! as FunctionSymbol;
         const f = new FunctionContext();
-        code += emitFunction(f, funcSymbol);
-        break;
+        code += '\n' + emitFunction(f, funcSymbol);
+                break;
       }
       case 'VariableDeclNode': {
         // TODO
@@ -99,7 +120,7 @@ function emitFunction(f: FunctionContext, funcSymbol: FunctionSymbol): string {
 /**
  * 命令を生成する。
 */
-function emitInstruction(f: FunctionContext, node: SyntaxNode, retVarId: string | undefined): { type: string, value: string } | undefined {
+function emitInstruction(f: FunctionContext, node: SyntaxNode, parentPtrId: string | undefined): { type: string, value: string } | undefined {
   switch (node.kind) {
     case 'VariableDeclNode': {
       // TODO
@@ -142,55 +163,73 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, retVarId: string 
           throw new Error('unsupported operation mode');
         }
       }
-      const localId = f.createLocalId();
+      const localId = f.createLocalId('op');
       f.writeInst(`%${localId} = ${inst} i32 ${left!.value}, ${right!.value}`);
       return { type: 'i32', value: `%${localId}` };
     }
     case 'IfNode': {
       const cond = emitInstruction(f, node.cond, undefined);
 
-      const thenBlockId = f.createBlockId();
-      const elseBlockId = f.createBlockId();
-      const contBlockId = f.createBlockId();
+      const thenBlockId = f.createBlockId('then');
+      const elseBlockId = f.createBlockId('else');
+      const contBlockId = f.createBlockId('cont');
 
       f.writeInst(`br i1 ${cond!.value}, label %${thenBlockId}, label %${elseBlockId}`);
 
-      const retId = f.createLocalId();
-      f.entryBlock?.stackAlloc.push({ name: retId, type: 'i32' });
+      const stackMemId = f.createLocalId('p');
+      f.entryBlock?.stackAlloc.push({ name: stackMemId, type: 'i32' });
 
       f.currentBlock = f.createBlock(thenBlockId);
       if (node.thenExpr.kind == 'BlockNode') {
-        emitInstruction(f, node.thenExpr, retId);
+        emitInstruction(f, node.thenExpr, stackMemId);
       } else {
         const expr = emitInstruction(f, node.thenExpr, undefined);
-        f.writeInst(`store ${expr!.type} ${expr!.value}, ptr %${retId}`);
+        f.writeInst(`store ${expr!.type} ${expr!.value}, ptr %${stackMemId}`);
       }
       f.writeInst(`br label %${contBlockId}`);
 
       f.currentBlock = f.createBlock(elseBlockId);
       if (node.elseExpr != null) {
         if (node.elseExpr.kind == 'BlockNode') {
-          emitInstruction(f, node.elseExpr, retId);
+          emitInstruction(f, node.elseExpr, stackMemId);
         } else {
           const expr = emitInstruction(f, node.elseExpr, undefined);
-          f.writeInst(`store ${expr!.type} ${expr!.value}, ptr %${retId}`);
+          f.writeInst(`store ${expr!.type} ${expr!.value}, ptr %${stackMemId}`);
         }
       }
       f.writeInst(`br label %${contBlockId}`);
 
       f.currentBlock = f.createBlock(contBlockId);
 
-      return { type: 'i32', value: `%${retId}` };
+      const retId2 = f.createLocalId('if_r');
+      f.writeInst(`%${retId2} = load i32, ptr %${stackMemId}`);
+
+      return { type: 'i32', value: `%${retId2}` };
     }
     case 'BlockNode': {
+      let stackMemId;
+      if (parentPtrId != null) {
+        stackMemId = parentPtrId;
+      } else {
+        stackMemId = f.createLocalId('p');
+        f.entryBlock?.stackAlloc.push({ name: stackMemId, type: 'i32' });
+      }
+
       for (let i = 0; i < node.body.length; i++) {
         const step = node.body[i];
         const expr = emitInstruction(f, step, undefined);
         if (isExpressionNode(step) && i == node.body.length - 1) {
-          f.writeInst(`store ${expr!.type} ${expr!.value}, ptr %${retVarId}`);
+          f.writeInst(`store ${expr!.type} ${expr!.value}, ptr %${stackMemId}`);
         }
       }
-      return { type: 'i32', value: `%${retVarId}` };
+
+      if (parentPtrId != null) {
+        return { type: 'i32', value: `%${stackMemId}` };
+      } else {
+        const retId = f.createLocalId('blck_r');
+        f.writeInst(`%${retId} = load i32, ptr %${stackMemId}`);
+        return { type: 'i32', value: `%${retId}` };
+      }
     }
   }
   throw new Error('generate code failure');
