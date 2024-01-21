@@ -12,7 +12,8 @@
   },
   "scripts": {
     "build": "tsc",
-    "rebuild": "rm -r ./dist && tsc"
+    "rebuild": "rm -r ./dist && tsc",
+    "holoc": "node ."
   },
   "author": "marihachi",
   "license": "MIT",

@@ -31,7 +31,7 @@ npm i
 npm run build
 
 # compile
-node ./ ./debug/main.ho
+npm run holoc ./debug/main.ho
 clang ./debug/main.ll -o ./debug/main
 
 # run
