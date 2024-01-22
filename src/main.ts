@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { emit } from './compile/emit-llvm.js';
+import { emit } from './compile/emit.js';
 import { typecheck } from './compile/typecheck.js';
 import { parse } from './compile/parse.js';
 import { resolve } from './compile/resolve.js';
