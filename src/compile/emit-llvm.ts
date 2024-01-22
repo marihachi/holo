@@ -131,21 +131,21 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
       // レジスタ名をシンボルに記憶
       variableSymbol.registerName = stackMemId;
       if (node.expr != null) {
-        const expr = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
-        f.writeInst(`store ${expr.join(' ')}, ptr %${variableSymbol.registerName}`);
+        const value = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
+        f.writeInst(`store ${value.join(' ')}, ptr %${variableSymbol.registerName}`);
       }
       return [];
     }
     case 'AssignNode': {
       const variableSymbol = unitSymbol.nodeTable.get(node.target)! as VariableSymbol;
-      const expr = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
-      f.writeInst(`store ${expr.join(' ')}, ptr %${variableSymbol.registerName}`);
+      const value = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
+      f.writeInst(`store ${value.join(' ')}, ptr %${variableSymbol.registerName}`);
       return [];
     }
     case 'ReturnNode': {
       if (node.expr != null) {
-        const expr = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
-        f.writeInst(`ret ${expr.join(' ')}`);
+        const value = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
+        f.writeInst(`ret ${value.join(' ')}`);
       } else {
         f.writeInst('ret void');
       }
@@ -162,8 +162,8 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
       return ['i32', `%${refValue}`];
     }
     case 'BinaryNode': {
-      const left = emitInstruction(f, node.left, unitSymbol, funcSymbol);
-      const right = emitInstruction(f, node.right, unitSymbol, funcSymbol);
+      const leftValue = emitInstruction(f, node.left, unitSymbol, funcSymbol);
+      const rightValue = emitInstruction(f, node.right, unitSymbol, funcSymbol);
       let inst;
       switch (node.mode) {
         case 'add': inst = node.mode; break;
@@ -182,59 +182,51 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
         }
       }
       const localId = f.createLocalId('op');
-      f.writeInst(`%${localId} = ${inst} i32 ${left[1]}, ${right[1]}`);
+      f.writeInst(`%${localId} = ${inst} i32 ${leftValue[1]}, ${rightValue[1]}`);
       return ['i32', `%${localId}`];
     }
     case 'IfNode': {
-      const cond = emitInstruction(f, node.cond, unitSymbol, funcSymbol);
+      const condValue = emitInstruction(f, node.cond, unitSymbol, funcSymbol);
 
       const thenBlockId = f.createBlockId('then');
       const elseBlockId = f.createBlockId('else');
       const contBlockId = f.createBlockId('cont');
 
-      f.writeInst(`br i1 ${cond[1]}, label %${thenBlockId}, label %${elseBlockId}`);
+      f.writeInst(`br i1 ${condValue[1]}, label %${thenBlockId}, label %${elseBlockId}`);
 
-      const stackMemId = f.createLocalId('if_p');
-      f.entryBlock?.stackAlloc.push({ name: stackMemId, type: 'i32' });
+      const storePtr = f.createLocalId('if_p');
+      f.entryBlock?.stackAlloc.push({ name: storePtr, type: 'i32' });
 
       f.currentBlock = f.createBlock(thenBlockId);
-      if (node.thenExpr.kind == 'BlockNode') {
-        emitInstruction(f, node.thenExpr, unitSymbol, funcSymbol);
-      } else {
-        const expr = emitInstruction(f, node.thenExpr, unitSymbol, funcSymbol);
-        f.writeInst(`store ${expr.join(' ')}, ptr %${stackMemId}`);
-      }
+      const thenValue = emitInstruction(f, node.thenExpr, unitSymbol, funcSymbol);
+      f.writeInst(`store ${thenValue.join(' ')}, ptr %${storePtr}`);
       f.writeInst(`br label %${contBlockId}`);
 
       f.currentBlock = f.createBlock(elseBlockId);
       if (node.elseExpr != null) {
-        if (node.elseExpr.kind == 'BlockNode') {
-          emitInstruction(f, node.elseExpr, unitSymbol, funcSymbol);
-        } else {
-          const expr = emitInstruction(f, node.elseExpr, unitSymbol, funcSymbol);
-          f.writeInst(`store ${expr.join(' ')}, ptr %${stackMemId}`);
-        }
+        const elseValue = emitInstruction(f, node.elseExpr, unitSymbol, funcSymbol);
+        f.writeInst(`store ${elseValue.join(' ')}, ptr %${storePtr}`);
       }
       f.writeInst(`br label %${contBlockId}`);
 
       f.currentBlock = f.createBlock(contBlockId);
 
-      const retId2 = f.createLocalId('if_r');
-      f.writeInst(`%${retId2} = load i32, ptr %${stackMemId}`);
+      const loadValue = f.createLocalId('if_r');
+      f.writeInst(`%${loadValue} = load i32, ptr %${storePtr}`);
 
-      return ['i32', `%${retId2}`];
+      return ['i32', `%${loadValue}`];
     }
     case 'BlockNode': {
-      let lastExpr;
+      let lastValue;
       for (let i = 0; i < node.body.length; i++) {
         const step = node.body[i];
-        const expr = emitInstruction(f, step, unitSymbol, funcSymbol);
+        const value = emitInstruction(f, step, unitSymbol, funcSymbol);
         if (isExpressionNode(step) && i == node.body.length - 1) {
-          lastExpr = expr;
+          lastValue = value;
         }
       }
-      if (lastExpr != null) {
-        return lastExpr;
+      if (lastValue != null) {
+        return lastValue;
       } else {
         return ['void'];
       }
