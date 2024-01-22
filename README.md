@@ -1,5 +1,5 @@
 # holo
-A better C-like programming language.
+A refined C-like, system programming language with LLVM.
 
 WIP!
 
