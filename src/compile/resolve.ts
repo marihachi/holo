@@ -93,6 +93,7 @@ function resolveNode(node: SyntaxNode, parent: ContainerSymbol, nodeTable: Symbo
       if (semantic == null) {
         throw new Error(`unknown identifier: ${node.name}`);
       }
+      nodeTable.set(node, semantic);
       break;
     }
     case 'TypeRefNode': {
@@ -100,6 +101,7 @@ function resolveNode(node: SyntaxNode, parent: ContainerSymbol, nodeTable: Symbo
       if (semantic == null) {
         throw new Error(`unknown type name: ${node.name}`);
       }
+      nodeTable.set(node, semantic);
       break;
     }
     case 'BinaryNode': {
