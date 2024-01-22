@@ -146,6 +146,9 @@ function resolveNode(node: SyntaxNode, parent: ContainerSymbol, nodeTable: Symbo
       break;
     }
     case 'AssignNode': {
+      if (node.target.kind != 'ReferenceNode') {
+        throw new Error(`invalid assign target`);
+      }
       resolveNode(node.target, parent, nodeTable);
       resolveNode(node.expr, parent, nodeTable);
       break;

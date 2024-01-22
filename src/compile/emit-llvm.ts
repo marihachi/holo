@@ -1,5 +1,5 @@
 import { FunctionSymbol, UnitSymbol, VariableSymbol } from './semantic-node.js';
-import { SyntaxNode, isExpressionNode } from './syntax-node.js';
+import { ReferenceNode, SyntaxNode, isExpressionNode } from './syntax-node.js';
 
 // 関数の最後の式をreturnする処理が必要
 
@@ -125,16 +125,19 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, parentPtrId: stri
     case 'VariableDeclNode': {
       const stackMemId = f.createLocalId('p');
       f.entryBlock?.stackAlloc.push({ name: stackMemId, type: 'i32' });
+      const variableSymbol = funcSymbol.nameTable.get(node.name)! as VariableSymbol;
+      variableSymbol.registerName = stackMemId;
       if (node.expr != null) {
         const expr = emitInstruction(f, node.expr, undefined, funcSymbol);
         f.writeInst(`store ${expr!.type} ${expr!.value}, ptr %${stackMemId}`);
       }
-      const variableSymbol = funcSymbol.nameTable.get(node.name)! as VariableSymbol;
-      variableSymbol.registerName = stackMemId;
       return;
     }
     case 'AssignNode': {
-      // TODO
+      const targetName = (node.target as ReferenceNode).name;
+      const variableSymbol = funcSymbol.nameTable.get(targetName)! as VariableSymbol;
+      const expr = emitInstruction(f, node.expr, undefined, funcSymbol);
+      f.writeInst(`store ${expr!.type} ${expr!.value}, ptr %${variableSymbol.registerName}`);
       return;
     }
     case 'ReturnNode': {
