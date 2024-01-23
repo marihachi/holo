@@ -120,7 +120,7 @@ function emitFunction(f: FunctionContext, unitSymbol: UnitSymbol, funcSymbol: Fu
 /**
  * 命令を生成する。
 */
-function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitSymbol, funcSymbol: FunctionSymbol): [] | [string] | [string, string] {
+function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitSymbol, funcSymbol: FunctionSymbol): [string] | [string, string] | undefined {
   switch (node.kind) {
     case 'VariableDeclNode': {
       const variableSymbol = unitSymbol.nodeTable.get(node)! as VariableSymbol;
@@ -132,9 +132,12 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
       variableSymbol.registerName = stackMemId;
       if (node.expr != null) {
         const value = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
+        if (value == null) {
+          throw new Error('expression expected');
+        }
         f.writeInst(`store ${value.join(' ')}, ptr %${variableSymbol.registerName}`);
       }
-      return [];
+      return;
     }
     case 'NumberLiteralNode': {
       return ['i32', node.value.toString()];
@@ -151,6 +154,12 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
     case 'BinaryNode': {
       const leftValue = emitInstruction(f, node.left, unitSymbol, funcSymbol);
       const rightValue = emitInstruction(f, node.right, unitSymbol, funcSymbol);
+      if (leftValue == null) {
+        throw new Error('expression expected');
+      }
+      if (rightValue == null) {
+        throw new Error('expression expected');
+      }
       switch (node.mode) {
         case 'add':
         case 'sub':
@@ -200,6 +209,9 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
     }
     case 'UnaryNode': {
       const value = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
+      if (value == null) {
+        throw new Error('expression expected');
+      }
       switch (node.mode) {
         case 'minus': {
           const localId = f.createLocalId('op');
@@ -208,7 +220,7 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
         }
         case 'not': {
           const localId = f.createLocalId('op');
-          f.writeInst(`%${localId} = icmp eq ${value[1]}, 0`);
+          f.writeInst(`%${localId} = icmp eq i32 ${value[1]}, 0`);
           return ['i1', `%${localId}`];
         }
         case 'compl': {
@@ -224,13 +236,16 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
     }
     case 'IfNode': {
       const condValue = emitInstruction(f, node.cond, unitSymbol, funcSymbol);
+      if (condValue == null) {
+        throw new Error('expression expected');
+      }
 
       const thenBlockId = f.createBlockId('then');
       const elseBlockId = f.createBlockId('else');
       const contBlockId = f.createBlockId('cont');
 
       const condId = f.createLocalId('cond');
-      f.writeInst(`%${condId} = icmp ne ${condValue[1]}, 0`);
+      f.writeInst(`%${condId} = icmp ne i32 ${condValue[1]}, 0`);
       f.writeInst(`br i1 %${condId}, label %${thenBlockId}, label %${elseBlockId}`);
 
       const storePtr = f.createLocalId('if_p');
@@ -238,12 +253,18 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
 
       f.currentBlock = f.createBlock(thenBlockId);
       const thenValue = emitInstruction(f, node.thenExpr, unitSymbol, funcSymbol);
+      if (thenValue == null) {
+        throw new Error('expression expected');
+      }
       f.writeInst(`store ${thenValue.join(' ')}, ptr %${storePtr}`);
       f.writeInst(`br label %${contBlockId}`);
 
       f.currentBlock = f.createBlock(elseBlockId);
       if (node.elseExpr != null) {
         const elseValue = emitInstruction(f, node.elseExpr, unitSymbol, funcSymbol);
+        if (elseValue == null) {
+          throw new Error('expression expected');
+        }
         f.writeInst(`store ${elseValue.join(' ')}, ptr %${storePtr}`);
       }
       f.writeInst(`br label %${contBlockId}`);
@@ -260,6 +281,9 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
       for (let i = 0; i < node.body.length; i++) {
         const step = node.body[i];
         const value = emitInstruction(f, step, unitSymbol, funcSymbol);
+        if (value == null) {
+          throw new Error('expression expected');
+        }
         if (isExpressionNode(step) && i == node.body.length - 1) {
           lastValue = value;
         }
@@ -282,17 +306,23 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
     case 'ReturnNode': {
       if (node.expr != null) {
         const value = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
+        if (value == null) {
+          throw new Error('expression expected');
+        }
         f.writeInst(`ret ${value.join(' ')}`);
       } else {
         f.writeInst('ret void');
       }
-      return [];
+      return;
     }
     case 'AssignNode': {
       const variableSymbol = unitSymbol.nodeTable.get(node.target)! as VariableSymbol;
       const value = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
+      if (value == null) {
+        throw new Error('expression expected');
+      }
       f.writeInst(`store ${value.join(' ')}, ptr %${variableSymbol.registerName}`);
-      return [];
+      return;
     }
     // case 'WhileNode': {
     //   break;
@@ -301,8 +331,11 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
     //   break;
     // }
     case 'ExpressionStatementNode': {
-      emitInstruction(f, node.expr, unitSymbol, funcSymbol);
-      return [];
+      const value = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
+      if (value == null) {
+        throw new Error('expression expected');
+      }
+      return;
     }
   }
   throw new Error('generate code failure');
