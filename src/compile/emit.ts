@@ -136,22 +136,6 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
       }
       return [];
     }
-    case 'AssignNode': {
-      const variableSymbol = unitSymbol.nodeTable.get(node.target)! as VariableSymbol;
-      const value = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
-      f.writeInst(`store ${value.join(' ')}, ptr %${variableSymbol.registerName}`);
-      return [];
-    }
-    case 'ReturnNode': {
-      if (node.expr != null) {
-        const value = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
-        f.writeInst(`ret ${value.join(' ')}`);
-      } else {
-        f.writeInst('ret void');
-      }
-      return [];
-    }
-
     case 'NumberLiteralNode': {
       return ['i32', node.value.toString()];
     }
@@ -161,29 +145,77 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
       f.writeInst(`%${refValue} = load i32, ptr %${variableSymbol.registerName}`);
       return ['i32', `%${refValue}`];
     }
+    // case 'TypeRefNode': {
+    //   break;
+    // }
     case 'BinaryNode': {
       const leftValue = emitInstruction(f, node.left, unitSymbol, funcSymbol);
       const rightValue = emitInstruction(f, node.right, unitSymbol, funcSymbol);
-      let inst;
       switch (node.mode) {
-        case 'add': inst = node.mode; break;
-        case 'sub': inst = node.mode; break;
-        case 'mul': inst = node.mode; break;
-        case 'div': inst = 'sdiv'; break;
-        case 'rem': inst = 'srem'; break;
-        case 'eq': inst = 'icmp eq'; break;
-        case 'neq': inst = 'icmp ne'; break;
-        case 'gt': inst = 'icmp sgt'; break;
-        case 'gte': inst = 'icmp sge'; break;
-        case 'lt': inst = 'icmp slt'; break;
-        case 'lte': inst = 'icmp sle'; break;
-        default: {
-          throw new Error('unsupported operation mode');
+        case 'add':
+        case 'sub':
+        case 'mul':
+        case 'div':
+        case 'rem': {
+          let inst;
+          if (node.mode == 'rem') inst = 'srem';
+          else inst = node.mode;
+          const localId = f.createLocalId('op');
+          f.writeInst(`%${localId} = ${inst} i32 ${leftValue[1]}, ${rightValue[1]}`);
+          return ['i32', `%${localId}`];
+        }
+        case 'eq':
+        case 'neq':
+        case 'gt':
+        case 'gte':
+        case 'lt':
+        case 'lte': {
+          let mode;
+          if (node.mode == 'neq') mode = 'ne';
+          else if (node.mode == 'gt') mode = 'sgt';
+          else if (node.mode == 'gte') mode = 'sge';
+          else if (node.mode == 'lt') mode = 'slt';
+          else if (node.mode == 'lte') mode = 'sle';
+          else mode = node.mode;
+          const localId = f.createLocalId('op');
+          f.writeInst(`%${localId} = icmp ${mode} i32 ${leftValue[1]}, ${rightValue[1]}`);
+          return ['i32', `%${localId}`];
+        }
+        // case 'and':
+        // case 'or':
+        // case 'xor':
+        // case 'shl':
+        // case 'shr':
+        // case 'bitand':
+        // case 'bitor': {
+        //   return [];
+        // }
+      }
+      throw new Error('unsupported operation mode');
+    }
+    case 'UnaryNode': {
+      const value = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
+      switch (node.mode) {
+        case 'minus': {
+          const localId = f.createLocalId('op');
+          f.writeInst(`%${localId} = sub i32 0, ${value[1]}`);
+          return ['i32', `%${localId}`];
+        }
+        case 'not': {
+          const localId = f.createLocalId('op');
+          f.writeInst(`%${localId} = icmp ne ${value[1]}, 0`);
+          return ['i1', `%${localId}`];
+        }
+        case 'compl': {
+          const localId = f.createLocalId('op');
+          f.writeInst(`%${localId} = xor i32 ${value[1]}, -1`);
+          return ['i32', `%${localId}`];
+        }
+        case 'plus': {
+          return value;
         }
       }
-      const localId = f.createLocalId('op');
-      f.writeInst(`%${localId} = ${inst} i32 ${leftValue[1]}, ${rightValue[1]}`);
-      return ['i32', `%${localId}`];
+      throw new Error('unsupported operation mode');
     }
     case 'IfNode': {
       const condValue = emitInstruction(f, node.cond, unitSymbol, funcSymbol);
@@ -230,6 +262,40 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
       } else {
         return ['void'];
       }
+    }
+    // case 'CallNode': {
+    //   break;
+    // }
+    // case 'BreakNode': {
+    //   break;
+    // }
+    // case 'ContinueNode': {
+    //   break;
+    // }
+    case 'ReturnNode': {
+      if (node.expr != null) {
+        const value = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
+        f.writeInst(`ret ${value.join(' ')}`);
+      } else {
+        f.writeInst('ret void');
+      }
+      return [];
+    }
+    case 'AssignNode': {
+      const variableSymbol = unitSymbol.nodeTable.get(node.target)! as VariableSymbol;
+      const value = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
+      f.writeInst(`store ${value.join(' ')}, ptr %${variableSymbol.registerName}`);
+      return [];
+    }
+    // case 'WhileNode': {
+    //   break;
+    // }
+    // case 'SwitchNode': {
+    //   break;
+    // }
+    case 'ExpressionStatementNode': {
+      emitInstruction(f, node.expr, unitSymbol, funcSymbol);
+      return [];
     }
   }
   throw new Error('generate code failure');
