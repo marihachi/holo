@@ -25,6 +25,8 @@ fn main(argc: int, argv: char*[]): int {
 ```
 
 ## How to compile
+`clang` command is required (clang 17 recommended).
+
 ```sh
 # install holo
 npm i
