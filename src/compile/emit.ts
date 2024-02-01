@@ -178,8 +178,8 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
           else if (node.mode == 'shr') inst = 'ashr';
           else inst = node.mode;
           const localId = f.createLocalId('op');
-          f.writeInst(`%${localId} = ${inst} i32 ${leftValue[1]}, ${rightValue[1]}`);
-          return ['i32', `%${localId}`];
+          f.writeInst(`%${localId} = ${inst} ${leftValue[0]} ${leftValue[1]}, ${rightValue[1]}`);
+          return [leftValue[0], `%${localId}`];
         }
         case 'eq':
         case 'neq':
@@ -195,14 +195,14 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
           else if (node.mode == 'lte') mode = 'sle';
           else mode = node.mode;
           const localId = f.createLocalId('op');
-          f.writeInst(`%${localId} = icmp ${mode} i32 ${leftValue[1]}, ${rightValue[1]}`);
+          f.writeInst(`%${localId} = icmp ${mode} ${leftValue[0]} ${leftValue[1]}, ${rightValue[1]}`);
           return ['i1', `%${localId}`];
         }
         case 'and':
         case 'or': {
           const localId = f.createLocalId('op');
-          f.writeInst(`%${localId} = and i1 ${leftValue[1]}, ${rightValue[1]}`);
-          return ['i1', `%${localId}`];
+          f.writeInst(`%${localId} = and ${leftValue[0]} ${leftValue[1]}, ${rightValue[1]}`);
+          return [leftValue[0], `%${localId}`];
         }
       }
       throw new Error('unsupported operation mode');
@@ -215,18 +215,18 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
       switch (node.mode) {
         case 'minus': {
           const localId = f.createLocalId('op');
-          f.writeInst(`%${localId} = sub i32 0, ${value[1]}`);
-          return ['i32', `%${localId}`];
+          f.writeInst(`%${localId} = sub ${value[0]} 0, ${value[1]}`);
+          return [value[0], `%${localId}`];
         }
         case 'not': {
           const localId = f.createLocalId('op');
-          f.writeInst(`%${localId} = icmp eq i32 ${value[1]}, 0`);
+          f.writeInst(`%${localId} = icmp eq ${value[0]} ${value[1]}, 0`);
           return ['i1', `%${localId}`];
         }
         case 'compl': {
           const localId = f.createLocalId('op');
-          f.writeInst(`%${localId} = xor i32 ${value[1]}, -1`);
-          return ['i32', `%${localId}`];
+          f.writeInst(`%${localId} = xor ${value[0]} ${value[1]}, -1`);
+          return [value[0], `%${localId}`];
         }
         case 'plus': {
           return value;
@@ -245,7 +245,7 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
       const contBlockId = f.createBlockId('cont');
 
       const condId = f.createLocalId('cond');
-      f.writeInst(`%${condId} = icmp ne i32 ${condValue[1]}, 0`);
+      f.writeInst(`%${condId} = icmp ne ${condValue[0]} ${condValue[1]}, 0`);
       f.writeInst(`br i1 %${condId}, label %${thenBlockId}, label %${elseBlockId}`);
 
       const storePtr = f.createLocalId('if_p');
