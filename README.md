@@ -1,16 +1,16 @@
 # holo
-A refined C-like, system programming language with LLVM.
+A system programming language of modern syntaxes with LLVM.
 
 WIP!
 
 ## Concept
-- Compile to generate LLVM IR
-- Improved C-based syntax
+- Modern syntax introducing elements of functional languages.
   - if式やswitch式のサポート
   - ブロック式による値のReturn
-- High-level type system
+- Type system
   - 参照型のサポート
   - いずれかの型であることを表すユニオン型のサポート
+- Generate LLVM IR code
 
 ## Syntax image
 ```
@@ -38,8 +38,10 @@ clang ./debug/main.ll -o ./debug/main
 ./debug/main
 ```
 
+## Author
+[@marihachi](https://github.com/marihachi)
+
 ## Contributors
-- [@marihachi](https://github.com/marihachi) - [Details](https://github.com/marihachi/holo/issues?q=author%3Amarihachi)
 - [@ikasoba](https://github.com/ikasoba) - [Details](https://github.com/marihachi/holo/issues?q=author%3Aikasoba)
 
 ## License
