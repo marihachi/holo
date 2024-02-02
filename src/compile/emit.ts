@@ -1,8 +1,6 @@
 import { FunctionSymbol, UnitSymbol, VariableSymbol } from './semantic-node.js';
 import { SyntaxNode, isExpressionNode } from './syntax-node.js';
 
-// 関数の最後の式をreturnする処理が必要
-
 class FunctionContext {
   blocks: Map<string, BasicBlock> = new Map();
   entryBlock: BasicBlock | undefined;
@@ -96,8 +94,20 @@ function emitFunction(f: FunctionContext, unitSymbol: UnitSymbol, funcSymbol: Fu
   f.entryBlock = entryBlock;
   f.currentBlock = entryBlock;
 
+  let result;
   for (const step of funcSymbol.node.body) {
-    emitInstruction(f, step, unitSymbol, funcSymbol);
+    result = emitInstruction(f, step, unitSymbol, funcSymbol);
+    if (result[0] == 'return') {
+      break;
+    }
+  }
+  if (result != null) {
+    if (result[0] == 'expr') {
+      f.writeInst(`ret ${result[1]} ${result[2]}`);
+    }
+    if (result[0] == 'none') {
+      f.writeInst(`ret void`);
+    }
   }
 
   // emit code
@@ -117,47 +127,53 @@ function emitFunction(f: FunctionContext, unitSymbol: UnitSymbol, funcSymbol: Fu
   return code;
 }
 
+type EmitResult =
+  | ['none']
+  | ['return']
+  | ['return', string, string] // type, operand
+  | ['expr', string, string]; // type, operand
+
 /**
  * 命令を生成する。
 */
-function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitSymbol, funcSymbol: FunctionSymbol): [string] | [string, string] | undefined {
+function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitSymbol, funcSymbol: FunctionSymbol): EmitResult {
   switch (node.kind) {
     case 'VariableDeclNode': {
       const variableSymbol = unitSymbol.nodeTable.get(node)! as VariableSymbol;
       // allocaで確保したスタック領域を参照するレジスタ名
-      const stackMemId = f.createLocalId('decl_p');
+      const stackMemId = f.createLocalId(`${node.name}_ptr`);
       // エントリブロック上にalloca命令を生成する
       f.entryBlock?.stackAlloc.push({ name: stackMemId, type: 'i32' });
       // レジスタ名をシンボルに記憶
       variableSymbol.registerName = stackMemId;
       if (node.expr != null) {
-        const value = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
-        if (value == null) {
-          throw new Error('expression expected');
+        const result = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
+        if (result[0] == 'expr') {
+          f.writeInst(`store ${result[1]} ${result[2]}, ptr %${variableSymbol.registerName}`);
         }
-        f.writeInst(`store ${value.join(' ')}, ptr %${variableSymbol.registerName}`);
       }
-      return;
+      return ['none'];
     }
     case 'NumberLiteralNode': {
-      return ['i32', node.value.toString()];
+      return ['expr', 'i32', node.value.toString()];
     }
     case 'ReferenceNode': {
       const variableSymbol = unitSymbol.nodeTable.get(node)! as VariableSymbol;
       const refValue = f.createLocalId('ref_v');
-      f.writeInst(`%${refValue} = load i32, ptr %${variableSymbol.registerName}`);
-      return ['i32', `%${refValue}`];
+      const type = 'i32';
+      f.writeInst(`%${refValue} = load ${type}, ptr %${variableSymbol.registerName}`);
+      return ['expr', type, `%${refValue}`];
     }
     // case 'TypeRefNode': {
     //   break;
     // }
     case 'BinaryNode': {
-      const leftValue = emitInstruction(f, node.left, unitSymbol, funcSymbol);
-      const rightValue = emitInstruction(f, node.right, unitSymbol, funcSymbol);
-      if (leftValue == null) {
+      const leftResult = emitInstruction(f, node.left, unitSymbol, funcSymbol);
+      const rightResult = emitInstruction(f, node.right, unitSymbol, funcSymbol);
+      if (leftResult[0] != 'expr') {
         throw new Error('expression expected');
       }
-      if (rightValue == null) {
+      if (rightResult[0] != 'expr') {
         throw new Error('expression expected');
       }
       switch (node.mode) {
@@ -178,8 +194,8 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
           else if (node.mode == 'shr') inst = 'ashr';
           else inst = node.mode;
           const localId = f.createLocalId('op');
-          f.writeInst(`%${localId} = ${inst} ${leftValue[0]} ${leftValue[1]}, ${rightValue[1]}`);
-          return [leftValue[0], `%${localId}`];
+          f.writeInst(`%${localId} = ${inst} ${leftResult[1]} ${leftResult[2]}, ${rightResult[2]}`);
+          return ['expr', leftResult[1], `%${localId}`];
         }
         case 'eq':
         case 'neq':
@@ -195,48 +211,50 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
           else if (node.mode == 'lte') mode = 'sle';
           else mode = node.mode;
           const localId = f.createLocalId('op');
-          f.writeInst(`%${localId} = icmp ${mode} ${leftValue[0]} ${leftValue[1]}, ${rightValue[1]}`);
-          return ['i1', `%${localId}`];
+          f.writeInst(`%${localId} = icmp ${mode} ${leftResult[1]} ${leftResult[2]}, ${rightResult[2]}`);
+          return ['expr', 'i1', `%${localId}`];
         }
         case 'and':
         case 'or': {
+          let inst;
+          inst = node.mode;
           const localId = f.createLocalId('op');
-          f.writeInst(`%${localId} = and ${leftValue[0]} ${leftValue[1]}, ${rightValue[1]}`);
-          return [leftValue[0], `%${localId}`];
+          f.writeInst(`%${localId} = ${inst} ${leftResult[1]} ${leftResult[2]}, ${rightResult[2]}`);
+          return ['expr', leftResult[1], `%${localId}`];
         }
       }
       throw new Error('unsupported operation mode');
     }
     case 'UnaryNode': {
-      const value = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
-      if (value == null) {
+      const result = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
+      if (result[0] != 'expr') {
         throw new Error('expression expected');
       }
       switch (node.mode) {
         case 'minus': {
           const localId = f.createLocalId('op');
-          f.writeInst(`%${localId} = sub ${value[0]} 0, ${value[1]}`);
-          return [value[0], `%${localId}`];
+          f.writeInst(`%${localId} = sub ${result[1]} 0, ${result[2]}`);
+          return ['expr', result[1], `%${localId}`];
         }
         case 'not': {
           const localId = f.createLocalId('op');
-          f.writeInst(`%${localId} = icmp eq ${value[0]} ${value[1]}, 0`);
-          return ['i1', `%${localId}`];
+          f.writeInst(`%${localId} = icmp eq ${result[1]} ${result[2]}, 0`);
+          return ['expr', 'i1', `%${localId}`];
         }
         case 'compl': {
           const localId = f.createLocalId('op');
-          f.writeInst(`%${localId} = xor ${value[0]} ${value[1]}, -1`);
-          return [value[0], `%${localId}`];
+          f.writeInst(`%${localId} = xor ${result[1]} ${result[2]}, -1`);
+          return ['expr', result[1], `%${localId}`];
         }
         case 'plus': {
-          return value;
+          return result;
         }
       }
       throw new Error('unsupported operation mode');
     }
     case 'IfNode': {
-      const condValue = emitInstruction(f, node.cond, unitSymbol, funcSymbol);
-      if (condValue == null) {
+      const condResult = emitInstruction(f, node.cond, unitSymbol, funcSymbol);
+      if (condResult[0] != 'expr') {
         throw new Error('expression expected');
       }
 
@@ -245,53 +263,56 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
       const contBlockId = f.createBlockId('cont');
 
       const condId = f.createLocalId('cond');
-      f.writeInst(`%${condId} = icmp ne ${condValue[0]} ${condValue[1]}, 0`);
+      f.writeInst(`%${condId} = icmp ne ${condResult[1]} ${condResult[2]}, 0`);
       f.writeInst(`br i1 %${condId}, label %${thenBlockId}, label %${elseBlockId}`);
 
       const storePtr = f.createLocalId('if_p');
       f.entryBlock?.stackAlloc.push({ name: storePtr, type: 'i32' });
 
       f.currentBlock = f.createBlock(thenBlockId);
-      const thenValue = emitInstruction(f, node.thenExpr, unitSymbol, funcSymbol);
-      if (thenValue == null) {
-        throw new Error('expression expected');
+      const thenResult = emitInstruction(f, node.thenExpr, unitSymbol, funcSymbol);
+      if (thenResult[0] == 'expr') {
+        f.writeInst(`store ${thenResult[1]} ${thenResult[2]}, ptr %${storePtr}`);
       }
-      f.writeInst(`store ${thenValue.join(' ')}, ptr %${storePtr}`);
-      f.writeInst(`br label %${contBlockId}`);
+      if (thenResult[0] != 'return') {
+        f.writeInst(`br label %${contBlockId}`);
+      }
 
       f.currentBlock = f.createBlock(elseBlockId);
       if (node.elseExpr != null) {
-        const elseValue = emitInstruction(f, node.elseExpr, unitSymbol, funcSymbol);
-        if (elseValue == null) {
-          throw new Error('expression expected');
+        const elseResult = emitInstruction(f, node.elseExpr, unitSymbol, funcSymbol);
+        if (elseResult[0] == 'expr') {
+          f.writeInst(`store ${elseResult[1]} ${elseResult[2]}, ptr %${storePtr}`);
         }
-        f.writeInst(`store ${elseValue.join(' ')}, ptr %${storePtr}`);
+        if (elseResult[0] != 'return') {
+          f.writeInst(`br label %${contBlockId}`);
+        }
+      } else {
+        f.writeInst(`br label %${contBlockId}`);
       }
-      f.writeInst(`br label %${contBlockId}`);
 
       f.currentBlock = f.createBlock(contBlockId);
-
       const loadValue = f.createLocalId('if_r');
       f.writeInst(`%${loadValue} = load i32, ptr %${storePtr}`);
 
-      return ['i32', `%${loadValue}`];
+      return ['expr', 'i32', `%${loadValue}`];
     }
     case 'BlockNode': {
-      let lastValue;
+      let lastExpr;
       for (let i = 0; i < node.body.length; i++) {
         const step = node.body[i];
-        const value = emitInstruction(f, step, unitSymbol, funcSymbol);
-        if (value == null) {
-          throw new Error('expression expected');
+        const result = emitInstruction(f, step, unitSymbol, funcSymbol);
+        if (result[0] == 'return') {
+          return result;
         }
         if (isExpressionNode(step) && i == node.body.length - 1) {
-          lastValue = value;
+          lastExpr = result;
         }
       }
-      if (lastValue != null) {
-        return lastValue;
+      if (lastExpr != null) {
+        return lastExpr;
       } else {
-        return ['void'];
+        return ['none'];
       }
     }
     // case 'CallNode': {
@@ -305,24 +326,25 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
     // }
     case 'ReturnNode': {
       if (node.expr != null) {
-        const value = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
-        if (value == null) {
+        const result = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
+        if (result[0] != 'expr') {
           throw new Error('expression expected');
         }
-        f.writeInst(`ret ${value.join(' ')}`);
+        f.writeInst(`ret ${result[1]} ${result[2]}`);
+        return ['return', result[1], result[2]];
       } else {
         f.writeInst('ret void');
+        return ['return'];
       }
-      return;
     }
-    case 'AssignNode': {
+    case 'AssignNode': { // 式がblockだった場合が未検討
       const variableSymbol = unitSymbol.nodeTable.get(node.target)! as VariableSymbol;
-      const value = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
-      if (value == null) {
+      const result = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
+      if (result[0] != 'expr') {
         throw new Error('expression expected');
       }
-      f.writeInst(`store ${value.join(' ')}, ptr %${variableSymbol.registerName}`);
-      return;
+      f.writeInst(`store ${result[1]} ${result[2]}, ptr %${variableSymbol.registerName}`);
+      return ['none'];
     }
     // case 'WhileNode': {
     //   break;
@@ -330,12 +352,12 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
     // case 'SwitchNode': {
     //   break;
     // }
-    case 'ExpressionStatementNode': {
-      const value = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
-      if (value == null) {
+    case 'ExpressionStatementNode': { // 式がblockだった場合が未検討
+      const result = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
+      if (result[0] != 'expr') {
         throw new Error('expression expected');
       }
-      return;
+      return ['none'];
     }
   }
   throw new Error('generate code failure');
