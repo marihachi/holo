@@ -25,7 +25,7 @@ fn main(argc: int, argv: char*[]): int {
 ```
 
 ## How to compile
-`clang` command is required (clang 17 recommended).
+`clang` command is required (clang 16 or 17 recommended).
 
 ```sh
 # install holo
