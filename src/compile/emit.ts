@@ -113,6 +113,7 @@ function emitFunction(f: FunctionContext, unitSymbol: UnitSymbol, funcSymbol: Fu
   code += `define i32 @${ funcSymbol.name }() {\n`;
   for (const [blockId, block] of f.blocks) {
     code += `${blockId}:\n`;
+    // エントリブロックの最初でスタックを確保
     if (blockId == 'entry') {
       for (const inst of f.allocationArea) {
         code += `  ${inst}\n`;
@@ -140,12 +141,10 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
   switch (node.kind) {
     case 'VariableDeclNode': {
       const variableSymbol = unitSymbol.nodeTable.get(node)! as VariableSymbol;
-      // allocaで確保したスタック領域を参照するレジスタ名
-      const stackMemId = f.createLocalId(`${node.name}_ptr`);
-      // エントリブロック上にalloca命令を生成する
-      f.allocationArea.push(`%${stackMemId} = alloca i32`);
+      const ptrReg = f.createLocalId(`${node.name}_ptr`);
+      f.allocationArea.push(`%${ptrReg} = alloca i32`);
       // レジスタ名をシンボルに記憶
-      variableSymbol.registerName = stackMemId;
+      variableSymbol.registerName = ptrReg;
       if (node.expr != null) {
         const result = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
         if (result[0] == 'expr') {
@@ -159,10 +158,10 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
     }
     case 'ReferenceNode': {
       const variableSymbol = unitSymbol.nodeTable.get(node)! as VariableSymbol;
-      const refValue = f.createLocalId('ref_v');
+      const valueReg = f.createLocalId(`${node.name}_val`);
       const type = 'i32';
-      f.writeInst(`%${refValue} = load ${type}, ptr %${variableSymbol.registerName}`);
-      return ['expr', type, `%${refValue}`];
+      f.writeInst(`%${valueReg} = load ${type}, ptr %${variableSymbol.registerName}`);
+      return ['expr', type, `%${valueReg}`];
     }
     // case 'TypeRefNode': {
     //   break;
@@ -193,9 +192,9 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
           else if (node.mode == 'bitor') inst = 'or';
           else if (node.mode == 'shr') inst = 'ashr';
           else inst = node.mode;
-          const localId = f.createLocalId('op');
-          f.writeInst(`%${localId} = ${inst} ${leftResult[1]} ${leftResult[2]}, ${rightResult[2]}`);
-          return ['expr', leftResult[1], `%${localId}`];
+          const reg = f.createLocalId('op');
+          f.writeInst(`%${reg} = ${inst} ${leftResult[1]} ${leftResult[2]}, ${rightResult[2]}`);
+          return ['expr', leftResult[1], `%${reg}`];
         }
         case 'eq':
         case 'neq':
@@ -210,17 +209,17 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
           else if (node.mode == 'lt') mode = 'slt';
           else if (node.mode == 'lte') mode = 'sle';
           else mode = node.mode;
-          const localId = f.createLocalId('op');
-          f.writeInst(`%${localId} = icmp ${mode} ${leftResult[1]} ${leftResult[2]}, ${rightResult[2]}`);
-          return ['expr', 'i1', `%${localId}`];
+          const reg = f.createLocalId('op');
+          f.writeInst(`%${reg} = icmp ${mode} ${leftResult[1]} ${leftResult[2]}, ${rightResult[2]}`);
+          return ['expr', 'i1', `%${reg}`];
         }
         case 'and':
         case 'or': {
           let inst;
           inst = node.mode;
-          const localId = f.createLocalId('op');
-          f.writeInst(`%${localId} = ${inst} ${leftResult[1]} ${leftResult[2]}, ${rightResult[2]}`);
-          return ['expr', leftResult[1], `%${localId}`];
+          const reg = f.createLocalId('op');
+          f.writeInst(`%${reg} = ${inst} ${leftResult[1]} ${leftResult[2]}, ${rightResult[2]}`);
+          return ['expr', leftResult[1], `%${reg}`];
         }
       }
       throw new Error('unsupported operation mode');
@@ -232,19 +231,19 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
       }
       switch (node.mode) {
         case 'minus': {
-          const localId = f.createLocalId('op');
-          f.writeInst(`%${localId} = sub ${result[1]} 0, ${result[2]}`);
-          return ['expr', result[1], `%${localId}`];
+          const reg = f.createLocalId('op');
+          f.writeInst(`%${reg} = sub ${result[1]} 0, ${result[2]}`);
+          return ['expr', result[1], `%${reg}`];
         }
         case 'not': {
-          const localId = f.createLocalId('op');
-          f.writeInst(`%${localId} = icmp eq ${result[1]} ${result[2]}, 0`);
-          return ['expr', 'i1', `%${localId}`];
+          const reg = f.createLocalId('op');
+          f.writeInst(`%${reg} = icmp eq ${result[1]} ${result[2]}, 0`);
+          return ['expr', 'i1', `%${reg}`];
         }
         case 'compl': {
-          const localId = f.createLocalId('op');
-          f.writeInst(`%${localId} = xor ${result[1]} ${result[2]}, -1`);
-          return ['expr', result[1], `%${localId}`];
+          const reg = f.createLocalId('op');
+          f.writeInst(`%${reg} = xor ${result[1]} ${result[2]}, -1`);
+          return ['expr', result[1], `%${reg}`];
         }
         case 'plus': {
           return result;
@@ -258,44 +257,44 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
         throw new Error('expression expected');
       }
 
-      const thenBlockId = f.createBlockId('then');
-      const elseBlockId = f.createBlockId('else');
-      const contBlockId = f.createBlockId('cont');
+      const thenBlock = f.createBlockId('then');
+      const elseBlock = f.createBlockId('else');
+      const contBlock = f.createBlockId('cont');
 
-      const condId = f.createLocalId('cond');
-      f.writeInst(`%${condId} = icmp ne ${condResult[1]} ${condResult[2]}, 0`);
-      f.writeInst(`br i1 %${condId}, label %${thenBlockId}, label %${elseBlockId}`);
+      const condReg = f.createLocalId('cond');
+      f.writeInst(`%${condReg} = icmp ne ${condResult[1]} ${condResult[2]}, 0`);
+      f.writeInst(`br i1 %${condReg}, label %${thenBlock}, label %${elseBlock}`);
 
-      const storePtr = f.createLocalId('if_p');
-      f.allocationArea.push(`%${storePtr} = alloca i32`);
+      const brPtrReg = f.createLocalId('br_ptr');
+      f.allocationArea.push(`%${brPtrReg} = alloca i32`);
 
-      f.currentBlock = f.createBlock(thenBlockId);
+      f.currentBlock = f.createBlock(thenBlock);
       const thenResult = emitInstruction(f, node.thenExpr, unitSymbol, funcSymbol);
       if (thenResult[0] == 'expr') {
-        f.writeInst(`store ${thenResult[1]} ${thenResult[2]}, ptr %${storePtr}`);
+        f.writeInst(`store ${thenResult[1]} ${thenResult[2]}, ptr %${brPtrReg}`);
       }
       if (thenResult[0] != 'return') {
-        f.writeInst(`br label %${contBlockId}`);
+        f.writeInst(`br label %${contBlock}`);
       }
 
-      f.currentBlock = f.createBlock(elseBlockId);
+      f.currentBlock = f.createBlock(elseBlock);
       if (node.elseExpr != null) {
         const elseResult = emitInstruction(f, node.elseExpr, unitSymbol, funcSymbol);
         if (elseResult[0] == 'expr') {
-          f.writeInst(`store ${elseResult[1]} ${elseResult[2]}, ptr %${storePtr}`);
+          f.writeInst(`store ${elseResult[1]} ${elseResult[2]}, ptr %${brPtrReg}`);
         }
         if (elseResult[0] != 'return') {
-          f.writeInst(`br label %${contBlockId}`);
+          f.writeInst(`br label %${contBlock}`);
         }
       } else {
-        f.writeInst(`br label %${contBlockId}`);
+        f.writeInst(`br label %${contBlock}`);
       }
 
-      f.currentBlock = f.createBlock(contBlockId);
-      const loadValue = f.createLocalId('if_r');
-      f.writeInst(`%${loadValue} = load i32, ptr %${storePtr}`);
+      f.currentBlock = f.createBlock(contBlock);
+      const brReg = f.createLocalId('br_val');
+      f.writeInst(`%${brReg} = load i32, ptr %${brPtrReg}`);
 
-      return ['expr', 'i32', `%${loadValue}`];
+      return ['expr', 'i32', `%${brReg}`];
     }
     case 'BlockNode': {
       let lastExpr;
