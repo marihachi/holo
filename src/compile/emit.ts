@@ -252,22 +252,23 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
       throw new Error('unsupported operation mode');
     }
     case 'IfNode': {
-      const condResult = emitInstruction(f, node.cond, unitSymbol, funcSymbol);
-      if (condResult[0] != 'expr') {
+      const conditionResult = emitInstruction(f, node.cond, unitSymbol, funcSymbol);
+      if (conditionResult[0] != 'expr') {
         throw new Error('expression expected');
       }
 
-      const thenBlock = f.createBlockId('then');
-      const elseBlock = f.createBlockId('else');
-      const contBlock = f.createBlockId('cont');
+      const thenBlock = f.createBlockId('if.then');
+      const elseBlock = f.createBlockId('if.else');
+      const contBlock = f.createBlockId('if.after');
 
-      const condReg = f.createLocalId('cond');
-      f.writeInst(`%${condReg} = icmp ne ${condResult[1]} ${condResult[2]}, 0`);
-      f.writeInst(`br i1 %${condReg}, label %${thenBlock}, label %${elseBlock}`);
+      const conditionReg = f.createLocalId('cond');
+      f.writeInst(`%${conditionReg} = icmp ne ${conditionResult[1]} ${conditionResult[2]}, 0`);
+      f.writeInst(`br i1 %${conditionReg}, label %${thenBlock}, label %${elseBlock}`);
 
       const brPtrReg = f.createLocalId('br_ptr');
       f.allocationArea.push(`%${brPtrReg} = alloca i32`);
 
+      // then block
       f.currentBlock = f.createBlock(thenBlock);
       const thenResult = emitInstruction(f, node.thenExpr, unitSymbol, funcSymbol);
       if (thenResult[0] == 'expr') {
@@ -277,6 +278,7 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
         f.writeInst(`br label %${contBlock}`);
       }
 
+      // else block
       f.currentBlock = f.createBlock(elseBlock);
       if (node.elseExpr != null) {
         const elseResult = emitInstruction(f, node.elseExpr, unitSymbol, funcSymbol);
@@ -290,6 +292,7 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
         f.writeInst(`br label %${contBlock}`);
       }
 
+      // cont block
       f.currentBlock = f.createBlock(contBlock);
       const brReg = f.createLocalId('br_val');
       f.writeInst(`%${brReg} = load i32, ptr %${brPtrReg}`);
@@ -353,8 +356,8 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
     // }
     case 'ExpressionStatementNode': {
       const result = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
-      if (result[0] != 'expr') {
-        throw new Error('expression expected');
+      if (result[0] == 'return') {
+        return result;
       }
       return ['none'];
     }
