@@ -3,8 +3,8 @@ import { SyntaxNode, isExpressionNode } from './syntax-node.js';
 
 class FunctionContext {
   blocks: Map<string, BasicBlock> = new Map();
-  entryBlock: BasicBlock | undefined;
   currentBlock: BasicBlock | undefined;
+  allocationArea: string[] = [];
   private localIdSet: Set<string> = new Set();
   private localIdCache: { name: string, index: number } | undefined;
   private blockIdSet: Set<string> = new Set();
@@ -57,7 +57,6 @@ class FunctionContext {
 }
 
 class BasicBlock {
-  stackAlloc: { name: string, type: string }[] = [];
   instructions: string[] = [];
 
   constructor(
@@ -91,7 +90,6 @@ export function emit(unitSymbol: UnitSymbol): string {
 function emitFunction(f: FunctionContext, unitSymbol: UnitSymbol, funcSymbol: FunctionSymbol): string {
   // add entry block
   const entryBlock = f.createBlock('entry');
-  f.entryBlock = entryBlock;
   f.currentBlock = entryBlock;
 
   let result;
@@ -115,8 +113,10 @@ function emitFunction(f: FunctionContext, unitSymbol: UnitSymbol, funcSymbol: Fu
   code += `define i32 @${ funcSymbol.name }() {\n`;
   for (const [blockId, block] of f.blocks) {
     code += `${blockId}:\n`;
-    for (const local of block.stackAlloc) {
-      code += `  %${local.name} = alloca ${local.type}\n`;
+    if (blockId == 'entry') {
+      for (const inst of f.allocationArea) {
+        code += `  ${inst}\n`;
+      }
     }
     for (const inst of block.instructions) {
       code += `  ${inst}\n`;
@@ -143,7 +143,7 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
       // allocaで確保したスタック領域を参照するレジスタ名
       const stackMemId = f.createLocalId(`${node.name}_ptr`);
       // エントリブロック上にalloca命令を生成する
-      f.entryBlock?.stackAlloc.push({ name: stackMemId, type: 'i32' });
+      f.allocationArea.push(`%${stackMemId} = alloca i32`);
       // レジスタ名をシンボルに記憶
       variableSymbol.registerName = stackMemId;
       if (node.expr != null) {
@@ -267,7 +267,7 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
       f.writeInst(`br i1 %${condId}, label %${thenBlockId}, label %${elseBlockId}`);
 
       const storePtr = f.createLocalId('if_p');
-      f.entryBlock?.stackAlloc.push({ name: storePtr, type: 'i32' });
+      f.allocationArea.push(`%${storePtr} = alloca i32`);
 
       f.currentBlock = f.createBlock(thenBlockId);
       const thenResult = emitInstruction(f, node.thenExpr, unitSymbol, funcSymbol);
