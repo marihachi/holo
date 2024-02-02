@@ -337,7 +337,7 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
         return ['return'];
       }
     }
-    case 'AssignNode': { // 式がblockだった場合が未検討
+    case 'AssignNode': {
       const variableSymbol = unitSymbol.nodeTable.get(node.target)! as VariableSymbol;
       const result = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
       if (result[0] != 'expr') {
@@ -352,7 +352,7 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
     // case 'SwitchNode': {
     //   break;
     // }
-    case 'ExpressionStatementNode': { // 式がblockだった場合が未検討
+    case 'ExpressionStatementNode': {
       const result = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
       if (result[0] != 'expr') {
         throw new Error('expression expected');
