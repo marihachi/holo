@@ -45,9 +45,9 @@ export function emit(unitSymbol: UnitSymbol): string {
 }
 
 /*
-emitInstruction関数の戻り値のEmitResultで、そのノードが値を必ず返すのかどうかや、最後にreturnするのかどうか、
-値を返さないなどの情報を親ノードに伝えることができます。
-これにより、例えば親ノード側でret命令の挿入が必要なのかを判断できます。
+emitInstruction関数の戻り値のEmitResultを使って親ノードに情報を伝えることができます。
+そのノードが値を返すのかどうか、最後にreturnするのかどうか、最後にbreakするのかどうか、など。
+例えば、親ノード側で最後にret命令の挿入が必要なのかを判断する際に利用できます。
 */
 
 function emitInstruction(
