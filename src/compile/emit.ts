@@ -10,64 +10,34 @@ export function emit(unitSymbol: UnitSymbol): string {
   for (const decl of unitSymbol.node.decls) {
     switch (decl.kind) {
       case 'FunctionDeclNode': {
-        const symbol = unitSymbol.nameTable.get(decl.name)! as FunctionSymbol;
+        const funcSymbol = unitSymbol.nameTable.get(decl.name)! as FunctionSymbol;
         const f = new FunctionContext();
-        code += '\n' + emitFunctionDecl(f, unitSymbol, symbol);
+        emitInstruction(f, funcSymbol.node, unitSymbol, funcSymbol, undefined);
+        // emit code
+        let code = '';
+        code += `define i32 @${ funcSymbol.name }() {\n`;
+        for (const [blockId, block] of f.blocks) {
+          code += `${blockId}:\n`;
+          // エントリブロックの最初でスタックを確保
+          if (blockId == 'entry') {
+            for (const inst of f.allocationArea) {
+              code += `  ${inst}\n`;
+            }
+          }
+          for (const inst of block.instructions) {
+            code += `  ${inst}\n`;
+          }
+        }
+        code += '}\n';
         break;
       }
       case 'VariableDeclNode': {
         const symbol = unitSymbol.nameTable.get(decl.name)! as VariableSymbol;
-        code += '\n' + emitVariableDecl(unitSymbol, symbol);
+        // TODO
         break;
       }
     }
   }
-  return code;
-}
-
-function emitVariableDecl(unitSymbol: UnitSymbol, variableSymbol: VariableSymbol): string {
-  // TODO
-  return '';
-}
-
-function emitFunctionDecl(f: FunctionContext, unitSymbol: UnitSymbol, funcSymbol: FunctionSymbol): string {
-  // add entry block
-  const entryBlock = f.createBlock('entry');
-  f.currentBlock = entryBlock;
-
-  let result;
-  for (const step of funcSymbol.node.body) {
-    result = emitInstruction(f, step, unitSymbol, funcSymbol, undefined);
-    if (result[0] == 'return') {
-      break;
-    }
-  }
-  if (result != null) {
-    if (result[0] == 'expr') {
-      f.writeInst(`ret ${result[1]} ${result[2]}`);
-    }
-    if (result[0] == 'none') {
-      f.writeInst(`ret void`);
-    }
-  }
-
-  // emit code
-  let code = '';
-  code += `define i32 @${ funcSymbol.name }() {\n`;
-  for (const [blockId, block] of f.blocks) {
-    code += `${blockId}:\n`;
-    // エントリブロックの最初でスタックを確保
-    if (blockId == 'entry') {
-      for (const inst of f.allocationArea) {
-        code += `  ${inst}\n`;
-      }
-    }
-    for (const inst of block.instructions) {
-      code += `  ${inst}\n`;
-    }
-  }
-  code += '}\n';
-
   return code;
 }
 
@@ -85,6 +55,28 @@ function emitInstruction(
   loop: { loopEntryBlock: string, loopEndBlock: string } | undefined,
 ): EmitResult {
   switch (node.kind) {
+    case 'FunctionDeclNode': {
+      // add entry block
+      const entryBlock = f.createBlock('entry');
+      f.currentBlock = entryBlock;
+
+      let result;
+      for (const step of funcSymbol.node.body) {
+        result = emitInstruction(f, step, unitSymbol, funcSymbol, undefined);
+        if (result[0] == 'return') {
+          break;
+        }
+      }
+      if (result != null) {
+        if (result[0] == 'expr') {
+          f.writeInst(`ret ${result[1]} ${result[2]}`);
+        }
+        if (result[0] == 'none') {
+          f.writeInst(`ret void`);
+        }
+      }
+      return ['none'];
+    }
     // case 'FuncParameterNode':
     // case 'FunctionDeclNode':
     // case 'TypeRefNode':
@@ -162,7 +154,8 @@ function emitInstruction(
 
       let reachable = true;
       for (const step of node.body) {
-        const result = emitInstruction(f, step, unitSymbol, funcSymbol, { loopEntryBlock: condBlock, loopEndBlock: afterBlock });
+        const loopInfo = { loopEntryBlock: condBlock, loopEndBlock: afterBlock };
+        const result = emitInstruction(f, step, unitSymbol, funcSymbol, loopInfo);
         if (result[0] == 'return' || result[0] == 'break' || result[0] == 'continue') {
           reachable = false;
           break;

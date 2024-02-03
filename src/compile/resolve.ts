@@ -1,6 +1,9 @@
 import { SyntaxNode, UnitNode } from './syntax-node.js';
-import { BlockSymbol, ContainerSymbol, FunctionParamSymbol, FunctionSymbol, SymbolTable, TypeSymbol, UnitSymbol, VariableSymbol, WhileSymbol } from './semantic-node.js';
 import { PrimitiveType } from './type.js';
+import {
+  BlockSymbol, ContainerSymbol, FunctionParamSymbol, FunctionSymbol, SymbolTable, TypeSymbol, UnitSymbol,
+  VariableSymbol, WhileSymbol
+} from './semantic-node.js';
 
 // 宣言ノードに対してsemantic nodeを生成します。
 // 参照ノードの名前を解決しsemantic nodeと関連付けます。
