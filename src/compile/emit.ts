@@ -14,8 +14,11 @@ export function emit(unitSymbol: UnitSymbol): string {
         const f = new FunctionContext();
         emitInstruction(f, funcSymbol.node, unitSymbol, funcSymbol, undefined);
         // emit code
-        let code = '';
-        code += `define i32 @${ funcSymbol.name }() {\n`;
+        const args = funcSymbol.node.parameters
+          .map(x => `i32 %${ x.name }`)
+          .join(', ');
+        code += '\n';
+        code += `define i32 @${ funcSymbol.name }(${ args }) {\n`;
         for (const [blockId, block] of f.blocks) {
           code += `${blockId}:\n`;
           // エントリブロックの最初でスタックを確保
@@ -58,10 +61,10 @@ function emitInstruction(
     case 'FunctionDeclNode': {
       // add entry block
       const entryBlock = f.createBlock('entry');
-      f.currentBlock = entryBlock;
 
+      f.currentBlock = entryBlock;
       let result;
-      for (const step of funcSymbol.node.body) {
+      for (const step of node.body) {
         result = emitInstruction(f, step, unitSymbol, funcSymbol, undefined);
         if (result[0] == 'return') {
           break;
