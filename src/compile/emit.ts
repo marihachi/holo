@@ -71,6 +71,12 @@ function emitFunctionDecl(f: FunctionContext, unitSymbol: UnitSymbol, funcSymbol
   return code;
 }
 
+/*
+emitInstruction関数の戻り値のEmitResultで、そのノードが値を必ず返すのかどうかや、最後にreturnするのかどうか、
+値を返さないなどの情報を親ノードに伝えることができます。
+これにより、例えば親ノード側でret命令の挿入が必要なのかを判断できます。
+*/
+
 function emitInstruction(
   f: FunctionContext,
   node: SyntaxNode,
@@ -351,7 +357,19 @@ function emitInstruction(
         return ['none'];
       }
     }
-    // case 'CallNode':
+    case 'CallNode': {
+      const args: EmitResult[] = [];
+      for (let i = 0; i < node.args.length; i++) {
+        const argResult = emitInstruction(f, node.args[i], unitSymbol, funcSymbol, loop);
+        args.push(argResult);
+      }
+
+      const exprSymbol = unitSymbol.nodeTable.get(node.expr)! as FunctionSymbol;
+      const resultReg = f.createLocalId(`call_ret`);
+      f.writeInst(`%${resultReg} = call i32 @${exprSymbol.name}(${args.map(x => `${x[1]} ${x[2]}`).join(', ')})`);
+
+      return ['expr', 'i32', `%${resultReg}`];
+    }
   }
   throw new Error('generate code failure');
 }
