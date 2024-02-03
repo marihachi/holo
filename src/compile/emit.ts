@@ -1,69 +1,6 @@
 import { FunctionSymbol, UnitSymbol, VariableSymbol } from './semantic-node.js';
 import { SyntaxNode, isExpressionNode } from './syntax-node.js';
 
-class FunctionContext {
-  blocks: Map<string, BasicBlock> = new Map();
-  currentBlock: BasicBlock | undefined;
-  allocationArea: string[] = [];
-  private localIdSet: Set<string> = new Set();
-  private localIdCache: { name: string, index: number } | undefined;
-  private blockIdSet: Set<string> = new Set();
-  private blockIdCache: { name: string, index: number } | undefined;
-
-  createLocalId(name: string): string {
-    if (!this.localIdSet.has(name)) {
-      this.localIdSet.add(name);
-      return name;
-    }
-    let index = 0;
-    if (this.localIdCache?.name == name) {
-      index = this.localIdCache.index + 1;
-    }
-    while (this.localIdSet.has(name + index)) {
-      index++;
-    }
-    this.localIdSet.add(name + index);
-    this.localIdCache = { name, index };
-    return name + index;
-  }
-
-  createBlockId(name: string): string {
-    if (!this.blockIdSet.has(name)) {
-      this.blockIdSet.add(name);
-      return name;
-    }
-    let index = 0;
-    if (this.blockIdCache?.name == name) {
-      index = this.blockIdCache.index + 1;
-    }
-    while (this.blockIdSet.has(name + index)) {
-      index++;
-    }
-    this.blockIdSet.add(name + index);
-    this.blockIdCache = { name, index };
-    return name + index;
-  }
-
-  createBlock(blockId: string): BasicBlock {
-    let block = new BasicBlock(blockId);
-    this.blocks.set(blockId, block);
-    return block;
-  }
-
-  writeInst(inst: string) {
-    if (this.currentBlock == null) return;
-    this.currentBlock.instructions.push(inst);
-  }
-}
-
-class BasicBlock {
-  instructions: string[] = [];
-
-  constructor(
-    public blockId: string
-  ) {}
-}
-
 export function emit(unitSymbol: UnitSymbol): string {
   let code = '';
 
@@ -128,15 +65,6 @@ function emitFunction(f: FunctionContext, unitSymbol: UnitSymbol, funcSymbol: Fu
   return code;
 }
 
-type EmitResult =
-  | ['none']
-  | ['return']
-  | ['return', string, string] // type, operand
-  | ['expr', string, string]; // type, operand
-
-/**
- * 命令を生成する。
-*/
 function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitSymbol, funcSymbol: FunctionSymbol): EmitResult {
   switch (node.kind) {
     case 'VariableDeclNode': {
@@ -363,4 +291,73 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
     }
   }
   throw new Error('generate code failure');
+}
+
+type EmitResult =
+  | ['none']
+  | ['return']
+  | ['return', string, string] // type, operand
+  | ['expr', string, string]; // type, operand
+
+class FunctionContext {
+  blocks: Map<string, BasicBlock> = new Map();
+  currentBlock: BasicBlock | undefined;
+  allocationArea: string[] = [];
+  private localIdSet: Set<string> = new Set();
+  private localIdCache: { name: string, index: number } | undefined;
+  private blockIdSet: Set<string> = new Set();
+  private blockIdCache: { name: string, index: number } | undefined;
+
+  createLocalId(name: string): string {
+    if (!this.localIdSet.has(name)) {
+      this.localIdSet.add(name);
+      return name;
+    }
+    let index = 0;
+    if (this.localIdCache?.name == name) {
+      index = this.localIdCache.index + 1;
+    }
+    while (this.localIdSet.has(name + index)) {
+      index++;
+    }
+    this.localIdSet.add(name + index);
+    this.localIdCache = { name, index };
+    return name + index;
+  }
+
+  createBlockId(name: string): string {
+    if (!this.blockIdSet.has(name)) {
+      this.blockIdSet.add(name);
+      return name;
+    }
+    let index = 0;
+    if (this.blockIdCache?.name == name) {
+      index = this.blockIdCache.index + 1;
+    }
+    while (this.blockIdSet.has(name + index)) {
+      index++;
+    }
+    this.blockIdSet.add(name + index);
+    this.blockIdCache = { name, index };
+    return name + index;
+  }
+
+  createBlock(blockId: string): BasicBlock {
+    let block = new BasicBlock(blockId);
+    this.blocks.set(blockId, block);
+    return block;
+  }
+
+  writeInst(inst: string) {
+    if (this.currentBlock == null) return;
+    this.currentBlock.instructions.push(inst);
+  }
+}
+
+class BasicBlock {
+  instructions: string[] = [];
+
+  constructor(
+    public blockId: string
+  ) {}
 }
