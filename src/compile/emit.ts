@@ -10,13 +10,14 @@ export function emit(unitSymbol: UnitSymbol): string {
   for (const decl of unitSymbol.node.decls) {
     switch (decl.kind) {
       case 'FunctionDeclNode': {
-        const funcSymbol = unitSymbol.nameTable.get(decl.name)! as FunctionSymbol;
+        const symbol = unitSymbol.nameTable.get(decl.name)! as FunctionSymbol;
         const f = new FunctionContext();
-        code += '\n' + emitFunction(f, unitSymbol, funcSymbol);
+        code += '\n' + emitFunctionDecl(f, unitSymbol, symbol);
         break;
       }
       case 'VariableDeclNode': {
-        // TODO
+        const symbol = unitSymbol.nameTable.get(decl.name)! as VariableSymbol;
+        code += '\n' + emitVariableDecl(unitSymbol, symbol);
         break;
       }
     }
@@ -24,7 +25,12 @@ export function emit(unitSymbol: UnitSymbol): string {
   return code;
 }
 
-function emitFunction(f: FunctionContext, unitSymbol: UnitSymbol, funcSymbol: FunctionSymbol): string {
+function emitVariableDecl(unitSymbol: UnitSymbol, variableSymbol: VariableSymbol): string {
+  // TODO
+  return '';
+}
+
+function emitFunctionDecl(f: FunctionContext, unitSymbol: UnitSymbol, funcSymbol: FunctionSymbol): string {
   // add entry block
   const entryBlock = f.createBlock('entry');
   f.currentBlock = entryBlock;
