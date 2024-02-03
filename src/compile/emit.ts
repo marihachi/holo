@@ -93,8 +93,14 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
       }
       return ['none'];
     }
-    // case 'BreakNode':
-    // case 'ContinueNode':
+    case 'BreakNode': {
+      // TODO: instruction
+      return ['break'];
+    }
+    case 'ContinueNode': {
+      // TODO: instruction
+      return ['continue'];
+    }
     case 'ReturnNode': {
       if (node.expr != null) {
         const result = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
@@ -102,7 +108,7 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
           throw new Error('expression expected');
         }
         f.writeInst(`ret ${result[1]} ${result[2]}`);
-        return ['return', result[1], result[2]];
+        return ['return'];
       } else {
         f.writeInst('ret void');
         return ['return'];
@@ -117,7 +123,45 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
       f.writeInst(`store ${result[1]} ${result[2]}, ptr %${variableSymbol.registerName}`);
       return ['none'];
     }
-    // case 'WhileNode':
+    case 'WhileNode': {
+      const condBlock = f.createBlockId('while.cond');
+      const bodyBlock = f.createBlockId('while.body');
+      const afterBlock = f.createBlockId('while.after');
+
+      f.writeInst(`br label %${condBlock}`);
+
+      // cond block
+      f.currentBlock = f.createBlock(condBlock);
+
+      const conditionResult = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
+      if (conditionResult[0] != 'expr') {
+        throw new Error('expression expected');
+      }
+      const conditionReg = f.createLocalId('while_cond');
+      f.writeInst(`%${conditionReg} = icmp ne ${conditionResult[1]} ${conditionResult[2]}, 0`);
+      f.writeInst(`br i1 %${conditionReg}, label %${bodyBlock}, label %${afterBlock}`);
+
+      // body block
+      f.currentBlock = f.createBlock(bodyBlock);
+
+      let reachable = true;
+      for (const step of node.body) {
+        const result = emitInstruction(f, step, unitSymbol, funcSymbol);
+        if (result[0] == 'return') {
+          reachable = false;
+          break;
+        }
+      }
+
+      if (reachable) {
+        f.writeInst(`br label %${condBlock}`);
+      }
+
+      // after block
+      f.currentBlock = f.createBlock(afterBlock);
+
+      return ['none'];
+    }
     case 'ExpressionStatementNode': {
       const result = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
       if (result[0] == 'return') {
@@ -305,7 +349,8 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
 type EmitResult =
   | ['none']
   | ['return']
-  | ['return', string, string] // type, operand
+  | ['break']
+  | ['continue']
   | ['expr', string, string]; // type, operand
 
 class FunctionContext {
