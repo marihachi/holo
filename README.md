@@ -17,10 +17,13 @@ WIP!
 var x: int;
 
 fn main(argc: int, argv: char*[]): int {
-  var a: int;
-  a = 1;
+  var a: int = 1;
 
-  return 0;
+  return if (a == 1) {
+    0
+  } else {
+    1
+  };
 }
 ```
 
