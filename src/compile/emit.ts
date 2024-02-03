@@ -1,5 +1,5 @@
 import { FunctionSymbol, UnitSymbol, VariableSymbol } from './semantic-node.js';
-import { SyntaxNode, isExpressionNode } from './syntax-node.js';
+import { SyntaxNode } from './syntax-node.js';
 
 export function emit(unitSymbol: UnitSymbol): string {
   let code = '';
@@ -73,6 +73,9 @@ function emitFunctionDecl(f: FunctionContext, unitSymbol: UnitSymbol, funcSymbol
 
 function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitSymbol, funcSymbol: FunctionSymbol): EmitResult {
   switch (node.kind) {
+    // case 'FuncParameterNode':
+    // case 'FunctionDeclNode':
+    // case 'TypeRefNode':
     case 'VariableDeclNode': {
       const variableSymbol = unitSymbol.nodeTable.get(node)! as VariableSymbol;
       const ptrReg = f.createLocalId(`${node.name}_ptr`);
@@ -90,6 +93,38 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
       }
       return ['none'];
     }
+    // case 'BreakNode':
+    // case 'ContinueNode':
+    case 'ReturnNode': {
+      if (node.expr != null) {
+        const result = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
+        if (result[0] != 'expr') {
+          throw new Error('expression expected');
+        }
+        f.writeInst(`ret ${result[1]} ${result[2]}`);
+        return ['return', result[1], result[2]];
+      } else {
+        f.writeInst('ret void');
+        return ['return'];
+      }
+    }
+    case 'AssignNode': {
+      const variableSymbol = unitSymbol.nodeTable.get(node.target)! as VariableSymbol;
+      const result = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
+      if (result[0] != 'expr') {
+        throw new Error('expression expected');
+      }
+      f.writeInst(`store ${result[1]} ${result[2]}, ptr %${variableSymbol.registerName}`);
+      return ['none'];
+    }
+    // case 'WhileNode':
+    case 'ExpressionStatementNode': {
+      const result = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
+      if (result[0] == 'return') {
+        return result;
+      }
+      return ['none'];
+    }
     case 'NumberLiteralNode': {
       return ['expr', 'i32', node.value.toString()];
     }
@@ -100,9 +135,6 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
       f.writeInst(`%${valueReg} = load ${type}, ptr %${variableSymbol.registerName}`);
       return ['expr', type, `%${valueReg}`];
     }
-    // case 'TypeRefNode': {
-    //   break;
-    // }
     case 'BinaryNode': {
       const leftResult = emitInstruction(f, node.left, unitSymbol, funcSymbol);
       const rightResult = emitInstruction(f, node.right, unitSymbol, funcSymbol);
@@ -246,6 +278,7 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
         return ['return'];
       }
     }
+    // case 'SwitchNode':
     case 'BlockNode': {
       let lastExpr;
       for (let i = 0; i < node.body.length; i++) {
@@ -264,50 +297,7 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
         return ['none'];
       }
     }
-    // case 'CallNode': {
-    //   break;
-    // }
-    // case 'BreakNode': {
-    //   break;
-    // }
-    // case 'ContinueNode': {
-    //   break;
-    // }
-    case 'ReturnNode': {
-      if (node.expr != null) {
-        const result = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
-        if (result[0] != 'expr') {
-          throw new Error('expression expected');
-        }
-        f.writeInst(`ret ${result[1]} ${result[2]}`);
-        return ['return', result[1], result[2]];
-      } else {
-        f.writeInst('ret void');
-        return ['return'];
-      }
-    }
-    case 'AssignNode': {
-      const variableSymbol = unitSymbol.nodeTable.get(node.target)! as VariableSymbol;
-      const result = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
-      if (result[0] != 'expr') {
-        throw new Error('expression expected');
-      }
-      f.writeInst(`store ${result[1]} ${result[2]}, ptr %${variableSymbol.registerName}`);
-      return ['none'];
-    }
-    // case 'WhileNode': {
-    //   break;
-    // }
-    // case 'SwitchNode': {
-    //   break;
-    // }
-    case 'ExpressionStatementNode': {
-      const result = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
-      if (result[0] == 'return') {
-        return result;
-      }
-      return ['none'];
-    }
+    // case 'CallNode':
   }
   throw new Error('generate code failure');
 }
