@@ -37,7 +37,7 @@ function emitFunctionDecl(f: FunctionContext, unitSymbol: UnitSymbol, funcSymbol
 
   let result;
   for (const step of funcSymbol.node.body) {
-    result = emitInstruction(f, step, unitSymbol, funcSymbol);
+    result = emitInstruction(f, step, unitSymbol, funcSymbol, undefined);
     if (result[0] == 'return') {
       break;
     }
@@ -71,7 +71,13 @@ function emitFunctionDecl(f: FunctionContext, unitSymbol: UnitSymbol, funcSymbol
   return code;
 }
 
-function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitSymbol, funcSymbol: FunctionSymbol): EmitResult {
+function emitInstruction(
+  f: FunctionContext,
+  node: SyntaxNode,
+  unitSymbol: UnitSymbol,
+  funcSymbol: FunctionSymbol,
+  loop: { loopEntryBlock: string, loopEndBlock: string } | undefined,
+): EmitResult {
   switch (node.kind) {
     // case 'FuncParameterNode':
     // case 'FunctionDeclNode':
@@ -83,7 +89,7 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
       // レジスタ名をシンボルに記憶
       variableSymbol.registerName = ptrReg;
       if (node.expr != null) {
-        const result = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
+        const result = emitInstruction(f, node.expr, unitSymbol, funcSymbol, loop);
         if (result[0] == 'expr') {
           f.writeInst(`store ${result[1]} ${result[2]}, ptr %${variableSymbol.registerName}`);
         }
@@ -94,16 +100,20 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
       return ['none'];
     }
     case 'BreakNode': {
-      // TODO: instruction
+      if (loop != null) {
+        f.writeInst(`br label %${loop.loopEndBlock}`);
+      }
       return ['break'];
     }
     case 'ContinueNode': {
-      // TODO: instruction
+      if (loop != null) {
+        f.writeInst(`br label %${loop.loopEntryBlock}`);
+      }
       return ['continue'];
     }
     case 'ReturnNode': {
       if (node.expr != null) {
-        const result = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
+        const result = emitInstruction(f, node.expr, unitSymbol, funcSymbol, loop);
         if (result[0] != 'expr') {
           throw new Error('expression expected');
         }
@@ -116,7 +126,7 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
     }
     case 'AssignNode': {
       const variableSymbol = unitSymbol.nodeTable.get(node.target)! as VariableSymbol;
-      const result = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
+      const result = emitInstruction(f, node.expr, unitSymbol, funcSymbol, loop);
       if (result[0] != 'expr') {
         throw new Error('expression expected');
       }
@@ -133,7 +143,7 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
       // cond block
       f.currentBlock = f.createBlock(condBlock);
 
-      const conditionResult = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
+      const conditionResult = emitInstruction(f, node.expr, unitSymbol, funcSymbol, loop);
       if (conditionResult[0] != 'expr') {
         throw new Error('expression expected');
       }
@@ -146,8 +156,8 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
 
       let reachable = true;
       for (const step of node.body) {
-        const result = emitInstruction(f, step, unitSymbol, funcSymbol);
-        if (result[0] == 'return') {
+        const result = emitInstruction(f, step, unitSymbol, funcSymbol, { loopEntryBlock: condBlock, loopEndBlock: afterBlock });
+        if (result[0] == 'return' || result[0] == 'break' || result[0] == 'continue') {
           reachable = false;
           break;
         }
@@ -163,7 +173,7 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
       return ['none'];
     }
     case 'ExpressionStatementNode': {
-      const result = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
+      const result = emitInstruction(f, node.expr, unitSymbol, funcSymbol, loop);
       if (result[0] == 'return') {
         return result;
       }
@@ -180,8 +190,8 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
       return ['expr', type, `%${valueReg}`];
     }
     case 'BinaryNode': {
-      const leftResult = emitInstruction(f, node.left, unitSymbol, funcSymbol);
-      const rightResult = emitInstruction(f, node.right, unitSymbol, funcSymbol);
+      const leftResult = emitInstruction(f, node.left, unitSymbol, funcSymbol, loop);
+      const rightResult = emitInstruction(f, node.right, unitSymbol, funcSymbol, loop);
       if (leftResult[0] != 'expr') {
         throw new Error('expression expected');
       }
@@ -238,7 +248,7 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
       throw new Error('unsupported operation mode');
     }
     case 'UnaryNode': {
-      const result = emitInstruction(f, node.expr, unitSymbol, funcSymbol);
+      const result = emitInstruction(f, node.expr, unitSymbol, funcSymbol, loop);
       if (result[0] != 'expr') {
         throw new Error('expression expected');
       }
@@ -265,7 +275,7 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
       throw new Error('unsupported operation mode');
     }
     case 'IfNode': {
-      const conditionResult = emitInstruction(f, node.cond, unitSymbol, funcSymbol);
+      const conditionResult = emitInstruction(f, node.cond, unitSymbol, funcSymbol, loop);
       if (conditionResult[0] != 'expr') {
         throw new Error('expression expected');
       }
@@ -284,7 +294,7 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
       // then block
       let reachableThen = true;
       f.currentBlock = f.createBlock(thenBlock);
-      const thenResult = emitInstruction(f, node.thenExpr, unitSymbol, funcSymbol);
+      const thenResult = emitInstruction(f, node.thenExpr, unitSymbol, funcSymbol, loop);
       if (thenResult[0] == 'expr') {
         f.writeInst(`store ${thenResult[1]} ${thenResult[2]}, ptr %${brPtrReg}`);
         f.writeInst(`br label %${contBlock}`);
@@ -298,7 +308,7 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
       let reachableElse = true;
       f.currentBlock = f.createBlock(elseBlock);
       if (node.elseExpr != null) {
-        const elseResult = emitInstruction(f, node.elseExpr, unitSymbol, funcSymbol);
+        const elseResult = emitInstruction(f, node.elseExpr, unitSymbol, funcSymbol, loop);
         if (elseResult[0] == 'expr') {
           f.writeInst(`store ${elseResult[1]} ${elseResult[2]}, ptr %${brPtrReg}`);
           f.writeInst(`br label %${contBlock}`);
@@ -327,7 +337,7 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
       let lastExpr;
       for (let i = 0; i < node.body.length; i++) {
         const step = node.body[i];
-        const result = emitInstruction(f, step, unitSymbol, funcSymbol);
+        const result = emitInstruction(f, step, unitSymbol, funcSymbol, loop);
         if (result[0] == 'return') {
           return result;
         }
