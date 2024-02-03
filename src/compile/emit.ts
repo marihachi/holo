@@ -84,6 +84,9 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
         if (result[0] == 'expr') {
           f.writeInst(`store ${result[1]} ${result[2]}, ptr %${variableSymbol.registerName}`);
         }
+        if (result[0] == 'return') {
+          return result;
+        }
       }
       return ['none'];
     }
@@ -203,35 +206,45 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
       f.allocationArea.push(`%${brPtrReg} = alloca i32`);
 
       // then block
+      let reachableThen = true;
       f.currentBlock = f.createBlock(thenBlock);
       const thenResult = emitInstruction(f, node.thenExpr, unitSymbol, funcSymbol);
       if (thenResult[0] == 'expr') {
         f.writeInst(`store ${thenResult[1]} ${thenResult[2]}, ptr %${brPtrReg}`);
-      }
-      if (thenResult[0] != 'return') {
         f.writeInst(`br label %${contBlock}`);
+      } else if (thenResult[0] == 'none') {
+        f.writeInst(`br label %${contBlock}`);
+      } else {
+        reachableThen = false;
       }
 
       // else block
+      let reachableElse = true;
       f.currentBlock = f.createBlock(elseBlock);
       if (node.elseExpr != null) {
         const elseResult = emitInstruction(f, node.elseExpr, unitSymbol, funcSymbol);
         if (elseResult[0] == 'expr') {
           f.writeInst(`store ${elseResult[1]} ${elseResult[2]}, ptr %${brPtrReg}`);
-        }
-        if (elseResult[0] != 'return') {
           f.writeInst(`br label %${contBlock}`);
+        } else if (elseResult[0] == 'none') {
+          f.writeInst(`br label %${contBlock}`);
+        } else {
+          reachableElse = false;
         }
       } else {
         f.writeInst(`br label %${contBlock}`);
       }
 
-      // cont block
-      f.currentBlock = f.createBlock(contBlock);
-      const brReg = f.createLocalId('br_val');
-      f.writeInst(`%${brReg} = load i32, ptr %${brPtrReg}`);
+      if (reachableThen || reachableElse) {
+        // after block
+        f.currentBlock = f.createBlock(contBlock);
+        const brReg = f.createLocalId('br_val');
+        f.writeInst(`%${brReg} = load i32, ptr %${brPtrReg}`);
 
-      return ['expr', 'i32', `%${brReg}`];
+        return ['expr', 'i32', `%${brReg}`];
+      } else {
+        return ['return'];
+      }
     }
     case 'BlockNode': {
       let lastExpr;
@@ -241,7 +254,7 @@ function emitInstruction(f: FunctionContext, node: SyntaxNode, unitSymbol: UnitS
         if (result[0] == 'return') {
           return result;
         }
-        if (isExpressionNode(step) && i == node.body.length - 1) {
+        if (result[0] == 'expr' && i == node.body.length - 1) {
           lastExpr = result;
         }
       }
