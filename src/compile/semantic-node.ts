@@ -72,7 +72,7 @@ export class TypeSymbol {
   kind = 'TypeSymbol' as const;
   constructor(
     public name: string,
-    public type: Type | undefined,
+    public type: Type,
   ) {}
 }
 

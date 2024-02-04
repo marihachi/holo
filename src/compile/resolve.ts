@@ -19,8 +19,9 @@ export function resolve(ast: UnitNode): UnitSymbol {
 
 function setPrimitiveTypes(symbol: ContainerSymbol) {
   symbol.typeNameTable.set('int', new TypeSymbol('int', new PrimitiveType('int')));
-  symbol.typeNameTable.set('uint', new TypeSymbol('uint', new PrimitiveType('uint')));
-  symbol.typeNameTable.set('bool', new TypeSymbol('bool', new PrimitiveType('bool')));
+  //symbol.typeNameTable.set('uint', new TypeSymbol('uint', new PrimitiveType('uint')));
+  //symbol.typeNameTable.set('bool', new TypeSymbol('bool', new PrimitiveType('bool')));
+  symbol.typeNameTable.set('void', new TypeSymbol('void', new PrimitiveType('void')));
 }
 
 function resolveNode(node: SyntaxNode, parent: ContainerSymbol, nodeTable: SymbolTable<SyntaxNode>): void {

@@ -1,5 +1,23 @@
-import { FunctionSymbol, UnitSymbol, VariableSymbol } from './semantic-node.js';
+import { FunctionSymbol, TypeSymbol, UnitSymbol, VariableSymbol } from './semantic-node.js';
 import { SyntaxNode } from './syntax-node.js';
+
+function getTypeName(typeSymbol: TypeSymbol): string {
+  const type = typeSymbol.type;
+  switch (type.kind) {
+    case 'PrimitiveType': {
+      const primitiveKind = type.primitiveKind;
+      switch (primitiveKind) {
+        case 'int': return 'i32';
+        case 'void': return 'void';
+      }
+      break;
+    }
+    case 'PointerType': {
+      return 'ptr';
+    }
+  }
+  throw new Error('emit type name failure');
+}
 
 export function emit(unitSymbol: UnitSymbol): string {
   let code = '';
@@ -10,23 +28,27 @@ export function emit(unitSymbol: UnitSymbol): string {
   for (const decl of unitSymbol.node.decls) {
     switch (decl.kind) {
       case 'FunctionDeclNode': {
-        const funcSymbol = unitSymbol.nameTable.get(decl.name)! as FunctionSymbol;
+        const funcSymbol = unitSymbol.nodeTable.get(decl) as FunctionSymbol;
         if (funcSymbol.node.external) {
           // emit code
-          const args = funcSymbol.node.parameters
-            .map(x => `i32 %${ x.name }`)
-            .join(', ');
+          const args = funcSymbol.node.parameters.map(x => {
+            const argType = getTypeName(unitSymbol.nodeTable.get(x.typeRef!) as TypeSymbol);
+            return `${ argType } %${ x.name }`;
+          });
           code += '\n';
-          code += `declare i32 @${ funcSymbol.name }(${ args })\n`;
+          const retType = getTypeName(unitSymbol.nodeTable.get(decl.typeRef!) as TypeSymbol);
+          code += `declare ${ retType } @${ funcSymbol.name }(${ args.join(', ') })\n`;
         } else {
           const f = new FunctionContext();
           emitInstruction(f, funcSymbol.node, unitSymbol, funcSymbol, undefined);
           // emit code
-          const args = funcSymbol.node.parameters
-            .map(x => `i32 %${ x.name }`)
-            .join(', ');
+          const args = funcSymbol.node.parameters.map(x => {
+            const argType = getTypeName(unitSymbol.nodeTable.get(x.typeRef!) as TypeSymbol);
+            return `${ argType } %${ x.name }`;
+          });
           code += '\n';
-          code += `define i32 @${ funcSymbol.name }(${ args }) {\n`;
+          const retType = getTypeName(unitSymbol.nodeTable.get(decl.typeRef!) as TypeSymbol);
+          code += `define ${ retType } @${ funcSymbol.name }(${ args.join(', ') }) {\n`;
           for (const [blockId, block] of f.blocks) {
             if (blockId != 'entry') {
               code += '\n';
@@ -379,17 +401,22 @@ function emitInstruction(
       }
     }
     case 'CallNode': {
+      const calleeSymbol = unitSymbol.nodeTable.get(node.expr)! as FunctionSymbol;
+      const calleeNode = calleeSymbol.node;
+      const retType = getTypeName(unitSymbol.nodeTable.get(calleeNode.typeRef!) as TypeSymbol);
       const args: EmitResult[] = [];
       for (let i = 0; i < node.args.length; i++) {
         const argResult = emitInstruction(f, node.args[i], unitSymbol, funcSymbol, loop);
         args.push(argResult);
       }
-
-      const exprSymbol = unitSymbol.nodeTable.get(node.expr)! as FunctionSymbol;
-      const resultReg = f.createLocalId(`call_ret`);
-      f.writeInst(`%${resultReg} = call i32 @${exprSymbol.name}(${args.map(x => `${x[1]} ${x[2]}`).join(', ')})`);
-
-      return ['expr', 'i32', `%${resultReg}`];
+      if (retType == 'void') {
+        f.writeInst(`call void @${ calleeNode.name }(${args.map(x => `${ x[1] } ${ x[2] }`).join(', ')})`);
+        return ['none'];
+      } else {
+        const resultReg = f.createLocalId(`call_ret`);
+        f.writeInst(`%${resultReg} = call ${ retType } @${ calleeNode.name }(${args.map(x => `${ x[1] } ${ x[2] }`).join(', ')})`);
+        return ['expr', retType, `%${resultReg}`];
+      }
     }
   }
   throw new Error('emit llvm failure');

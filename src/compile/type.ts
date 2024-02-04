@@ -4,7 +4,7 @@ export type Type =
   | ArrayType
   | FunctionType;
 
-export type PrimitiveKind = 'int' | 'uint' | 'bool';
+export type PrimitiveKind = 'int' /* | 'uint' | 'bool' */ | 'void';
 
 export class PrimitiveType {
   kind = 'PrimitiveType' as const;
