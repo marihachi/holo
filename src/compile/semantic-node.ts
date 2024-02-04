@@ -25,7 +25,6 @@ export type SemanticSymbol =
   | UnitSymbol
   | FunctionSymbol
   | VariableSymbol
-  | FunctionParamSymbol
   | TypeSymbol
   | BlockSymbol
   | WhileSymbol;
@@ -65,15 +64,7 @@ export class VariableSymbol {
   registerName: string | undefined;
   constructor(
     public name: string,
-    public node: VariableDeclNode,
-  ) {}
-}
-
-export class FunctionParamSymbol {
-  kind = 'FunctionParamSymbol' as const;
-  constructor(
-    public name: string,
-    public node: FuncParameterNode,
+    public node: VariableDeclNode | FuncParameterNode,
   ) {}
 }
 

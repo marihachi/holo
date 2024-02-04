@@ -58,11 +58,21 @@ function emitInstruction(
   loop: { loopEntryBlock: string, loopEndBlock: string } | undefined,
 ): EmitResult {
   switch (node.kind) {
+    //case 'FuncParameterNode':
     case 'FunctionDeclNode': {
       // add entry block
       const entryBlock = f.createBlock('entry');
-
       f.currentBlock = entryBlock;
+
+      for (const parameter of node.parameters) {
+        const variableSymbol = unitSymbol.nodeTable.get(parameter)! as VariableSymbol;
+        const ptrReg = f.createLocalId(`${parameter.name}_ptr`);
+        f.allocationArea.push(`%${ptrReg} = alloca i32`);
+        f.writeInst(`store i32 %${parameter.name}, ptr %${ptrReg}`);
+        // レジスタ名をシンボルに記憶
+        variableSymbol.registerName = ptrReg;
+      }
+
       let result;
       for (const step of node.body) {
         result = emitInstruction(f, step, unitSymbol, funcSymbol, undefined);
@@ -80,8 +90,6 @@ function emitInstruction(
       }
       return ['none'];
     }
-    // case 'FuncParameterNode':
-    // case 'FunctionDeclNode':
     // case 'TypeRefNode':
     case 'VariableDeclNode': {
       const variableSymbol = unitSymbol.nodeTable.get(node)! as VariableSymbol;

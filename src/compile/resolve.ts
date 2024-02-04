@@ -1,7 +1,7 @@
 import { SyntaxNode, UnitNode } from './syntax-node.js';
 import { PrimitiveType } from './type.js';
 import {
-  BlockSymbol, ContainerSymbol, FunctionParamSymbol, FunctionSymbol, SymbolTable, TypeSymbol, UnitSymbol,
+  BlockSymbol, ContainerSymbol, FunctionSymbol, SymbolTable, TypeSymbol, UnitSymbol,
   VariableSymbol, WhileSymbol
 } from './semantic-node.js';
 
@@ -56,7 +56,7 @@ function resolveNode(node: SyntaxNode, parent: ContainerSymbol, nodeTable: Symbo
         throw new Error(`identifier "${node.name}" is already exists`);
       }
 
-      const symbol = new FunctionParamSymbol(node.name, node);
+      const symbol = new VariableSymbol(node.name, node);
       parent.nameTable.set(node.name, symbol);
       nodeTable.set(node, symbol);
 
