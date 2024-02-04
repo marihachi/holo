@@ -345,6 +345,9 @@ export class Scanner implements ITokenStream {
       case 'else': {
         return TOKEN(TokenKind.Else, loc, { });
       }
+      case 'external': {
+        return TOKEN(TokenKind.External, loc, { });
+      }
       case 'fn': {
         return TOKEN(TokenKind.Fn, loc, { });
       }

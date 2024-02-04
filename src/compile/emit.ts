@@ -11,30 +11,39 @@ export function emit(unitSymbol: UnitSymbol): string {
     switch (decl.kind) {
       case 'FunctionDeclNode': {
         const funcSymbol = unitSymbol.nameTable.get(decl.name)! as FunctionSymbol;
-        const f = new FunctionContext();
-        emitInstruction(f, funcSymbol.node, unitSymbol, funcSymbol, undefined);
-        // emit code
-        const args = funcSymbol.node.parameters
-          .map(x => `i32 %${ x.name }`)
-          .join(', ');
-        code += '\n';
-        code += `define i32 @${ funcSymbol.name }(${ args }) {\n`;
-        for (const [blockId, block] of f.blocks) {
-          if (blockId != 'entry') {
-            code += '\n';
-          }
-          code += `${blockId}:\n`;
-          // エントリブロックの最初でスタックを確保
-          if (blockId == 'entry') {
-            for (const inst of f.allocationArea) {
+        if (funcSymbol.node.external) {
+          // emit code
+          const args = funcSymbol.node.parameters
+            .map(x => `i32 %${ x.name }`)
+            .join(', ');
+          code += '\n';
+          code += `declare i32 @${ funcSymbol.name }(${ args })\n`;
+        } else {
+          const f = new FunctionContext();
+          emitInstruction(f, funcSymbol.node, unitSymbol, funcSymbol, undefined);
+          // emit code
+          const args = funcSymbol.node.parameters
+            .map(x => `i32 %${ x.name }`)
+            .join(', ');
+          code += '\n';
+          code += `define i32 @${ funcSymbol.name }(${ args }) {\n`;
+          for (const [blockId, block] of f.blocks) {
+            if (blockId != 'entry') {
+              code += '\n';
+            }
+            code += `${blockId}:\n`;
+            // エントリブロックの最初でスタックを確保
+            if (blockId == 'entry') {
+              for (const inst of f.allocationArea) {
+                code += `  ${inst}\n`;
+              }
+            }
+            for (const inst of block.instructions) {
               code += `  ${inst}\n`;
             }
           }
-          for (const inst of block.instructions) {
-            code += `  ${inst}\n`;
-          }
+          code += '}\n';
         }
-        code += '}\n';
         break;
       }
       case 'VariableDeclNode': {
@@ -77,7 +86,7 @@ function emitInstruction(
       }
 
       let result;
-      for (const step of node.body) {
+      for (const step of node.body!) {
         result = emitInstruction(f, step, unitSymbol, funcSymbol, undefined);
         if (result[0] == 'return') {
           break;

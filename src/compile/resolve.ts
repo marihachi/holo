@@ -46,8 +46,10 @@ function resolveNode(node: SyntaxNode, parent: ContainerSymbol, nodeTable: Symbo
       }
 
       // body
-      for (const child of node.body) {
-        resolveNode(child, symbol, nodeTable);
+      if (!node.external) {
+        for (const child of node.body!) {
+          resolveNode(child, symbol, nodeTable);
+        }
       }
       break;
     }

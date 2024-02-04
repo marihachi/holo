@@ -73,7 +73,8 @@ export class FunctionDeclNode {
     public name: string,
     public parameters: FuncParameterNode[],
     public typeRef: TypeRefNode | undefined,
-    public body: (ExpressionNode | StatementNode)[],
+    public body: (ExpressionNode | StatementNode)[] | undefined, // externalでない場合はbodyがある
+    public external: boolean,
     public loc: Loc,
   ) {}
 }

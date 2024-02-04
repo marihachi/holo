@@ -1,5 +1,9 @@
 import { error } from './util/error.js';
-import { AssignNode, BinaryNode, BinaryMode, BlockNode, BreakNode, CallNode, ContinueNode, ExpressionNode, ExpressionStatementNode, FuncParameterNode, FunctionDeclNode, IfNode, NumberLiteralNode, ReferenceNode, ReturnNode, StatementNode, SwitchNode, TypeRefNode, UnaryNode, UnaryMode, UnitNode, VariableDeclNode, WhileNode } from './syntax-node.js';
+import {
+  AssignNode, BinaryNode, BinaryMode, BlockNode, BreakNode, CallNode, ContinueNode, ExpressionNode, ExpressionStatementNode,
+  FuncParameterNode, FunctionDeclNode, IfNode, NumberLiteralNode, ReferenceNode, ReturnNode, StatementNode, SwitchNode, TypeRefNode,
+  UnaryNode, UnaryMode, UnitNode, VariableDeclNode, WhileNode
+} from './syntax-node.js';
 import { Scanner } from './scan.js';
 import { ITokenStream } from './stream/token-stream.js';
 import { TokenKind } from './token.js';
@@ -12,7 +16,8 @@ export function parse(input: string): UnitNode {
   const decls = [];
   while (s.getKind() != TokenKind.EOF) {
     switch (s.getKind()) {
-      case TokenKind.Fn: {
+      case TokenKind.Fn:
+      case TokenKind.External: {
         decls.push(parseFunctionDecl(s));
         break;
       }
@@ -235,6 +240,13 @@ function parseExpr(s: ITokenStream): ExpressionNode {
 
 function parseFunctionDecl(s: ITokenStream): FunctionDeclNode {
   const loc = s.getToken().loc;
+
+  let external = false;
+  if (s.getKind() == TokenKind.External) {
+    external = true;
+    s.next();
+  }
+
   s.nextWith(TokenKind.Fn);
 
   s.expect(TokenKind.Identifier);
@@ -249,9 +261,14 @@ function parseFunctionDecl(s: ITokenStream): FunctionDeclNode {
     retTypeRef = parseTypeRef(s);
   }
 
-  const body = parseBlock(s);
+  let body;
+  if (external) {
+    s.nextWith(TokenKind.SemiColon);
+  } else {
+    body = parseBlock(s);
+  }
 
-  return new FunctionDeclNode(name, params, retTypeRef, body, loc);
+  return new FunctionDeclNode(name, params, retTypeRef, body, external, loc);
 }
 
 function parseVariableDecl(s: ITokenStream): VariableDeclNode {

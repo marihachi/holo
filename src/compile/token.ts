@@ -88,6 +88,7 @@ export enum TokenKind {
   Default,
   Do,
   Else,
+  External,
   Fn,
   If,
   Return,
