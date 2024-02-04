@@ -11,16 +11,21 @@ export function emit(unitSymbol: UnitSymbol): string {
     switch (decl.kind) {
       case 'FunctionDeclNode': {
         const funcSymbol = unitSymbol.nameTable.get(decl.name)! as FunctionSymbol;
-        const f = new FunctionContext();
-        emitInstruction(f, funcSymbol.node, unitSymbol, funcSymbol, undefined);
-        // emit code
-        const args = funcSymbol.node.parameters
-          .map(x => `i32 %${ x.name }`)
-          .join(', ');
-        code += '\n';
         if (funcSymbol.node.external) {
+          // emit code
+          const args = funcSymbol.node.parameters
+            .map(x => `i32 %${ x.name }`)
+            .join(', ');
+          code += '\n';
           code += `declare i32 @${ funcSymbol.name }(${ args })\n`;
         } else {
+          const f = new FunctionContext();
+          emitInstruction(f, funcSymbol.node, unitSymbol, funcSymbol, undefined);
+          // emit code
+          const args = funcSymbol.node.parameters
+            .map(x => `i32 %${ x.name }`)
+            .join(', ');
+          code += '\n';
           code += `define i32 @${ funcSymbol.name }(${ args }) {\n`;
           for (const [blockId, block] of f.blocks) {
             if (blockId != 'entry') {
