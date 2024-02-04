@@ -23,6 +23,10 @@ export function parse(input: string): UnitNode {
       }
       case TokenKind.Var: {
         decls.push(parseVariableDecl(s));
+        break;
+      }
+      default: {
+        throw error(`unexpected token: ${TokenKind[s.getKind()]}`, loc);
       }
     }
   }
