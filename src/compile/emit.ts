@@ -20,6 +20,9 @@ export function emit(unitSymbol: UnitSymbol): string {
         code += '\n';
         code += `define i32 @${ funcSymbol.name }(${ args }) {\n`;
         for (const [blockId, block] of f.blocks) {
+          if (blockId != 'entry') {
+            code += '\n';
+          }
           code += `${blockId}:\n`;
           // エントリブロックの最初でスタックを確保
           if (blockId == 'entry') {
@@ -292,7 +295,7 @@ function emitInstruction(
 
       const thenBlock = f.createBlockId('if.then');
       const elseBlock = f.createBlockId('if.else');
-      const contBlock = f.createBlockId('if.after');
+      const endBlock = f.createBlockId('if.end');
 
       const conditionReg = f.createLocalId('cond');
       f.writeInst(`%${conditionReg} = icmp ne ${conditionResult[1]} ${conditionResult[2]}, 0`);
@@ -307,9 +310,9 @@ function emitInstruction(
       const thenResult = emitInstruction(f, node.thenExpr, unitSymbol, funcSymbol, loop);
       if (thenResult[0] == 'expr') {
         f.writeInst(`store ${thenResult[1]} ${thenResult[2]}, ptr %${brPtrReg}`);
-        f.writeInst(`br label %${contBlock}`);
+        f.writeInst(`br label %${endBlock}`);
       } else if (thenResult[0] == 'none') {
-        f.writeInst(`br label %${contBlock}`);
+        f.writeInst(`br label %${endBlock}`);
       } else {
         reachableThen = false;
       }
@@ -321,19 +324,19 @@ function emitInstruction(
         const elseResult = emitInstruction(f, node.elseExpr, unitSymbol, funcSymbol, loop);
         if (elseResult[0] == 'expr') {
           f.writeInst(`store ${elseResult[1]} ${elseResult[2]}, ptr %${brPtrReg}`);
-          f.writeInst(`br label %${contBlock}`);
+          f.writeInst(`br label %${endBlock}`);
         } else if (elseResult[0] == 'none') {
-          f.writeInst(`br label %${contBlock}`);
+          f.writeInst(`br label %${endBlock}`);
         } else {
           reachableElse = false;
         }
       } else {
-        f.writeInst(`br label %${contBlock}`);
+        f.writeInst(`br label %${endBlock}`);
       }
 
       if (reachableThen || reachableElse) {
         // after block
-        f.currentBlock = f.createBlock(contBlock);
+        f.currentBlock = f.createBlock(endBlock);
         const brReg = f.createLocalId('br_val');
         f.writeInst(`%${brReg} = load i32, ptr %${brPtrReg}`);
 
