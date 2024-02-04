@@ -49,7 +49,8 @@ function entry() {
   try {
     childProcess.execSync(`${clangPath} ${llCodePath} -o ${path.resolve(fileInfo.dir, fileInfo.name)}`);
   } catch(err) {
-    console.log('Failed to compile.');
+    console.log(err);
+    throw new Error('generate binary failure.');
   }
 }
 entry();

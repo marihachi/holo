@@ -335,7 +335,7 @@ function emitInstruction(
       }
 
       if (reachableThen || reachableElse) {
-        // after block
+        // end block
         f.currentBlock = f.createBlock(endBlock);
         const brReg = f.createLocalId('br_val');
         f.writeInst(`%${brReg} = load i32, ptr %${brPtrReg}`);
@@ -378,7 +378,7 @@ function emitInstruction(
       return ['expr', 'i32', `%${resultReg}`];
     }
   }
-  throw new Error('generate code failure');
+  throw new Error('emit llvm failure');
 }
 
 type EmitResult =
