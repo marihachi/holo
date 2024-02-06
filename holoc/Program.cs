@@ -1,5 +1,6 @@
 using System;
 using System.CommandLine;
+using holoc.Syntax;
 
 public class Program
 {
@@ -12,8 +13,13 @@ public class Program
 
         rootCommand.SetHandler((ctx) =>
         {
-            var inputValue = ctx.ParseResult.GetValueForArgument(inputArg);
+            var inputArgValue = ctx.ParseResult.GetValueForArgument(inputArg);
             // do something
+
+            Console.WriteLine($"input files: {inputArgValue.Length}");
+
+            var parser = new SyntaxParser();
+            parser.Parse("");
         });
 
         return rootCommand.InvokeAsync(args).Result;
