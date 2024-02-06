@@ -9,6 +9,7 @@
 !/debug/*.ho
 
 # user
+bin
 obj
 dist
 /temp
