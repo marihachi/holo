@@ -3,6 +3,7 @@
 
 # editor
 /.vscode
+.vs
 
 # holo
 /debug/*
