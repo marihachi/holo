@@ -1,14 +1,22 @@
 using System;
+using System.IO;
 
 namespace holoc.Syntax;
 
-public class SyntaxParserContext(SyntaxTokenReader reader)
+public class SyntaxParserContext
 {
-    private SyntaxTokenReader Reader = reader;
+    private SyntaxTokenReader Reader = new SyntaxTokenReader();
 
-    public SyntaxToken? Token { get; set; }
+    public ReadTokenResult? Result;
+    public bool? IsSuccess => Result?.IsSuccess;
+    public SyntaxToken? Token => Result?.Token;
     public SyntaxTokenKind? Kind => Token?.Kind;
-    public string? ErrorMessage { get; set; }
+    public string? Message => Result?.Message;
+
+    public void Initialize(Stream stream)
+    {
+        Reader.Initialize(stream);
+    }
 
     private Exception CreateUnexpectedError()
     {
@@ -17,15 +25,8 @@ public class SyntaxParserContext(SyntaxTokenReader reader)
 
     public bool Read()
     {
-        Token = null;
-        ErrorMessage = null;
-
-        var result = Reader.Read();
-
-        Token = result.Token;
-        ErrorMessage = result.Message;
-
-        return result.IsSuccess;
+        Result = Reader.Read();
+        return Result.IsSuccess;
     }
 
     public void Peek()

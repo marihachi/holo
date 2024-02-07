@@ -1,6 +1,5 @@
 using System;
-using System.IO;
-using System.Text;
+using System.IO.MemoryMappedFiles;
 
 namespace holoc.Syntax;
 
@@ -8,28 +7,25 @@ public class SyntaxParser
 {
     public void Parse(string input)
     {
-        var stream = new MemoryStream(1024);
+        using var mmf = MemoryMappedFile.CreateFromFile("debug/main.ho");
+        using var stream = mmf.CreateViewStream();
 
-        stream.Write(Encoding.UTF8.GetBytes("+"));
+        var ctx = new SyntaxParserContext();
+        ctx.Initialize(stream);
 
-        var tokenReader = new SyntaxTokenReader(stream);
-        var ctx = new SyntaxParserContext(tokenReader);
+        ctx.Read();
+        Console.WriteLine("IsSuccess: {0}", ctx.IsSuccess);
+        Console.WriteLine("Kind: {0}", ctx.Kind);
+        Console.WriteLine("Message: {0}", ctx.Message);
 
-        Console.WriteLine("result: {0}", ctx.Read());
-        Console.WriteLine("token: {0}", ctx.Token);
-        Console.WriteLine("kind: {0}", ctx.Kind);
-        Console.WriteLine("error: {0}", ctx.ErrorMessage);
+        ctx.Read();
+        Console.WriteLine("IsSuccess: {0}", ctx.IsSuccess);
+        Console.WriteLine("Kind: {0}", ctx.Kind);
+        Console.WriteLine("Message: {0}", ctx.Message);
 
-        stream.Write(Encoding.UTF8.GetBytes("*"));
-
-        Console.WriteLine("result: {0}", ctx.Read());
-        Console.WriteLine("token: {0}", ctx.Token);
-        Console.WriteLine("kind: {0}", ctx.Kind);
-        Console.WriteLine("error: {0}", ctx.ErrorMessage);
-
-        Console.WriteLine("result: {0}", ctx.Read());
-        Console.WriteLine("token: {0}", ctx.Token);
-        Console.WriteLine("kind: {0}", ctx.Kind);
-        Console.WriteLine("error: {0}", ctx.ErrorMessage);
+        ctx.Read();
+        Console.WriteLine("IsSuccess: {0}", ctx.IsSuccess);
+        Console.WriteLine("Kind: {0}", ctx.Kind);
+        Console.WriteLine("Message: {0}", ctx.Message);
     }
 }

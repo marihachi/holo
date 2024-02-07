@@ -1,71 +1,79 @@
+using System;
 using System.IO;
-using System.Text;
 
 namespace holoc.Syntax;
 
+public class TokenReaderSession(Stream stream)
+{
+    public StreamReader Reader { get; set; } = new StreamReader(stream);
+    public int Column { get; set; } = 1;
+    public int Line { get; set; } = 1;
+}
+
 public class SyntaxTokenReader
 {
-    private StreamReader SourceReader;
+    private TokenReaderSession? Session;
 
-    private int Column = 1;
-    private int Line = 1;
-
-    public SyntaxTokenReader(Stream stream)
+    public void Initialize(Stream stream)
     {
-        SourceReader = new StreamReader(stream);
+        Session = new TokenReaderSession(stream);
     }
 
     public ReadTokenResult Read()
     {
+        if (Session == null) {
+            throw new InvalidOperationException("not initialized");
+        }
+
         // NOTE: SourceReader.Read()したら必ず位置の更新を行う。
 
         while (true)
         {
             // ストリームの終わりに達していたら
-            if (SourceReader.EndOfStream)
+            if (Session.Reader.EndOfStream)
             {
                 return ReadTokenResult.Succeed(
-                    new SyntaxToken(SyntaxTokenKind.EOF, new CodeLocation(Column, Line))
+                    new SyntaxToken(SyntaxTokenKind.EOF, new CodeLocation(Session.Column, Session.Line))
                 );
             }
 
             // 1文字読み取る
-            var ch = (char)SourceReader.Read();
+            var ch = (char)Session.Reader.Read();
 
             // スペースのスキップ
             switch (ch)
             {
                 case ' ':
-                    Column += 1;
+                    Session.Column += 1;
                     continue;
                 case '\t':
-                    Column += 1;
+                    Session.Column += 1;
                     continue;
                 case '\n':
-                    Column = 1;
-                    Line += 1;
+                    Session.Column = 1;
+                    Session.Line += 1;
                     continue;
                 case '\r':
-                    if (!SourceReader.EndOfStream && (char)SourceReader.Peek() == '\n')
+                    if (!Session.Reader.EndOfStream && (char)Session.Reader.Peek() == '\n')
                     {
-                        SourceReader.Read();
-                        Column = 1;
-                        Line += 1;
+                        Session.Reader.Read();
+                        Session.Column = 1;
+                        Session.Line += 1;
                         continue;
                     }
                     return ReadTokenResult.Fail("unexpected char.");
             }
 
-            var location = new CodeLocation(Column, Line);
-             Column += 1;
+            var location = new CodeLocation(Session.Column, Session.Line);
+            Session.Column += 1;
 
             // 記号の読み取り
             switch (ch) {
                 case '*':
-                    if (!SourceReader.EndOfStream && (char)SourceReader.Peek() == '=')
+                    if (!Session.Reader.EndOfStream && (char)Session.Reader.Peek() == '=')
                     {
-                        SourceReader.Read();
-                        Column += 1;
+                        Session.Reader.Read();
+                        Session.Column += 1;
                         return ReadTokenResult.Succeed(
                             new SyntaxToken(SyntaxTokenKind.AsterEq, location)
                         );
@@ -77,10 +85,10 @@ public class SyntaxTokenReader
                         );
                     }
                 case '+':
-                    if (!SourceReader.EndOfStream && (char)SourceReader.Peek() == '=')
+                    if (!Session.Reader.EndOfStream && (char)Session.Reader.Peek() == '=')
                     {
-                        SourceReader.Read();
-                        Column += 1;
+                        Session.Reader.Read();
+                        Session.Column += 1;
                         return ReadTokenResult.Succeed(
                             new SyntaxToken(SyntaxTokenKind.PlusEq, location)
                         );
@@ -92,10 +100,10 @@ public class SyntaxTokenReader
                         );
                     }
                 case '-':
-                    if (!SourceReader.EndOfStream && (char)SourceReader.Peek() == '=')
+                    if (!Session.Reader.EndOfStream && (char)Session.Reader.Peek() == '=')
                     {
-                        SourceReader.Read();
-                        Column += 1;
+                        Session.Reader.Read();
+                        Session.Column += 1;
                         return ReadTokenResult.Succeed(
                             new SyntaxToken(SyntaxTokenKind.MinusEq, location)
                         );
@@ -107,10 +115,10 @@ public class SyntaxTokenReader
                         );
                     }
                 case '/':
-                    if (!SourceReader.EndOfStream && (char)SourceReader.Peek() == '=')
+                    if (!Session.Reader.EndOfStream && (char)Session.Reader.Peek() == '=')
                     {
-                        SourceReader.Read();
-                        Column += 1;
+                        Session.Reader.Read();
+                        Session.Column += 1;
                         return ReadTokenResult.Succeed(
                             new SyntaxToken(SyntaxTokenKind.SlashEq, location)
                         );
