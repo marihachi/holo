@@ -1,7 +1,7 @@
 using System;
 using System.CommandLine;
 using System.IO.MemoryMappedFiles;
-using holoc.Syntax;
+using Holo.Compiler.Syntax;
 
 public class Program
 {
@@ -12,20 +12,36 @@ public class Program
         var inputArg = new Argument<string[]>("input", "list of input files.");
         rootCommand.Add(inputArg);
 
-        rootCommand.SetHandler((ctx) =>
+        var outputOption = new Option<string>("-o", "output filename.");
+        rootCommand.Add(outputOption);
+
+        rootCommand.SetHandler(ctx =>
         {
-            var inputArgValue = ctx.ParseResult.GetValueForArgument(inputArg);
-            // do something
+            var input = ctx.ParseResult.GetValueForArgument(inputArg);
+            var output = ctx.ParseResult.GetValueForOption(outputOption);
 
-            Console.WriteLine($"input files: {inputArgValue.Length}");
-
-            using var mmf = MemoryMappedFile.CreateFromFile("debug/main.ho");
-            using var stream = mmf.CreateViewStream();
-
-            var parser = new SyntaxParser();
-            parser.Parse(stream);
+            ProcessCommand(input, output);
         });
 
         return rootCommand.InvokeAsync(args).Result;
+    }
+
+    static void ProcessCommand(string[] input, string? output)
+    {
+        var parser = new Parser();
+
+        foreach (var filepath in input)
+        {
+            // open a file as MMF stream
+            using var mmf = MemoryMappedFile.CreateFromFile(filepath);
+            using var stream = mmf.CreateViewStream();
+
+            // parse file
+            var unitNode = parser.Parse(stream);
+
+            // TODO: resolve
+
+            // TODO: emit LLVM
+        }
     }
 }

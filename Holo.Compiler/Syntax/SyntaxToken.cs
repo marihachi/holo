@@ -1,17 +1,19 @@
-namespace holoc.Syntax;
+using System;
+
+namespace Holo.Compiler.Syntax;
 
 public class SyntaxToken (
-    SyntaxTokenKind kind,
-    CodeLocation location,
+    TokenKind kind,
+    TokenLocation location,
     object? value = null
     )
 {
-    public SyntaxTokenKind Kind { get; set; } = kind;
-    public CodeLocation Location { get; set; } = location;
+    public TokenKind Kind { get; set; } = kind;
+    public TokenLocation Location { get; set; } = location;
     public object? Value { get; set; } = value;
 }
 
-public enum SyntaxTokenKind
+public enum TokenKind
 {
     EOF,
     Identifier,
@@ -111,11 +113,8 @@ public enum SyntaxTokenKind
     While,
 }
 
-public class CodeLocation (
-    int column,
-    int line
-    )
+public struct TokenLocation(int column, int line)
 {
-    public int Column { get; set; } = column;
-    public int Line { get; set; } = line;
+    public int Column = column;
+    public int Line = line;
 }

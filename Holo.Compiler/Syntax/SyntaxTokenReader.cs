@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace holoc.Syntax;
+namespace Holo.Compiler.Syntax;
 
 public class SyntaxTokenReader
 {
@@ -26,7 +26,7 @@ public class SyntaxTokenReader
             if (Session.Reader.EndOfStream)
             {
                 return ReadResult.Succeed(
-                    new SyntaxToken(SyntaxTokenKind.EOF, new CodeLocation(Session.Column, Session.Line))
+                    new SyntaxToken(TokenKind.EOF, new TokenLocation(Session.Column, Session.Line))
                 );
             }
 
@@ -57,7 +57,7 @@ public class SyntaxTokenReader
                     return ReadResult.Fail("unexpected char.");
             }
 
-            var location = new CodeLocation(Session.Column, Session.Line);
+            var location = new TokenLocation(Session.Column, Session.Line);
             Session.Column += 1;
 
             // 記号の読み取り
@@ -68,13 +68,13 @@ public class SyntaxTokenReader
                         Session.Reader.Read();
                         Session.Column += 1;
                         return ReadResult.Succeed(
-                            new SyntaxToken(SyntaxTokenKind.AsterEq, location)
+                            new SyntaxToken(TokenKind.AsterEq, location)
                         );
                     }
                     else
                     {
                         return ReadResult.Succeed(
-                            new SyntaxToken(SyntaxTokenKind.Asterisk, location)
+                            new SyntaxToken(TokenKind.Asterisk, location)
                         );
                     }
                 case '+':
@@ -83,13 +83,13 @@ public class SyntaxTokenReader
                         Session.Reader.Read();
                         Session.Column += 1;
                         return ReadResult.Succeed(
-                            new SyntaxToken(SyntaxTokenKind.PlusEq, location)
+                            new SyntaxToken(TokenKind.PlusEq, location)
                         );
                     }
                     else
                     {
                         return ReadResult.Succeed(
-                            new SyntaxToken(SyntaxTokenKind.Plus, location)
+                            new SyntaxToken(TokenKind.Plus, location)
                         );
                     }
                 case '-':
@@ -98,13 +98,13 @@ public class SyntaxTokenReader
                         Session.Reader.Read();
                         Session.Column += 1;
                         return ReadResult.Succeed(
-                            new SyntaxToken(SyntaxTokenKind.MinusEq, location)
+                            new SyntaxToken(TokenKind.MinusEq, location)
                         );
                     }
                     else
                     {
                         return ReadResult.Succeed(
-                            new SyntaxToken(SyntaxTokenKind.Minus, location)
+                            new SyntaxToken(TokenKind.Minus, location)
                         );
                     }
                 case '/':
@@ -113,13 +113,13 @@ public class SyntaxTokenReader
                         Session.Reader.Read();
                         Session.Column += 1;
                         return ReadResult.Succeed(
-                            new SyntaxToken(SyntaxTokenKind.SlashEq, location)
+                            new SyntaxToken(TokenKind.SlashEq, location)
                         );
                     }
                     else
                     {
                         return ReadResult.Succeed(
-                            new SyntaxToken(SyntaxTokenKind.Slash, location)
+                            new SyntaxToken(TokenKind.Slash, location)
                         );
                     }
             }

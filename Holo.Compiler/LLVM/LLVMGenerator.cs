@@ -1,12 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Holo.Compiler.LLVM
+namespace Holo.Compiler.LLVM;
+
+public class LLVMGenerator
 {
-    internal class LLVMGenerator
-    {
-    }
 }

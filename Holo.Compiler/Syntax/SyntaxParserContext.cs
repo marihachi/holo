@@ -1,16 +1,16 @@
 using System;
 using System.IO;
 
-namespace holoc.Syntax;
+namespace Holo.Compiler.Syntax;
 
-public class SyntaxParserContext
+public class ParserContext
 {
     private SyntaxTokenReader Reader = new SyntaxTokenReader();
 
     public SyntaxTokenReader.ReadResult? Result;
     public bool? IsSuccess => Result?.IsSuccess;
     public SyntaxToken? Token => Result?.Token;
-    public SyntaxTokenKind? Kind => Token?.Kind;
+    public TokenKind? Kind => Token?.Kind;
     public string? Message => Result?.Message;
 
     public void Initialize(Stream stream)
@@ -34,7 +34,7 @@ public class SyntaxParserContext
         throw new NotImplementedException();
     }
 
-    public void Expect(SyntaxTokenKind kind)
+    public void Expect(TokenKind kind)
     {
         if (Kind != kind)
         {
@@ -42,7 +42,7 @@ public class SyntaxParserContext
         }
     }
 
-    public void ReadAs(SyntaxTokenKind kind)
+    public void ReadAs(TokenKind kind)
     {
         Expect(kind);
         Read();
