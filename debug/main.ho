@@ -1,11 +1,14 @@
+external fn putn(x: int): void;
+
+fn mul(x: int, c: int): int {
+  if (c == 1)
+    x
+  else
+    x + mul(x, c - 1)
+}
+
 fn main(): int {
-  var x: int = 1 + 1;
-
-  x = 2;
-
-  if (x == 1) {
-    0
-  } else {
-    1 + 2
-  }
+  var x: int = mul(2, 20);
+  putn(x);
+  0
 }

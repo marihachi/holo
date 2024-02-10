@@ -23,34 +23,50 @@ function entry() {
   if (process.argv.length < 3) {
     throw new Error('no input files');
   }
-  const filepath = process.argv[2];
-  const fileInfo = path.parse(filepath);
-
   const clangPath = findClangPath();
   if (clangPath == null) {
     throw new Error('clang command not found');
   }
-
-  // load file
-  let sourceCode;
-  try {
-    sourceCode = fs.readFileSync(filepath, { encoding: 'utf-8' });
-  } catch (err) {
-    throw new Error('Failed to load a source file.');
+  const linkItems: string[] = [];
+  for (let i = 2; i < process.argv.length; i++) {
+    const inputFilename = process.argv[i];
+    const inputInfo = path.parse(inputFilename);
+    let linkPath;
+    switch (inputInfo.ext) {
+      case '.ho': {
+        let sourceCode;
+        try {
+          const inputPath = path.resolve(process.cwd(), inputFilename);
+          sourceCode = fs.readFileSync(inputPath, { encoding: 'utf-8' });
+        } catch (err) {
+          throw new Error('Failed to load a source file.');
+        }
+        const ast = parse(sourceCode);
+        const unitSymbol = resolve(ast);
+        typecheck(ast, unitSymbol);
+        const code = emit(unitSymbol);
+        const outputPath = path.resolve(process.cwd(), `${inputInfo.name}.ll`);
+        fs.writeFileSync(outputPath, code, { encoding: 'utf-8' });
+        linkPath = outputPath;
+        break;
+      }
+      case '.a': {
+        const inputPath = path.resolve(process.cwd(), inputFilename);
+        linkPath = inputPath;
+        break;
+      }
+      default: {
+        continue;
+      }
+    }
+    linkItems.push(linkPath);
   }
-
-  let ast = parse(sourceCode);
-  const unitSymbol = resolve(ast);
-  typecheck(ast, unitSymbol);
-  const code = emit(unitSymbol);
-  const llCodePath = path.resolve(fileInfo.dir, `${fileInfo.name}.ll`);
-  fs.writeFileSync(llCodePath, code, { encoding: 'utf-8' });
-
   try {
-    childProcess.execSync(`${clangPath} ${llCodePath} -o ${path.resolve(fileInfo.dir, fileInfo.name)}`);
+    const outputPath = path.resolve(process.cwd(), 'main');
+    childProcess.execSync(`${ clangPath } ${ linkItems.join(' ') } -o ${ outputPath }`);
   } catch(err) {
     console.log(err);
-    throw new Error('generate binary failure.');
+    throw new Error('compile failure.');
   }
 }
 entry();

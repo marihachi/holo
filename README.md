@@ -41,7 +41,7 @@ cd lib/
 cd ../
 
 # compile
-npm run holoc ./debug/main.ho ./lib/dist/system.ho ./lib/dist/system.a
+npm run holoc ./debug/main.ho ./lib/dist/system.a
 
 # run
 ./main
