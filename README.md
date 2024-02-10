@@ -35,11 +35,16 @@ fn main(argc: int, argv: char*[]): int {
 npm i
 npm run build
 
+# compile lib
+cd lib/
+./build.sh
+cd ../
+
 # compile
-npm run holoc ./debug/main.ho
+npm run holoc ./debug/main.ho ./lib/dist/system.a
 
 # run
-./debug/main
+./main
 ```
 
 ## Author
