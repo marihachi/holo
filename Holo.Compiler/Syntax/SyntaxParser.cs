@@ -14,7 +14,7 @@ public class Parser
         var node = new UnitNode();
         while (ctx.Kind != TokenKind.EOF)
         {
-            node.Declarations.Add(ParseFunctionDecl(ctx));
+            node.Body.Add(ParseFunctionDecl(ctx));
         }
 
         return node;
@@ -24,10 +24,10 @@ public class Parser
     {
         ctx.Read();
 
-        return new FunctionDeclNode();
+        return new FuncDeclarationNode();
     }
 
-    public ExpressionNode ParseExpression(ParserContext ctx)
+    public IExpressionNode ParseExpression(ParserContext ctx)
     {
         throw new NotImplementedException();
     }
