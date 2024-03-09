@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace Holo.Compiler.Syntax;
 
-public enum NodeKind
+public enum NodeKind : byte
 {
     Unit,
     FunctionDecl,
@@ -25,7 +25,7 @@ public enum NodeKind
     TypeReference,
 }
 
-public enum NodeMode
+public enum NodeMode : byte
 {
     None,
 
@@ -71,10 +71,8 @@ public class SyntaxNode
         };
     }
 
-    public static SyntaxNode CreateFunctionDecl(
-        string name,
-        List<SyntaxNode> body,
-        NodeLocation location)
+    public static SyntaxNode CreateFunctionDecl
+        (string name, List<SyntaxNode> body, NodeLocation location)
     {
         return new SyntaxNode
         {
@@ -85,10 +83,8 @@ public class SyntaxNode
         };
     }
 
-    public static SyntaxNode CreateVariableDecl(
-        string name,
-        SyntaxNode? initializer,
-        NodeLocation location)
+    public static SyntaxNode CreateVariableDecl
+        (string name, SyntaxNode? initializer, NodeLocation location)
     {
         return new SyntaxNode
         {
@@ -99,10 +95,8 @@ public class SyntaxNode
         };
     }
 
-    public static SyntaxNode CreateWhileStatement(
-        SyntaxNode condition,
-        List<SyntaxNode> body,
-        NodeLocation location)
+    public static SyntaxNode CreateWhileStatement
+        (SyntaxNode condition, List<SyntaxNode> body, NodeLocation location)
     {
         return new SyntaxNode
         {
@@ -113,11 +107,8 @@ public class SyntaxNode
         };
     }
 
-    public static SyntaxNode CreateAssignStatement(
-        NodeMode assignMode,
-        SyntaxNode assignee,
-        SyntaxNode expression,
-        NodeLocation location)
+    public static SyntaxNode CreateAssignStatement
+        (NodeMode assignMode, SyntaxNode assignee, SyntaxNode expression, NodeLocation location)
     {
         return new SyntaxNode
         {
@@ -156,10 +147,8 @@ public class SyntaxNode
         };
     }
 
-    public static SyntaxNode CreateSwitchStatement(
-        SyntaxNode condition,
-        List<SyntaxNode> arms,
-        NodeLocation location)
+    public static SyntaxNode CreateSwitchStatement
+        (SyntaxNode condition, List<SyntaxNode> arms, NodeLocation location)
     {
         return new SyntaxNode
         {
@@ -170,11 +159,8 @@ public class SyntaxNode
         };
     }
 
-    public static SyntaxNode CreateSwitchArm(
-        bool isDefaultArm,
-        SyntaxNode? condition,
-        SyntaxNode expression,
-        NodeLocation location)
+    public static SyntaxNode CreateSwitchArm
+        (bool isDefaultArm, SyntaxNode? condition, SyntaxNode expression, NodeLocation location)
     {
         return new SyntaxNode
         {
@@ -217,10 +203,8 @@ public class SyntaxNode
         };
     }
 
-    public static SyntaxNode CreateBinaryOperation(
-        SyntaxNode left,
-        SyntaxNode right,
-        NodeLocation location)
+    public static SyntaxNode CreateBinaryOperation
+        (SyntaxNode left, SyntaxNode right, NodeLocation location)
     {
         return new SyntaxNode
         {
@@ -230,11 +214,8 @@ public class SyntaxNode
         };
     }
 
-    public static SyntaxNode CreateIf(
-        SyntaxNode condition,
-        SyntaxNode thenExpression,
-        SyntaxNode? elseExpression,
-        NodeLocation location)
+    public static SyntaxNode CreateIf
+        (SyntaxNode condition, SyntaxNode thenExpression, SyntaxNode? elseExpression, NodeLocation location)
     {
         return new SyntaxNode
         {
@@ -266,10 +247,8 @@ public class SyntaxNode
         };
     }
 
-    public static SyntaxNode CreateCall(
-        SyntaxNode callee,
-        List<SyntaxNode> args,
-        NodeLocation location)
+    public static SyntaxNode CreateCall
+        (SyntaxNode callee, List<SyntaxNode> args, NodeLocation location)
     {
         return new SyntaxNode
         {
