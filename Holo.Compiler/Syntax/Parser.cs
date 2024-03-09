@@ -6,38 +6,112 @@ namespace Holo.Compiler.Syntax;
 
 public class Parser
 {
-    public SyntaxNode Parse(Stream stream)
+    private TokenReader Reader = new TokenReader();
+
+    public bool IsSuccess => Result != null;
+    public SyntaxNode? Result;
+    public List<string> Errors = [];
+
+    private void GenerateError(string message)
     {
-        var ctx = new ParserContext();
-        ctx.Initialize(stream);
-        ctx.Read();
+        Errors.Add(message);
+    }
 
-        var beginToken = ctx.Token;
+    private void GenerateReadError()
+    {
+        GenerateError(Reader.Message);
+    }
 
-        var body = new List<SyntaxNode>();
+    private void GenerateUnexpectedTokenError()
+    {
+        GenerateError(Reader.CreateUnexpectedError());
+    }
 
-        while (ctx.Kind != TokenKind.EOF)
+    public void Parse(Stream stream)
+    {
+        // clear states
+        Reader.Initialize(stream);
+        Result = null;
+        Errors.Clear();
+
+        if (!Reader.Read())
         {
-            body.Add(ParseFunctionDecl(ctx));
+            GenerateReadError();
+            return;
         }
 
-        var endToken = ctx.Token;
-
-        return SyntaxNode.CreateUnit(body, new NodeLocation(beginToken!.Location, endToken!.Location));
+        ParseUnit();
     }
 
-    public SyntaxNode ParseFunctionDecl(ParserContext ctx)
+    private void ParseUnit()
     {
-        var beginToken = ctx.Token;
+        if (!Reader.Read())
+        {
+            GenerateReadError();
+            return;
+        }
+
+        var beginToken = Reader.Token;
 
         var body = new List<SyntaxNode>();
+        while (Reader.TokenKind != TokenKind.EOF)
+        {
+            ParseFunctionDecl();
+            if (!IsSuccess) return;
 
-        var endToken = ctx.Token;
+            body.Add(Result!);
+        }
 
-        return SyntaxNode.CreateFunctionDecl("f", body, new NodeLocation(beginToken!.Location, endToken!.Location));
+        var endToken = Reader.Token;
+
+        Result = SyntaxNode.CreateUnit(body, new NodeLocation(beginToken.Location, endToken.Location));
     }
 
-    public SyntaxNode ParseExpression(ParserContext ctx)
+    private void ParseFunctionDecl()
+    {
+        var body = new List<SyntaxNode>();
+        var beginToken = Reader.Token;
+
+        if (Reader.TokenKind != TokenKind.Fn)
+        {
+            GenerateUnexpectedTokenError();
+            return;
+        }
+
+        if (!Reader.Read())
+        {
+            GenerateReadError();
+            return;
+        }
+
+        if (Reader.TokenKind != TokenKind.Identifier)
+        {
+            GenerateUnexpectedTokenError();
+            return;
+        }
+
+        var name = (string)Reader.Token.Value!;
+
+        if (!Reader.Read())
+        {
+            GenerateReadError();
+            return;
+        }
+
+        // TODO: parse body
+
+        var endToken = Reader.Token;
+
+        Result = SyntaxNode.CreateFunctionDecl(name, body, new NodeLocation(beginToken.Location, endToken.Location));
+        return;
+    }
+
+    private void ParseExpression()
+    {
+        throw new NotImplementedException();
+    }
+
+    private void ParseStatement()
     {
         throw new NotImplementedException();
     }

@@ -5,6 +5,39 @@ namespace Holo.Compiler.Syntax;
 
 public class TokenReader
 {
+    private TokenReaderBase Base = new TokenReaderBase();
+
+    private ReadTokenResult? _Result;
+    public ReadTokenResult Result => _Result!;
+
+    public SyntaxToken Token => Result.Token!;
+    public TokenKind TokenKind => Token.Kind!;
+    public string Message => Result.Message!;
+
+    public void Initialize(Stream stream)
+    {
+        Base.Initialize(stream);
+    }
+
+    public string CreateUnexpectedError()
+    {
+        return $"unexpected token: {Result.Token.Kind}";
+    }
+
+    public bool Read()
+    {
+        _Result = Base.Read();
+        return _Result.IsSuccess;
+    }
+
+    public ReadTokenResult Peek()
+    {
+        throw new NotImplementedException();
+    }
+}
+
+public class TokenReaderBase
+{
     private TokenReaderSession? Session;
 
     public void Initialize(Stream stream)
@@ -167,9 +200,9 @@ public class TokenReaderSession(Stream stream)
 
 public class ReadTokenResult(bool isSuccess, SyntaxToken? token, string? message)
 {
-    public bool IsSuccess { get; set; } = isSuccess;
-    public SyntaxToken? Token { get; set; } = token;
-    public string? Message { get; set; } = message;
+    public bool IsSuccess => isSuccess;
+    public SyntaxToken Token => token!;
+    public string Message => message!;
 
     public static ReadTokenResult Succeed(SyntaxToken token)
     {
