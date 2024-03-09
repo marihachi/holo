@@ -27,10 +27,10 @@ public class SyntaxNode
 {
     public NodeKind Kind { get; set; }
     public NodeLocation Location { get; set; }
+    public List<SyntaxNode>? Operands { get; set; }
+    public List<SyntaxNode>? Body { get; set; }
     public string? Name { get; set; }
     public object? Value { get; set; }
-    public List<SyntaxNode>? Operand1 { get; set; }
-    public List<SyntaxNode>? Operand2 { get; set; }
 
     public static SyntaxNode CreateUnit(List<SyntaxNode> body, NodeLocation location)
     {
@@ -38,7 +38,7 @@ public class SyntaxNode
         {
             Kind = NodeKind.Unit,
             Location = location,
-            Operand1 = body,
+            Body = body,
         };
     }
 
@@ -49,7 +49,7 @@ public class SyntaxNode
             Kind = NodeKind.FunctionDecl,
             Location = location,
             Name = name,
-            Operand1 = body,
+            Body = body,
         };
     }
 
@@ -60,7 +60,7 @@ public class SyntaxNode
             Kind = NodeKind.VariableDecl,
             Location = location,
             Name = name,
-            Operand1 = initializer != null ? [initializer] : [],
+            Operands = initializer != null ? [initializer] : [],
         };
     }
 
@@ -70,8 +70,8 @@ public class SyntaxNode
         {
             Kind = NodeKind.While,
             Location = location,
-            Operand1 = [condition],
-            Operand2 = body,
+            Operands = [condition],
+            Body = body,
         };
     }
 
@@ -91,7 +91,7 @@ public class SyntaxNode
         {
             Kind = NodeKind.UnaryOperation,
             Location = location,
-            Operand1 = [expression],
+            Operands = [expression],
         };
     }
 
@@ -101,7 +101,7 @@ public class SyntaxNode
         {
             Kind = NodeKind.BinaryOperation,
             Location = location,
-            Operand1 = [left, right],
+            Operands = [left, right],
         };
     }
 
@@ -116,7 +116,7 @@ public class SyntaxNode
         {
             Kind = NodeKind.IfExpression,
             Location = location,
-            Operand1 = elseExpression != null
+            Operands = elseExpression != null
                 ? [condition, thenExpression, elseExpression]
                 : [condition, thenExpression],
         };
@@ -128,7 +128,7 @@ public class SyntaxNode
         {
             Kind = NodeKind.BlockExpression,
             Location = location,
-            Operand1 = body,
+            Body = body,
         };
     }
 
