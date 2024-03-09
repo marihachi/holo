@@ -5,9 +5,9 @@ namespace Holo.Compiler.Syntax;
 
 public class ParserContext
 {
-    private SyntaxTokenReader Reader = new SyntaxTokenReader();
+    private TokenReader Reader = new TokenReader();
 
-    public SyntaxTokenReader.ReadResult? Result;
+    public ReadTokenResult? Result;
     public bool? IsSuccess => Result?.IsSuccess;
     public SyntaxToken? Token => Result?.Token;
     public TokenKind? Kind => Token?.Kind;

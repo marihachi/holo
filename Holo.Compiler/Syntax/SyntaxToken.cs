@@ -1,12 +1,6 @@
-using System;
-
 namespace Holo.Compiler.Syntax;
 
-public class SyntaxToken (
-    TokenKind kind,
-    TokenLocation location,
-    object? value = null
-    )
+public class SyntaxToken(TokenKind kind, TokenLocation location, object? value = null)
 {
     public TokenKind Kind { get; set; } = kind;
     public TokenLocation Location { get; set; } = location;

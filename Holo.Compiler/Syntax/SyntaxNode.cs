@@ -2,134 +2,153 @@ using System.Collections.Generic;
 
 namespace Holo.Compiler.Syntax;
 
+public enum NodeKind
+{
+    Unit,
+    FunctionDecl,
+    VariableDecl,
+    While,
+    NumberLiteral,
+    UnaryOperation,
+    BinaryOperation,
+    IfExpression,
+    BlockExpression,
+    ReferenceExpression,
+    TypeReference,
+}
+
 public struct NodeLocation(TokenLocation begin, TokenLocation end)
 {
     public TokenLocation Begin = begin;
     public TokenLocation End = end;
 }
 
-public interface ISyntaxNode
+public class SyntaxNode
 {
-    NodeLocation Location { get; set; }
-}
+    public NodeKind Kind { get; set; }
+    public NodeLocation Location { get; set; }
+    public string? Name { get; set; }
+    public object? Value { get; set; }
+    public List<SyntaxNode>? Operand1 { get; set; }
+    public List<SyntaxNode>? Operand2 { get; set; }
 
-public interface ITopLevelNode {}
-public interface IStepNode {}
-public interface ITypeNode {}
+    public static SyntaxNode CreateUnit(List<SyntaxNode> body, NodeLocation location)
+    {
+        return new SyntaxNode
+        {
+            Kind = NodeKind.Unit,
+            Location = location,
+            Operand1 = body,
+        };
+    }
 
-public interface IStatementNode {}
-public interface IExpressionNode {}
+    public static SyntaxNode CreateFunctionDecl(string name, List<SyntaxNode> body, NodeLocation location)
+    {
+        return new SyntaxNode
+        {
+            Kind = NodeKind.FunctionDecl,
+            Location = location,
+            Name = name,
+            Operand1 = body,
+        };
+    }
 
-public interface IDeclarationNode
-{
-    string Name { get; set; }
-}
+    public static SyntaxNode CreateVariableDecl(string name, SyntaxNode? initializer, NodeLocation location)
+    {
+        return new SyntaxNode
+        {
+            Kind = NodeKind.VariableDecl,
+            Location = location,
+            Name = name,
+            Operand1 = initializer != null ? [initializer] : [],
+        };
+    }
 
-public class UnitNode(
-    List<ITopLevelNode> body,
-    NodeLocation location
-) : ISyntaxNode
-{
-    public List<ITopLevelNode> Body { get; } = body;
-    public NodeLocation Location { get; set; } = location;
-}
+    public static SyntaxNode CreateWhile(SyntaxNode condition, List<SyntaxNode> body, NodeLocation location)
+    {
+        return new SyntaxNode
+        {
+            Kind = NodeKind.While,
+            Location = location,
+            Operand1 = [condition],
+            Operand2 = body,
+        };
+    }
 
-public class FuncDeclarationNode(
-    string name,
-    List<IStepNode> body,
-    NodeLocation location
-) : ISyntaxNode, ITopLevelNode, IDeclarationNode
-{
-    public string Name { get; set; } = name;
-    public List<IStepNode> Body { get; } = body;
-    public NodeLocation Location { get; set; } = location;
-}
+    public static SyntaxNode CreateNumberLiteral(int value, NodeLocation location)
+    {
+        return new SyntaxNode
+        {
+            Kind = NodeKind.NumberLiteral,
+            Location = location,
+            Value = value,
+        };
+    }
 
-public class VariableDeclNode(
-    string name,
-    IExpressionNode? initializer,
-    NodeLocation location
-) : ISyntaxNode, IStepNode, IDeclarationNode
-{
-    public string Name { get; set; } = name;
-    public IExpressionNode? Initializer { get; set; } = initializer;
-    public NodeLocation Location { get; set; } = location;
-}
+    public static SyntaxNode CreateUnaryOperation(SyntaxNode expression, NodeLocation location)
+    {
+        return new SyntaxNode
+        {
+            Kind = NodeKind.UnaryOperation,
+            Location = location,
+            Operand1 = [expression],
+        };
+    }
 
-public class WhileNode(
-    IExpressionNode condition,
-    List<IStepNode> body,
-    NodeLocation location
-) : ISyntaxNode, IStepNode, IStatementNode
-{
-    public IExpressionNode Condition { get; set; } = condition;
-    public List<IStepNode> Body { get; } = body;
-    public NodeLocation Location { get; set; } = location;
-}
+    public static SyntaxNode CreateBinaryOperation(SyntaxNode left, SyntaxNode right, NodeLocation location)
+    {
+        return new SyntaxNode
+        {
+            Kind = NodeKind.BinaryOperation,
+            Location = location,
+            Operand1 = [left, right],
+        };
+    }
 
-public class NumberLiteralNode(
-    NodeLocation location
-) : ISyntaxNode, IStepNode, IExpressionNode
-{
-    public NodeLocation Location { get; set; } = location;
-}
+    public static SyntaxNode CreateIfExpression(
+        SyntaxNode condition,
+        SyntaxNode thenExpression,
+        SyntaxNode? elseExpression,
+        NodeLocation location
+    )
+    {
+        return new SyntaxNode
+        {
+            Kind = NodeKind.IfExpression,
+            Location = location,
+            Operand1 = elseExpression != null
+                ? [condition, thenExpression, elseExpression]
+                : [condition, thenExpression],
+        };
+    }
 
-public class UnaryOperationNode(
-    IExpressionNode expression,
-    NodeLocation location
-) : ISyntaxNode, IStepNode, IExpressionNode
-{
-    public IExpressionNode Expression { get; set; } = expression;
-    public NodeLocation Location { get; set; } = location;
-}
+    public static SyntaxNode CreateBlockExpression(List<SyntaxNode> body, NodeLocation location)
+    {
+        return new SyntaxNode
+        {
+            Kind = NodeKind.BlockExpression,
+            Location = location,
+            Operand1 = body,
+        };
+    }
 
-public class BinaryOperationNode(
-    IExpressionNode leftExpression,
-    IExpressionNode rightExpression,
-    NodeLocation location
-) : ISyntaxNode, IStepNode, IExpressionNode
-{
-    public IExpressionNode LeftExpression { get; set; } = leftExpression;
-    public IExpressionNode RightExpression { get; set; } = rightExpression;
-    public NodeLocation Location { get; set; } = location;
-}
+    public static SyntaxNode CreateReferenceExpression(string name, NodeLocation location)
+    {
+        return new SyntaxNode
+        {
+            Kind = NodeKind.ReferenceExpression,
+            Location = location,
+            Name = name,
+        };
+    }
 
-public class IfExpressionNode(
-    IExpressionNode conditionExpression,
-    IStepNode thenExpression,
-    IStepNode? elseExpression,
-    NodeLocation location
-) : ISyntaxNode, IStepNode, IExpressionNode
-{
-    public IExpressionNode ConditionExpression { get; set; } = conditionExpression;
-    public IStepNode ThenExpression { get; } = thenExpression;
-    public IStepNode? ElseExpression { get; } = elseExpression;
-    public NodeLocation Location { get; set; } = location;
-}
-
-public class BlockExpressionNode(
-    List<IStepNode> body,
-    NodeLocation location
-) : ISyntaxNode, IStepNode, IExpressionNode
-{
-    public List<IStepNode> Body { get; } = body;
-    public NodeLocation Location { get; set; } = location;
-}
-
-public class ReferenceExpressionNode(
-    string name,
-    NodeLocation location
-) : ISyntaxNode, IStepNode, IExpressionNode
-{
-    public string Name { get; set; } = name;
-    public NodeLocation Location { get; set; } = location;
-}
-
-public class TypeReferenceNode(
-    string name,
-    NodeLocation location
-) : ISyntaxNode, ITypeNode
-{
-    public string Name { get; set; } = name;
-    public NodeLocation Location { get; set; } = location;
+    public static SyntaxNode CreateTypeReference(string name, NodeLocation location)
+    {
+        return new SyntaxNode
+        {
+            Kind = NodeKind.TypeReference,
+            Location = location,
+            Name = name,
+        };
+    }
 }

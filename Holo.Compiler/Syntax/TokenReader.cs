@@ -3,38 +3,38 @@ using System.IO;
 
 namespace Holo.Compiler.Syntax;
 
-public class SyntaxTokenReader
+public class TokenReader
 {
-    private ReaderSession? Session;
+    private TokenReaderSession? Session;
 
     public void Initialize(Stream stream)
     {
-        Session = new ReaderSession(stream);
+        Session = new TokenReaderSession(stream);
     }
 
-    public ReadResult Read()
+    public ReadTokenResult Read()
     {
         if (Session == null) {
             throw new InvalidOperationException("not initialized");
         }
 
-        // NOTE: Session.Reader.Readしたら必ず位置の更新を行う。
+        // NOTE: Session.Readしたら必ず位置の更新を行う。
 
         while (true)
         {
+            // 1文字読み取る
+            Session.Read();
+            
             // ストリームの終わりに達していたら
-            if (Session.Reader.EndOfStream)
+            if (Session.CurrentChar == null)
             {
-                return ReadResult.Succeed(
+                return ReadTokenResult.Succeed(
                     new SyntaxToken(TokenKind.EOF, new TokenLocation(Session.Column, Session.Line))
                 );
             }
 
-            // 1文字読み取る
-            var ch = (char)Session.Reader.Read();
-
             // スペースのスキップ
-            switch (ch)
+            switch (Session.CurrentChar)
             {
                 case ' ':
                     Session.Column += 1;
@@ -47,78 +47,78 @@ public class SyntaxTokenReader
                     Session.Line += 1;
                     continue;
                 case '\r':
-                    if (!Session.Reader.EndOfStream && (char)Session.Reader.Peek() == '\n')
+                    Session.Read();
+                    if (Session.CurrentChar == '\n')
                     {
-                        Session.Reader.Read();
                         Session.Column = 1;
                         Session.Line += 1;
                         continue;
                     }
-                    return ReadResult.Fail("unexpected char.");
+                    return ReadTokenResult.Fail("unexpected char.");
             }
 
             var location = new TokenLocation(Session.Column, Session.Line);
             Session.Column += 1;
 
             // 記号の読み取り
-            switch (ch) {
+            switch (Session.CurrentChar) {
                 case '*':
-                    if (!Session.Reader.EndOfStream && (char)Session.Reader.Peek() == '=')
+                    if (Session.Peek() == '=')
                     {
-                        Session.Reader.Read();
+                        Session.Read();
                         Session.Column += 1;
-                        return ReadResult.Succeed(
+                        return ReadTokenResult.Succeed(
                             new SyntaxToken(TokenKind.AsterEq, location)
                         );
                     }
                     else
                     {
-                        return ReadResult.Succeed(
+                        return ReadTokenResult.Succeed(
                             new SyntaxToken(TokenKind.Asterisk, location)
                         );
                     }
                 case '+':
-                    if (!Session.Reader.EndOfStream && (char)Session.Reader.Peek() == '=')
+                    if (Session.Peek() == '=')
                     {
-                        Session.Reader.Read();
+                        Session.Read();
                         Session.Column += 1;
-                        return ReadResult.Succeed(
+                        return ReadTokenResult.Succeed(
                             new SyntaxToken(TokenKind.PlusEq, location)
                         );
                     }
                     else
                     {
-                        return ReadResult.Succeed(
+                        return ReadTokenResult.Succeed(
                             new SyntaxToken(TokenKind.Plus, location)
                         );
                     }
                 case '-':
-                    if (!Session.Reader.EndOfStream && (char)Session.Reader.Peek() == '=')
+                    if (Session.Peek() == '=')
                     {
-                        Session.Reader.Read();
+                        Session.Read();
                         Session.Column += 1;
-                        return ReadResult.Succeed(
+                        return ReadTokenResult.Succeed(
                             new SyntaxToken(TokenKind.MinusEq, location)
                         );
                     }
                     else
                     {
-                        return ReadResult.Succeed(
+                        return ReadTokenResult.Succeed(
                             new SyntaxToken(TokenKind.Minus, location)
                         );
                     }
                 case '/':
-                    if (!Session.Reader.EndOfStream && (char)Session.Reader.Peek() == '=')
+                    if (Session.Peek() == '=')
                     {
-                        Session.Reader.Read();
+                        Session.Read();
                         Session.Column += 1;
-                        return ReadResult.Succeed(
+                        return ReadTokenResult.Succeed(
                             new SyntaxToken(TokenKind.SlashEq, location)
                         );
                     }
                     else
                     {
-                        return ReadResult.Succeed(
+                        return ReadTokenResult.Succeed(
                             new SyntaxToken(TokenKind.Slash, location)
                         );
                     }
@@ -126,31 +126,58 @@ public class SyntaxTokenReader
 
             // TODO: 識別子やキーワード、リテラルの読み取り
 
-            return ReadResult.Fail("unexpected char.");
+            return ReadTokenResult.Fail("unexpected char.");
         }
     }
+}
 
-    public class ReaderSession(Stream stream)
+public class TokenReaderSession(Stream stream)
+{
+    public StreamReader Reader { get; set; } = new StreamReader(stream);
+    public char? CurrentChar { get; set; }
+    public int Column { get; set; } = 1;
+    public int Line { get; set; } = 1;
+
+    public char? Read()
     {
-        public StreamReader Reader { get; set; } = new StreamReader(stream);
-        public int Column { get; set; } = 1;
-        public int Line { get; set; } = 1;
+        if (!Reader.EndOfStream)
+        {
+            CurrentChar = (char)Reader.Read();
+        }
+        else
+        {
+            CurrentChar = null;
+        }
+
+        return CurrentChar;
     }
 
-    public class ReadResult(bool isSuccess, SyntaxToken? token, string? message)
+    public char? Peek()
     {
-        public bool IsSuccess { get; set; } = isSuccess;
-        public SyntaxToken? Token { get; set; } = token;
-        public string? Message { get; set; } = message;
-
-        public static ReadResult Succeed(SyntaxToken token)
+        if (!Reader.EndOfStream)
         {
-            return new ReadResult(true, token, null);
+            return (char)Reader.Peek();
         }
-
-        public static ReadResult Fail(string message)
+        else
         {
-            return new ReadResult(false, null, message);
+            return null;
         }
+    }
+}
+
+public class ReadTokenResult(bool isSuccess, SyntaxToken? token, string? message)
+{
+    public bool IsSuccess { get; set; } = isSuccess;
+    public SyntaxToken? Token { get; set; } = token;
+    public string? Message { get; set; } = message;
+
+    public static ReadTokenResult Succeed(SyntaxToken token)
+    {
+        return new ReadTokenResult(true, token, null);
+    }
+
+    public static ReadTokenResult Fail(string message)
+    {
+        return new ReadTokenResult(false, null, message);
     }
 }
