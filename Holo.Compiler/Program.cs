@@ -37,7 +37,19 @@ public class Program
             using var stream = mmf.CreateViewStream();
 
             // parse file
-            var unitNode = parser.Parse(stream);
+            parser.Parse(stream);
+
+            if (!parser.IsSuccess)
+            {
+                Console.Error.WriteLine("parse failed:");
+                foreach (var error in parser.Errors)
+                {
+                    Console.Error.WriteLine(error);
+                }
+                return;
+            }
+
+            var unitNode = parser.Result;
 
             // TODO: resolve
 

@@ -1,13 +1,6 @@
 namespace Holo.Compiler.Syntax;
 
-public class SyntaxToken(TokenKind kind, TokenLocation location, object? value = null)
-{
-    public TokenKind Kind { get; set; } = kind;
-    public TokenLocation Location { get; set; } = location;
-    public object? Value { get; set; } = value;
-}
-
-public enum TokenKind
+public enum TokenKind : byte
 {
     EOF,
     Identifier,
@@ -107,8 +100,15 @@ public enum TokenKind
     While,
 }
 
-public struct TokenLocation(int column, int line)
+public struct TokenLocation(long column, long line)
 {
-    public int Column = column;
-    public int Line = line;
+    public long Column = column;
+    public long Line = line;
+}
+
+public class SyntaxToken(TokenKind kind, TokenLocation location, object? value = null)
+{
+    public TokenKind Kind { get; set; } = kind;
+    public TokenLocation Location { get; set; } = location;
+    public object? Value { get; set; } = value;
 }

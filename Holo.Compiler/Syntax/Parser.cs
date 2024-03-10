@@ -8,9 +8,16 @@ public class Parser
 {
     private TokenReader Reader = new TokenReader();
 
+    private SyntaxNode? _Result;
+
     public bool IsSuccess => Result != null;
-    public SyntaxNode? Result;
+    public SyntaxNode Result => _Result!;
     public List<string> Errors = [];
+
+    private void SetResult(SyntaxNode node)
+    {
+        _Result = node;
+    }
 
     private void GenerateError(string message)
     {
@@ -31,7 +38,7 @@ public class Parser
     {
         // clear states
         Reader.Initialize(stream);
-        Result = null;
+        _Result = null;
         Errors.Clear();
 
         if (!Reader.Read())
@@ -64,7 +71,7 @@ public class Parser
 
         var endToken = Reader.Token;
 
-        Result = SyntaxNode.CreateUnit(body, new NodeLocation(beginToken.Location, endToken.Location));
+        SetResult(SyntaxNode.CreateUnit(body, new NodeLocation(beginToken.Location, endToken.Location)));
     }
 
     private void ParseFunctionDecl()
@@ -102,7 +109,7 @@ public class Parser
 
         var endToken = Reader.Token;
 
-        Result = SyntaxNode.CreateFunctionDecl(name, body, new NodeLocation(beginToken.Location, endToken.Location));
+        SetResult(SyntaxNode.CreateFunctionDecl(name, body, new NodeLocation(beginToken.Location, endToken.Location)));
         return;
     }
 

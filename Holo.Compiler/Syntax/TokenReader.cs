@@ -5,212 +5,196 @@ namespace Holo.Compiler.Syntax;
 
 public class TokenReader
 {
-    private TokenReaderBase Base = new TokenReaderBase();
+    private StreamReader? Stream;
+    private char? CurrentChar;
+    private SyntaxToken? _Token;
+    private string? _Message;
 
-    private ReadTokenResult? _Result;
-    public ReadTokenResult Result => _Result!;
+    public int Column { get; private set; }
+    public int Line { get; private set; }
+    public bool IsSuccess => Token != null;
+    public SyntaxToken Token => _Token!;
+    public TokenKind TokenKind => Token.Kind;
+    public string Message => _Message!;
 
-    public SyntaxToken Token => Result.Token!;
-    public TokenKind TokenKind => Token.Kind!;
-    public string Message => Result.Message!;
-
-    public void Initialize(Stream stream)
+    private void ReadChar()
     {
-        Base.Initialize(stream);
-    }
-
-    public string CreateUnexpectedError()
-    {
-        return $"unexpected token: {Result.Token.Kind}";
-    }
-
-    public bool Read()
-    {
-        _Result = Base.Read();
-        return _Result.IsSuccess;
-    }
-
-    public ReadTokenResult Peek()
-    {
-        throw new NotImplementedException();
-    }
-}
-
-public class TokenReaderBase
-{
-    private TokenReaderSession? Session;
-
-    public void Initialize(Stream stream)
-    {
-        Session = new TokenReaderSession(stream);
-    }
-
-    public ReadTokenResult Read()
-    {
-        if (Session == null) {
+        if (Stream == null) {
             throw new InvalidOperationException("not initialized");
         }
 
-        // NOTE: Session.Readしたら必ず位置の更新を行う。
-
-        while (true)
+        if (!Stream.EndOfStream)
         {
-            // 1文字読み取る
-            Session.Read();
-            
-            // ストリームの終わりに達していたら
-            if (Session.CurrentChar == null)
-            {
-                return ReadTokenResult.Succeed(
-                    new SyntaxToken(TokenKind.EOF, new TokenLocation(Session.Column, Session.Line))
-                );
-            }
-
-            // スペースのスキップ
-            switch (Session.CurrentChar)
-            {
-                case ' ':
-                    Session.Column += 1;
-                    continue;
-                case '\t':
-                    Session.Column += 1;
-                    continue;
-                case '\n':
-                    Session.Column = 1;
-                    Session.Line += 1;
-                    continue;
-                case '\r':
-                    Session.Read();
-                    if (Session.CurrentChar == '\n')
-                    {
-                        Session.Column = 1;
-                        Session.Line += 1;
-                        continue;
-                    }
-                    return ReadTokenResult.Fail("unexpected char.");
-            }
-
-            var location = new TokenLocation(Session.Column, Session.Line);
-            Session.Column += 1;
-
-            // 記号の読み取り
-            switch (Session.CurrentChar) {
-                case '*':
-                    if (Session.Peek() == '=')
-                    {
-                        Session.Read();
-                        Session.Column += 1;
-                        return ReadTokenResult.Succeed(
-                            new SyntaxToken(TokenKind.AsterEq, location)
-                        );
-                    }
-                    else
-                    {
-                        return ReadTokenResult.Succeed(
-                            new SyntaxToken(TokenKind.Asterisk, location)
-                        );
-                    }
-                case '+':
-                    if (Session.Peek() == '=')
-                    {
-                        Session.Read();
-                        Session.Column += 1;
-                        return ReadTokenResult.Succeed(
-                            new SyntaxToken(TokenKind.PlusEq, location)
-                        );
-                    }
-                    else
-                    {
-                        return ReadTokenResult.Succeed(
-                            new SyntaxToken(TokenKind.Plus, location)
-                        );
-                    }
-                case '-':
-                    if (Session.Peek() == '=')
-                    {
-                        Session.Read();
-                        Session.Column += 1;
-                        return ReadTokenResult.Succeed(
-                            new SyntaxToken(TokenKind.MinusEq, location)
-                        );
-                    }
-                    else
-                    {
-                        return ReadTokenResult.Succeed(
-                            new SyntaxToken(TokenKind.Minus, location)
-                        );
-                    }
-                case '/':
-                    if (Session.Peek() == '=')
-                    {
-                        Session.Read();
-                        Session.Column += 1;
-                        return ReadTokenResult.Succeed(
-                            new SyntaxToken(TokenKind.SlashEq, location)
-                        );
-                    }
-                    else
-                    {
-                        return ReadTokenResult.Succeed(
-                            new SyntaxToken(TokenKind.Slash, location)
-                        );
-                    }
-            }
-
-            // TODO: 識別子やキーワード、リテラルの読み取り
-
-            return ReadTokenResult.Fail("unexpected char.");
-        }
-    }
-}
-
-public class TokenReaderSession(Stream stream)
-{
-    public StreamReader Reader { get; set; } = new StreamReader(stream);
-    public char? CurrentChar { get; set; }
-    public int Column { get; set; } = 1;
-    public int Line { get; set; } = 1;
-
-    public char? Read()
-    {
-        if (!Reader.EndOfStream)
-        {
-            CurrentChar = (char)Reader.Read();
+            CurrentChar = (char)Stream.Read();
         }
         else
         {
             CurrentChar = null;
         }
-
-        return CurrentChar;
     }
 
-    public char? Peek()
+    private char? PeekChar()
     {
-        if (!Reader.EndOfStream)
+        if (Stream == null) {
+            throw new InvalidOperationException("not initialized");
+        }
+
+        if (!Stream.EndOfStream)
         {
-            return (char)Reader.Peek();
+            return (char)Stream.Peek();
         }
         else
         {
             return null;
         }
     }
-}
 
-public class ReadTokenResult(bool isSuccess, SyntaxToken? token, string? message)
-{
-    public bool IsSuccess => isSuccess;
-    public SyntaxToken Token => token!;
-    public string Message => message!;
-
-    public static ReadTokenResult Succeed(SyntaxToken token)
+    private void SetResult(SyntaxToken token)
     {
-        return new ReadTokenResult(true, token, null);
+        _Token = token;
     }
 
-    public static ReadTokenResult Fail(string message)
+    private void SetError(string message)
     {
-        return new ReadTokenResult(false, null, message);
+        _Message = message;
+    }
+
+    public void Initialize(Stream stream)
+    {
+        Stream = new StreamReader(stream);
+        CurrentChar = null;
+        Column = 1;
+        Line = 1;
+        _Token = null;
+        _Message = null;
+    }
+
+    public string CreateUnexpectedError()
+    {
+        return $"unexpected token: {Token.Kind}";
+    }
+
+    public bool Read()
+    {
+        ReadInternal();
+        return IsSuccess;
+    }
+
+    private void ReadInternal()
+    {
+        if (Stream == null) {
+            throw new InvalidOperationException("not initialized");
+        }
+
+        // NOTE: ReadCharしたら必ず位置の更新を行う。
+
+        while (true)
+        {
+            // 1文字読み取る
+            ReadChar();
+
+            // ストリームの終わりに達していたら
+            if (CurrentChar == null)
+            {
+                SetResult(new SyntaxToken(TokenKind.EOF, new TokenLocation(Column, Line)));
+                return;
+            }
+
+            // スペースのスキップ
+            switch (CurrentChar)
+            {
+                case ' ':
+                    Column += 1;
+                    continue;
+
+                case '\t':
+                    Column += 1;
+                    continue;
+
+                case '\n':
+                    Column = 1;
+                    Line += 1;
+                    continue;
+
+                case '\r':
+                    ReadChar();
+                    if (CurrentChar == '\n')
+                    {
+                        Column = 1;
+                        Line += 1;
+                        continue;
+                    }
+                    SetError("unexpected char.");
+                    return;
+            }
+
+            var location = new TokenLocation(Column, Line);
+            Column += 1;
+
+            // 記号の読み取り
+            switch (CurrentChar) {
+                case '*':
+                    if (PeekChar() == '=')
+                    {
+                        ReadChar();
+                        Column += 1;
+                        SetResult(new SyntaxToken(TokenKind.AsterEq, location));
+                    }
+                    else
+                    {
+                        SetResult(new SyntaxToken(TokenKind.Asterisk, location));
+                    }
+                    return;
+
+                case '+':
+                    if (PeekChar() == '=')
+                    {
+                        ReadChar();
+                        Column += 1;
+                        SetResult(new SyntaxToken(TokenKind.PlusEq, location));
+                    }
+                    else
+                    {
+                        SetResult(new SyntaxToken(TokenKind.Plus, location));
+                    }
+                    return;
+
+                case '-':
+                    if (PeekChar() == '=')
+                    {
+                        ReadChar();
+                        Column += 1;
+                        SetResult(new SyntaxToken(TokenKind.MinusEq, location));
+                    }
+                    else
+                    {
+                        SetResult(new SyntaxToken(TokenKind.Minus, location));
+                    }
+                    return;
+
+                case '/':
+                    if (PeekChar() == '=')
+                    {
+                        ReadChar();
+                        Column += 1;
+                        SetResult(new SyntaxToken(TokenKind.SlashEq, location));
+                    }
+                    else
+                    {
+                        SetResult(new SyntaxToken(TokenKind.Slash, location));
+                    }
+                    return;
+            }
+
+            // TODO: 識別子やキーワード、リテラルの読み取り
+
+            SetError("unexpected char.");
+            return;
+        }
+    }
+
+    public void Peek()
+    {
+        throw new NotImplementedException();
     }
 }
