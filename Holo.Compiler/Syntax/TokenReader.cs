@@ -19,7 +19,8 @@ public class TokenReader
 
     private void ReadChar()
     {
-        if (Stream == null) {
+        if (Stream == null)
+        {
             throw new InvalidOperationException("not initialized");
         }
 
@@ -35,7 +36,8 @@ public class TokenReader
 
     private char? PeekChar()
     {
-        if (Stream == null) {
+        if (Stream == null)
+        {
             throw new InvalidOperationException("not initialized");
         }
 
@@ -82,7 +84,8 @@ public class TokenReader
 
     private void ReadInternal()
     {
-        if (Stream == null) {
+        if (Stream == null)
+        {
             throw new InvalidOperationException("not initialized");
         }
 

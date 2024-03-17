@@ -89,6 +89,7 @@ public class Parser
 
         location.MarkBegin(Reader);
 
+        // expect "fn"
         if (Reader.TokenKind != TokenKind.Fn)
         {
             GenerateUnexpectedTokenError();
@@ -101,6 +102,7 @@ public class Parser
             return;
         }
 
+        // expect ident
         if (Reader.TokenKind != TokenKind.Identifier)
         {
             GenerateUnexpectedTokenError();
