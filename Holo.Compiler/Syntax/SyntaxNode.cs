@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace Holo.Compiler.Syntax;
@@ -45,17 +46,34 @@ public enum NodeMode : byte
     DefaultArm,
 }
 
-public struct NodeLocation(TokenLocation begin, TokenLocation end)
+public class NodeLocation(TokenLocation begin, TokenLocation end)
 {
     public TokenLocation Begin = begin;
     public TokenLocation End = end;
+
+    public void MarkBegin(TokenReader reader)
+    {
+        var tokenLocation = new TokenLocation(reader.Column, reader.Line);
+        Begin = tokenLocation;
+    }
+
+    public void MarkEnd(TokenReader reader)
+    {
+        if (Begin.Column == -1 || Begin.Line == -1)
+            throw new InvalidOperationException("ノードの開始位置が設定されていません。");
+
+        var tokenLocation = new TokenLocation(reader.Column, reader.Line);
+        End = tokenLocation;
+    }
+
+    public static NodeLocation Empty => new(TokenLocation.Empty, TokenLocation.Empty);
 }
 
 public class SyntaxNode
 {
     public NodeKind Kind { get; set; }
     public NodeMode Mode { get; set; } = NodeMode.None;
-    public NodeLocation Location { get; set; }
+    public NodeLocation Location { get; set; } = NodeLocation.Empty;
     public List<SyntaxNode>? Operands { get; set; }
     public List<SyntaxNode>? Body { get; set; }
     public string? Name { get; set; }

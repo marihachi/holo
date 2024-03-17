@@ -104,6 +104,8 @@ public struct TokenLocation(long column, long line)
 {
     public long Column = column;
     public long Line = line;
+
+    public static TokenLocation Empty => new(-1, -1);
 }
 
 public class SyntaxToken(TokenKind kind, TokenLocation location, object? value = null)

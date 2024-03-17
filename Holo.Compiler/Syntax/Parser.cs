@@ -19,6 +19,11 @@ public class Parser
         _Result = node;
     }
 
+    private NodeLocation CreateLocation()
+    {
+        return new NodeLocation(TokenLocation.Empty, TokenLocation.Empty);
+    }
+
     private void GenerateError(string message)
     {
         Errors.Add(message);
@@ -58,7 +63,9 @@ public class Parser
             return;
         }
 
-        var beginToken = Reader.Token;
+        var location = CreateLocation();
+
+        location.MarkBegin(Reader);
 
         var body = new List<SyntaxNode>();
         while (Reader.TokenKind != TokenKind.EOF)
@@ -69,15 +76,18 @@ public class Parser
             body.Add(Result!);
         }
 
-        var endToken = Reader.Token;
+        location.MarkEnd(Reader);
 
-        SetResult(SyntaxNode.CreateUnit(body, new NodeLocation(beginToken.Location, endToken.Location)));
+        SetResult(SyntaxNode.CreateUnit(body, location));
     }
 
     private void ParseFunctionDecl()
     {
         var body = new List<SyntaxNode>();
-        var beginToken = Reader.Token;
+
+        var location = CreateLocation();
+
+        location.MarkBegin(Reader);
 
         if (Reader.TokenKind != TokenKind.Fn)
         {
@@ -107,9 +117,9 @@ public class Parser
 
         // TODO: parse body
 
-        var endToken = Reader.Token;
+        location.MarkEnd(Reader);
 
-        SetResult(SyntaxNode.CreateFunctionDecl(name, body, new NodeLocation(beginToken.Location, endToken.Location)));
+        SetResult(SyntaxNode.CreateFunctionDecl(name, body, location));
         return;
     }
 
