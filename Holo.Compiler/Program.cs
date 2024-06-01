@@ -7,23 +7,26 @@ public class Program
 {
     static int Main(string[] args)
     {
-        var rootCommand = new RootCommand("The holo compiler");
+        // Define a command
+        var command = new RootCommand("The holo compiler");
 
         var inputArg = new Argument<string[]>("input", "list of input files.");
-        rootCommand.Add(inputArg);
+        command.Add(inputArg);
 
         var outputOption = new Option<string>("-o", "output filename.");
-        rootCommand.Add(outputOption);
+        command.Add(outputOption);
 
-        rootCommand.SetHandler(ctx =>
+        // Set a handler will be called after command parsing
+        command.SetHandler(ctx =>
         {
-            var input = ctx.ParseResult.GetValueForArgument(inputArg);
-            var output = ctx.ParseResult.GetValueForOption(outputOption);
+            var inputValues = ctx.ParseResult.GetValueForArgument(inputArg);
+            var outputValues = ctx.ParseResult.GetValueForOption(outputOption);
 
-            ProcessCommand(input, output);
+            ProcessCommand(inputValues, outputValues);
         });
 
-        return rootCommand.InvokeAsync(args).Result;
+        // Execute the command parsing
+        return command.InvokeAsync(args).Result;
     }
 
     static void ProcessCommand(string[] input, string? output)
@@ -32,11 +35,11 @@ public class Program
 
         foreach (var filepath in input)
         {
-            // open a file as MMF stream
+            // Open a file as MMF stream
             using var mmf = MemoryMappedFile.CreateFromFile(filepath);
             using var stream = mmf.CreateViewStream();
 
-            // parse file
+            // Parse .holo file
             parser.Parse(stream);
 
             if (!parser.IsSuccess)
@@ -51,9 +54,9 @@ public class Program
 
             var unitNode = parser.Result;
 
-            // TODO: resolve
+            // TODO: Resolve
 
-            // TODO: emit LLVM
+            // TODO: Emit LLVM-IR
         }
     }
 }
