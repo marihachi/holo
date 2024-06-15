@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-
 namespace Holoc.Compile.Syntax;
 
 public enum NodeKind : byte
