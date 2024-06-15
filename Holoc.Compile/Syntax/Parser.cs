@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 
 namespace Holoc.Compile.Syntax;
 
@@ -15,24 +14,72 @@ public class Parser
     private List<SyntaxNode>? Results;
     public List<string> Errors = [];
 
+    /// <summary>
+    /// 新しいノード位置情報を作成します。
+    /// </summary>
     private static NodeLocation CreateLocation()
     {
         return new NodeLocation(TokenLocation.Empty, TokenLocation.Empty);
     }
 
+    /// <summary>
+    /// パースエラーを生成します。
+    /// </summary>
     private void GenerateError(string message)
     {
         Errors.Add(message);
     }
 
-    private void GenerateReadError()
+    /// <summary>
+    /// 現在のトークンが期待する種類であるかを確認します。
+    /// </summary>
+    private bool Expect(TokenKind kind)
     {
-        GenerateError(Reader.Error);
+        if (Reader.TokenKind == kind)
+        {
+            return true;
+        }
+        else
+        {
+            GenerateError(Reader.CreateUnexpectedError());
+            return false;
+        }
     }
 
-    private void GenerateUnexpectedTokenError()
+    /// <summary>
+    /// 次のトークンを読み進めます。
+    /// </summary>
+    private bool Next()
     {
-        GenerateError(Reader.CreateUnexpectedError());
+        if (Reader.Read())
+        {
+            return true;
+        }
+        else
+        {
+            GenerateError(Reader.Error);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 現在のトークンが期待する種類であるかを確認し、次のトークンを読み進めます。
+    /// </summary>
+    private bool NextWith(TokenKind kind)
+    {
+        if (Reader.TokenKind != kind)
+        {
+            GenerateError(Reader.CreateUnexpectedError());
+            return false;
+        }
+
+        if (!Reader.Read())
+        {
+            GenerateError(Reader.Error);
+            return false;
+        }
+
+        return true;
     }
 
     /// <summary>
@@ -42,7 +89,7 @@ public class Parser
     /// </summary>
     /// <param name="parseFunc">パース関数</param>
     /// <param name="termination">繰り返しの完了条件</param>
-    public void Repeat(Action parseFunc, Predicate<TokenKind> termination)
+    private void Repeat(Action parseFunc, Predicate<TokenKind> termination)
     {
         Results = null;
 
@@ -65,6 +112,8 @@ public class Parser
         Results = null;
         Errors.Clear();
 
+        if (!Next()) return null;
+
         ParseUnit();
 
         return Result;
@@ -73,12 +122,6 @@ public class Parser
     private void ParseUnit()
     {
         Result = null;
-
-        if (!Reader.Read())
-        {
-            GenerateReadError();
-            return;
-        }
 
         var location = CreateLocation();
 
@@ -101,33 +144,13 @@ public class Parser
 
         location.MarkBegin(Reader);
 
-        // expect "fn"
-        if (Reader.TokenKind != TokenKind.Fn)
-        {
-            GenerateUnexpectedTokenError();
-            return;
-        }
+        if (!NextWith(TokenKind.Fn)) return;
 
-        if (!Reader.Read())
-        {
-            GenerateReadError();
-            return;
-        }
-
-        // expect ident
-        if (Reader.TokenKind != TokenKind.Identifier)
-        {
-            GenerateUnexpectedTokenError();
-            return;
-        }
+        if (!Expect(TokenKind.Identifier)) return;
 
         var name = (string)Reader.Token.Value;
 
-        if (!Reader.Read())
-        {
-            GenerateReadError();
-            return;
-        }
+        if (!Next()) return;
 
         // TODO: parse body
         var body = new List<SyntaxNode>();
