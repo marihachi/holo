@@ -1,4 +1,4 @@
-namespace Holo.Compiler.Syntax;
+namespace Holoc.Compile.Syntax;
 
 public enum TokenKind : byte
 {
@@ -14,11 +14,11 @@ public enum TokenKind : byte
     Percent,
     /// <summary>"%="</summary>
     PercentEq,
-    /// <summary>"&"</summary>
+    /// <summary>"&amp;"</summary>
     And,
-    /// <summary>"&&"</summary>
+    /// <summary>"&amp;&amp;"</summary>
     And2,
-    /// <summary>"&="</summary>
+    /// <summary>"&amp;="</summary>
     AndEq,
     /// <summary>"("</summary>
     OpenParen,

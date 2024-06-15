@@ -1,4 +1,4 @@
-namespace Holo.Compiler.Tests
+namespace Holoc.Compile.Tests
 {
   public class UnitTest1
   {

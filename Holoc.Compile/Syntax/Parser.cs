@@ -2,24 +2,20 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 
-namespace Holo.Compiler.Syntax;
+namespace Holoc.Compile.Syntax;
 
+/// <summary>
+/// Holo言語のLLパーサーを実装します。
+/// </summary>
 public class Parser
 {
     private TokenReader Reader = new TokenReader();
 
-    private SyntaxNode? _Result;
-
-    public bool IsSuccess => Result != null;
-    public SyntaxNode Result => _Result!;
+    private SyntaxNode? Result;
+    private List<SyntaxNode>? Results;
     public List<string> Errors = [];
 
-    private void SetResult(SyntaxNode node)
-    {
-        _Result = node;
-    }
-
-    private NodeLocation CreateLocation()
+    private static NodeLocation CreateLocation()
     {
         return new NodeLocation(TokenLocation.Empty, TokenLocation.Empty);
     }
@@ -31,7 +27,7 @@ public class Parser
 
     private void GenerateReadError()
     {
-        GenerateError(Reader.Message);
+        GenerateError(Reader.Error);
     }
 
     private void GenerateUnexpectedTokenError()
@@ -39,24 +35,45 @@ public class Parser
         GenerateError(Reader.CreateUnexpectedError());
     }
 
-    public void Parse(Stream stream)
+    /// <summary>
+    /// 指定したパース関数を繰り返し適用します。
+    /// 繰り返し完了条件に一致するまで処理は継続されます。
+    /// 繰り返しの途中でパース関数がエラーを返した場合、繰り返し呼び出し全体が失敗として終了します。
+    /// </summary>
+    /// <param name="parseFunc">パース関数</param>
+    /// <param name="termination">繰り返しの完了条件</param>
+    public void Repeat(Action parseFunc, Predicate<TokenKind> termination)
+    {
+        Results = null;
+
+        var items = new List<SyntaxNode>();
+        while (!termination(Reader.TokenKind))
+        {
+            parseFunc();
+            if (Result == null) return;
+            items.Add(Result);
+        }
+
+        Results = items;
+    }
+
+    public SyntaxNode? Parse(Stream stream)
     {
         // clear states
         Reader.Initialize(stream);
-        _Result = null;
+        Result = null;
+        Results = null;
         Errors.Clear();
 
-        if (!Reader.Read())
-        {
-            GenerateReadError();
-            return;
-        }
-
         ParseUnit();
+
+        return Result;
     }
 
     private void ParseUnit()
     {
+        Result = null;
+
         if (!Reader.Read())
         {
             GenerateReadError();
@@ -67,23 +84,18 @@ public class Parser
 
         location.MarkBegin(Reader);
 
-        var body = new List<SyntaxNode>();
-        while (Reader.TokenKind != TokenKind.EOF)
-        {
-            ParseFunctionDecl();
-            if (!IsSuccess) return;
-
-            body.Add(Result!);
-        }
+        Repeat(ParseFunctionDecl, k => k == TokenKind.EOF);
+        if (Results == null) return;
+        var body = Results;
 
         location.MarkEnd(Reader);
 
-        SetResult(SyntaxNode.CreateUnit(body, location));
+        Result = SyntaxNode.CreateUnit(body, location);
     }
 
     private void ParseFunctionDecl()
     {
-        var body = new List<SyntaxNode>();
+        Result = null;
 
         var location = CreateLocation();
 
@@ -109,7 +121,7 @@ public class Parser
             return;
         }
 
-        var name = (string)Reader.Token.Value!;
+        var name = (string)Reader.Token.Value;
 
         if (!Reader.Read())
         {
@@ -118,10 +130,11 @@ public class Parser
         }
 
         // TODO: parse body
+        var body = new List<SyntaxNode>();
 
         location.MarkEnd(Reader);
 
-        SetResult(SyntaxNode.CreateFunctionDecl(name, body, location));
+        Result = SyntaxNode.CreateFunctionDecl(name, body, location);
         return;
     }
 

@@ -1,14 +1,14 @@
 using System;
 using System.CommandLine;
 using System.IO.MemoryMappedFiles;
-using Holo.Compiler.Syntax;
+using Holoc.Compile.Syntax;
 
 public class Program
 {
     static int Main(string[] args)
     {
         // Define a command
-        var command = new RootCommand("The holo compiler");
+        var command = new RootCommand("The Holo compiler");
 
         var inputArg = new Argument<string[]>("input", "list of input files.");
         command.Add(inputArg);
@@ -40,9 +40,9 @@ public class Program
             using var stream = mmf.CreateViewStream();
 
             // Parse .holo file
-            parser.Parse(stream);
+            var unitNode = parser.Parse(stream);
 
-            if (!parser.IsSuccess)
+            if (unitNode == null)
             {
                 Console.Error.WriteLine("parse failed:");
                 foreach (var error in parser.Errors)
@@ -51,8 +51,6 @@ public class Program
                 }
                 return;
             }
-
-            var unitNode = parser.Result;
 
             // TODO: Resolve
 

@@ -1,6 +1,6 @@
 using System;
 
-namespace Holo.Compiler.Semantics;
+namespace Holoc.Compile.Semantics;
 
 public class SemanticResolver
 {

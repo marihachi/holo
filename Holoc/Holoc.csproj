@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <Version>1.0.0</Version>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net8.0</TargetFramework>
+        <Nullable>enable</Nullable>
+
+        <!-- publish setting -->
+        <PublishAot>True</PublishAot>
+        <OptimizationPreference>Size</OptimizationPreference>
+        <!-- <IlcFoldIdenticalMethodBodies>True</IlcFoldIdenticalMethodBodies> -->
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Holoc.Compile\Holoc.Compile.csproj" />
+    </ItemGroup>
+
+</Project>
