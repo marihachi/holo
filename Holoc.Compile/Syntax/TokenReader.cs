@@ -64,6 +64,10 @@ public class TokenReader
         return $"unexpected token: {Token!.Kind}";
     }
 
+    /// <summary>
+    /// トークンを読み取ります。
+    /// 読み取りに失敗した場合は、Errorプロパティにエラーの内容が設定されます。
+    /// </summary>
     public bool Read()
     {
         ReadInternal();

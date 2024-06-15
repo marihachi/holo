@@ -57,7 +57,7 @@ public class Parser
         }
         else
         {
-            GenerateError(Reader.Error);
+            GenerateError(Reader.Error!);
             return false;
         }
     }
@@ -75,7 +75,7 @@ public class Parser
 
         if (!Reader.Read())
         {
-            GenerateError(Reader.Error);
+            GenerateError(Reader.Error!);
             return false;
         }
 
@@ -148,7 +148,8 @@ public class Parser
 
         if (!Expect(TokenKind.Identifier)) return;
 
-        var name = (string)Reader.Token.Value;
+        // Identifierトークンが読み出されているためValueはnullではない
+        var name = (string)Reader.Token!.Value!;
 
         if (!Next()) return;
 
