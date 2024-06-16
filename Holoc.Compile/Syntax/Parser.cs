@@ -44,6 +44,47 @@ public class Parser
     }
 
     /// <summary>
+    /// 現在のトークンの種類を取得します。
+    /// </summary>
+    private TokenKind GetKind()
+    {
+        return Reader.TokenKind;
+    }
+
+    /// <summary>
+    /// 現在のトークンが期待する種類であるかを確認します。
+    /// </summary>
+    private bool Try(TokenKind kind)
+    {
+        if (Reader.TokenKind == kind)
+        {
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// 現在のトークンが期待するキーワードであるかを確認します。
+    /// </summary>
+    private bool Try(string keyword)
+    {
+        if (Reader.TokenKind != TokenKind.Word)
+        {
+            return false;
+        }
+
+        if ((string)Reader.Token!.Value! != keyword)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
     /// 次のトークンを読み進めます。
     /// </summary>
     private bool Next()
@@ -176,8 +217,28 @@ public class Parser
 
         if (!Next()) return;
 
-        // TODO: parse body
+        if (!NextWith(TokenKind.OpenParen)) return;
+
+        // TODO: arguments
+
+        if (!NextWith(TokenKind.CloseParen)) return;
+
+        // body
         var body = new List<SyntaxNode>();
+
+        if (Try(TokenKind.OpenBrace))
+        {
+            if (!Next()) return;
+
+            Repeat(ParseStatement, x => x == TokenKind.CloseBrace);
+            if (Results == null) return;
+
+            if (!NextWith(TokenKind.CloseBrace)) return;
+        }
+        else
+        {
+            if (!NextWith(TokenKind.SemiColon)) return;
+        }
 
         location.MarkEnd(Reader);
 
@@ -192,6 +253,23 @@ public class Parser
 
     private void ParseStatement()
     {
-        throw new NotImplementedException();
+        Result = null;
+
+        var location = CreateLocation();
+
+        location.MarkBegin(Reader);
+
+        if (Try("return"))
+        {
+            if (!Next()) return;
+            if (!NextWith(TokenKind.SemiColon)) return;
+            location.MarkEnd(Reader);
+            Result = SyntaxNode.CreateReturnStatement(null, location);
+            return;
+        }
+
+        // TODO: statements
+
+        GenerateError(Reader.CreateUnexpectedError());
     }
 }

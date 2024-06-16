@@ -130,6 +130,36 @@ public class TokenReader
                     Line += 1;
                     continue;
 
+                case '{':
+                    beginLocation = new TokenLocation(Column, Line);
+                    Column += 1;
+                    Token = new SyntaxToken(TokenKind.OpenBrace, beginLocation);
+                    return;
+
+                case '}':
+                    beginLocation = new TokenLocation(Column, Line);
+                    Column += 1;
+                    Token = new SyntaxToken(TokenKind.CloseBrace, beginLocation);
+                    return;
+
+                case '(':
+                    beginLocation = new TokenLocation(Column, Line);
+                    Column += 1;
+                    Token = new SyntaxToken(TokenKind.OpenParen, beginLocation);
+                    return;
+
+                case ')':
+                    beginLocation = new TokenLocation(Column, Line);
+                    Column += 1;
+                    Token = new SyntaxToken(TokenKind.CloseParen, beginLocation);
+                    return;
+
+                case ';':
+                    beginLocation = new TokenLocation(Column, Line);
+                    Column += 1;
+                    Token = new SyntaxToken(TokenKind.SemiColon, beginLocation);
+                    return;
+
                 case '*':
                     beginLocation = new TokenLocation(Column, Line);
                     Column += 1;
