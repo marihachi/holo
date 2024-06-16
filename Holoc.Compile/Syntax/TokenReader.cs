@@ -14,26 +14,38 @@ public class TokenReader
 
     private void ReadChar()
     {
-        if (!Stream.EndOfStream)
-        {
-            CurrentChar = (char)Stream.Read();
-        }
-        else
+        if (Stream!.EndOfStream)
         {
             CurrentChar = null;
+            return;
         }
+
+        var ch = (char)Stream.Read();
+
+        if (ch == '\0')
+        {
+            CurrentChar = null;
+            return;
+        }
+
+        CurrentChar = ch;
     }
 
     private char? PeekChar()
     {
-        if (!Stream.EndOfStream)
-        {
-            return (char)Stream.Peek();
-        }
-        else
+        if (Stream!.EndOfStream)
         {
             return null;
         }
+
+        var ch = (char)Stream.Peek();
+
+        if (ch == '\0')
+        {
+            return null;
+        }
+
+        return ch;
     }
 
     public void Initialize(Stream stream)
@@ -85,7 +97,7 @@ public class TokenReader
             ReadChar();
 
             // ストリームの終わりに達していたら
-            if (CurrentChar == null || CurrentChar == '\0')
+            if (CurrentChar == null)
             {
                 Token = new SyntaxToken(TokenKind.EOF, new TokenLocation(Column, Line));
                 return;
