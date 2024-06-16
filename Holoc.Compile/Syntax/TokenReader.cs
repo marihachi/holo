@@ -58,7 +58,12 @@ public class TokenReader
 
     public string CreateUnexpectedError()
     {
-        return $"unexpected token: {Token!.Kind}";
+        if (TokenKind == TokenKind.Word)
+        {
+            return $"Unexpected token: {(string)Token!.Value!} {Token.Location.Line}:{Token.Location.Column}";
+        }
+
+        return $"Unexpected token: {Token!.Kind} {Token.Location.Line}:{Token.Location.Column}";
     }
 
     /// <summary>
@@ -81,133 +86,172 @@ public class TokenReader
         }
 
         Token = null;
-        int state = 0;
 
         while (true)
         {
             TokenLocation beginLocation;
 
-            switch (state)
+            // 1文字読み取る
+            ReadChar();
+
+            // ストリームの終わりに達していたら
+            if (CurrentChar == null || CurrentChar == '\0')
             {
-                // トークン読み取り状態
-                case 0:
+                Token = new SyntaxToken(TokenKind.EOF, new TokenLocation(Column, Line));
+                return;
+            }
 
-                    // 1文字読み取る
-                    ReadChar();
+            switch (CurrentChar)
+            {
+                case ' ':
+                    Column += 1;
+                    continue;
 
-                    // ストリームの終わりに達していたら
-                    if (CurrentChar == null)
+                case '\t':
+                    Column += 1;
+                    continue;
+
+                // LF
+                case '\n':
+                    Column = 1;
+                    Line += 1;
+                    continue;
+
+                // CR
+                case '\r':
+                    // LFが続いていたら一緒に消費する
+                    if (PeekChar() == '\n')
                     {
-                        Token = new SyntaxToken(TokenKind.EOF, new TokenLocation(Column, Line));
+                        ReadChar();
+                    }
+                    Column = 1;
+                    Line += 1;
+                    continue;
+
+                case '*':
+                    beginLocation = new TokenLocation(Column, Line);
+                    Column += 1;
+
+                    // 先読み
+                    if (PeekChar() == '=')
+                    {
+                        ReadChar();
+                        Column += 1;
+                        Token = new SyntaxToken(TokenKind.AsterEq, beginLocation);
                         return;
                     }
 
-                    switch (CurrentChar)
+                    Token = new SyntaxToken(TokenKind.Asterisk, beginLocation);
+                    return;
+
+                case '+':
+                    beginLocation = new TokenLocation(Column, Line);
+                    Column += 1;
+
+                    // 先読み
+                    if (PeekChar() == '=')
                     {
-                        case ' ':
-                            Column += 1;
-                            continue;
-
-                        case '\t':
-                            Column += 1;
-                            continue;
-
-                        case '\n':
-                            Column = 1;
-                            Line += 1;
-                            continue;
-
-                        case '\r':
-                            ReadChar();
-                            if (CurrentChar == '\n')
-                            {
-                                Column = 1;
-                                Line += 1;
-                                continue;
-                            }
-                            Error = "unexpected char.";
-                            return;
-
-                        case '*':
-                            beginLocation = new TokenLocation(Column, Line);
-                            Column += 1;
-
-                            // 先読み
-                            if (PeekChar() == '=')
-                            {
-                                ReadChar();
-                                Column += 1;
-                                Token = new SyntaxToken(TokenKind.AsterEq, beginLocation);
-                                return;
-                            }
-
-                            Token = new SyntaxToken(TokenKind.Asterisk, beginLocation);
-                            return;
-
-                        case '+':
-                            beginLocation = new TokenLocation(Column, Line);
-                            Column += 1;
-
-                            // 先読み
-                            if (PeekChar() == '=')
-                            {
-                                ReadChar();
-                                Column += 1;
-                                Token = new SyntaxToken(TokenKind.PlusEq, beginLocation);
-                                return;
-                            }
-
-                            Token = new SyntaxToken(TokenKind.Plus, beginLocation);
-                            return;
-
-                        case '-':
-                            beginLocation = new TokenLocation(Column, Line);
-                            Column += 1;
-
-                            // 先読み
-                            if (PeekChar() == '=')
-                            {
-                                ReadChar();
-                                Column += 1;
-                                Token = new SyntaxToken(TokenKind.MinusEq, beginLocation);
-                                return;
-                            }
-
-                            Token = new SyntaxToken(TokenKind.Minus, beginLocation);
-                            return;
-
-                        case '/':
-                            beginLocation = new TokenLocation(Column, Line);
-                            Column += 1;
-
-                            // 先読み
-                            if (PeekChar() == '=')
-                            {
-                                ReadChar();
-                                Column += 1;
-                                Token = new SyntaxToken(TokenKind.SlashEq, beginLocation);
-                                return;
-                            }
-
-                            Token = new SyntaxToken(TokenKind.Slash, beginLocation);
-                            return;
+                        ReadChar();
+                        Column += 1;
+                        Token = new SyntaxToken(TokenKind.PlusEq, beginLocation);
+                        return;
                     }
-                    break;
 
-                // 識別子またはキーワード
-                case 1:
-                    break;
+                    Token = new SyntaxToken(TokenKind.Plus, beginLocation);
+                    return;
 
-                // 数値リテラル
-                case 2:
-                    break;
+                case '-':
+                    beginLocation = new TokenLocation(Column, Line);
+                    Column += 1;
 
-                // 文字列リテラル
-                case 3:
-                    break;
+                    // 先読み
+                    if (PeekChar() == '=')
+                    {
+                        ReadChar();
+                        Column += 1;
+                        Token = new SyntaxToken(TokenKind.MinusEq, beginLocation);
+                        return;
+                    }
+
+                    Token = new SyntaxToken(TokenKind.Minus, beginLocation);
+                    return;
+
+                case '/':
+                    beginLocation = new TokenLocation(Column, Line);
+                    Column += 1;
+
+                    // 先読み
+                    if (PeekChar() == '=')
+                    {
+                        ReadChar();
+                        Column += 1;
+                        Token = new SyntaxToken(TokenKind.SlashEq, beginLocation);
+                        return;
+                    }
+
+                    Token = new SyntaxToken(TokenKind.Slash, beginLocation);
+                    return;
             }
 
-            Error = "unexpected char.";
+            // 数字
+            if (CurrentChar >= '0' && CurrentChar <= '9')
+            {
+                beginLocation = new TokenLocation(Column, Line);
+                string wholeNumber = "";
+
+                wholeNumber += CurrentChar;
+                Column += 1;
+
+                // 後続の文字を読む
+                while (true)
+                {
+                    var ch = PeekChar();
+                    if (ch == null || !(ch >= '0' && ch <= '9')) break;
+
+                    ReadChar();
+                    wholeNumber += ch;
+                    Column += 1;
+                }
+
+                string value = wholeNumber;
+                Token = new SyntaxToken(TokenKind.NumberLiteral, beginLocation, value);
+                return;
+            }
+
+            // 識別子またはキーワード
+            if (CurrentChar >= 'A' && CurrentChar <= 'Z' ||
+                CurrentChar >= 'a' && CurrentChar <= 'z' ||
+                CurrentChar == '_')
+            {
+                beginLocation = new TokenLocation(Column, Line);
+                string value = "";
+
+                value += CurrentChar;
+                Column += 1;
+
+                // 後続の文字を読む
+                while (true)
+                {
+                    var ch = PeekChar();
+                    if (ch == null || !(
+                        ch >= '0' && ch <= '9' ||
+                        ch >= 'A' && ch <= 'Z' ||
+                        ch >= 'a' && ch <= 'z' ||
+                        ch == '_'))
+                    {
+                        break;
+                    }
+
+                    ReadChar();
+                    value += ch;
+                    Column += 1;
+                }
+
+                Token = new SyntaxToken(TokenKind.Word, beginLocation, value);
+                return;
+            }
+
+            Error = $"Unexpected char: '{CurrentChar}' {Line}:{Column}";
             return;
         }
     }

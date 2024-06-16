@@ -3,7 +3,7 @@ namespace Holoc.Compile.Syntax;
 public enum TokenKind : byte
 {
     EOF,
-    Identifier,
+    Word,
     NumberLiteral,
 
     /// <summary>"!"</summary>
@@ -85,19 +85,19 @@ public enum TokenKind : byte
     /// <summary>"}"</summary>
     CloseBrace,
 
-    Break,
-    Case,
-    Continue,
-    Default,
-    Do,
-    Else,
-    External,
-    Fn,
-    If,
-    Return,
-    Switch,
-    Var,
-    While,
+    //Break,
+    //Case,
+    //Continue,
+    //Default,
+    //Do,
+    //Else,
+    //External,
+    //Fn,
+    //If,
+    //Return,
+    //Switch,
+    //Var,
+    //While,
 }
 
 public struct TokenLocation(long column, long line)

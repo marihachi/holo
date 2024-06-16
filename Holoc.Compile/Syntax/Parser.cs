@@ -80,6 +80,32 @@ public class Parser
     }
 
     /// <summary>
+    /// 現在のトークンが期待するキーワードであるかを確認し、次のトークンを読み進めます。
+    /// </summary>
+    private bool NextWith(string keyword)
+    {
+        if (Reader.TokenKind != TokenKind.Word)
+        {
+            GenerateError(Reader.CreateUnexpectedError());
+            return false;
+        }
+
+        if ((string)Reader.Token!.Value! != keyword)
+        {
+            GenerateError(Reader.CreateUnexpectedError());
+            return false;
+        }
+
+        if (!Reader.Read())
+        {
+            GenerateError(Reader.Error!);
+            return false;
+        }
+
+        return true;
+    }
+
+    /// <summary>
     /// 指定したパース関数を繰り返し適用します。
     /// 繰り返し完了条件に一致するまで処理は継続されます。
     /// 繰り返しの途中でパース関数がエラーを返した場合、繰り返し呼び出し全体が失敗として終了します。
@@ -141,9 +167,9 @@ public class Parser
 
         location.MarkBegin(Reader);
 
-        if (!NextWith(TokenKind.Fn)) return;
+        if (!NextWith("fn")) return;
 
-        if (!Expect(TokenKind.Identifier)) return;
+        if (!Expect(TokenKind.Word)) return;
 
         // Identifierトークンが読み出されているためValueはnullではない
         var name = (string)Reader.Token!.Value!;
