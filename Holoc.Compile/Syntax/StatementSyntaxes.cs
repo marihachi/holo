@@ -10,13 +10,13 @@ public partial class Parser
     /// </summary>
     private void ParseStatement()
     {
-        if (Ctx.Try("return"))
+        if (Try("return"))
         {
             ParseReturn();
             return;
         }
 
-        Ctx.GenerateError(Ctx.Reader.CreateUnexpectedError());
+        GenerateError(Reader.CreateUnexpectedError());
     }
 
     /// <summary>
@@ -24,14 +24,14 @@ public partial class Parser
     /// </summary>
     private void ParseReturn()
     {
-        Ctx.Result = null;
-        var location = ParserContext.CreateLocation();
-        location.MarkBegin(Ctx.Reader);
+        Result = null;
+        var location = CreateLocation();
+        location.MarkBegin(Reader);
 
-        if (!Ctx.NextWith("return")) return;
-        if (!Ctx.NextWith(TokenKind.SemiColon)) return;
+        if (!NextWith("return")) return;
+        if (!NextWith(TokenKind.SemiColon)) return;
 
-        location.MarkEnd(Ctx.Reader);
-        Ctx.Result = SyntaxNode.CreateReturnStatement(null, location);
+        location.MarkEnd(Reader);
+        Result = SyntaxNode.CreateReturnStatement(null, location);
     }
 }
