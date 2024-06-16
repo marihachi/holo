@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Holoc": {
+      "commandName": "Project",
+      "commandLineArgs": ".\\main.holo"
+    }
+  }
+}
