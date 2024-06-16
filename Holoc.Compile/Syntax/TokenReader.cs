@@ -14,11 +14,6 @@ public class TokenReader
 
     private void ReadChar()
     {
-        if (Stream == null)
-        {
-            throw new InvalidOperationException("not initialized");
-        }
-
         if (!Stream.EndOfStream)
         {
             CurrentChar = (char)Stream.Read();
@@ -31,11 +26,6 @@ public class TokenReader
 
     private char? PeekChar()
     {
-        if (Stream == null)
-        {
-            throw new InvalidOperationException("not initialized");
-        }
-
         if (!Stream.EndOfStream)
         {
             return (char)Stream.Peek();
