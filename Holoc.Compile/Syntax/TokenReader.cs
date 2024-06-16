@@ -85,22 +85,23 @@ public class TokenReader
 
         while (true)
         {
-            // 1文字読み取る
-            ReadChar();
-
-            // ストリームの終わりに達していたら
-            if (CurrentChar == null)
-            {
-                Token = new SyntaxToken(TokenKind.EOF, new TokenLocation(Column, Line));
-                return;
-            }
-
             TokenLocation beginLocation;
 
             switch (state)
             {
                 // トークン読み取り状態
                 case 0:
+
+                    // 1文字読み取る
+                    ReadChar();
+
+                    // ストリームの終わりに達していたら
+                    if (CurrentChar == null)
+                    {
+                        Token = new SyntaxToken(TokenKind.EOF, new TokenLocation(Column, Line));
+                        return;
+                    }
+
                     switch (CurrentChar)
                     {
                         case ' ':
@@ -131,64 +132,64 @@ public class TokenReader
                             beginLocation = new TokenLocation(Column, Line);
                             Column += 1;
 
+                            // 先読み
                             if (PeekChar() == '=')
                             {
                                 ReadChar();
                                 Column += 1;
                                 Token = new SyntaxToken(TokenKind.AsterEq, beginLocation);
+                                return;
                             }
-                            else
-                            {
-                                Token = new SyntaxToken(TokenKind.Asterisk, beginLocation);
-                            }
+
+                            Token = new SyntaxToken(TokenKind.Asterisk, beginLocation);
                             return;
 
                         case '+':
                             beginLocation = new TokenLocation(Column, Line);
                             Column += 1;
 
+                            // 先読み
                             if (PeekChar() == '=')
                             {
                                 ReadChar();
                                 Column += 1;
                                 Token = new SyntaxToken(TokenKind.PlusEq, beginLocation);
+                                return;
                             }
-                            else
-                            {
-                                Token = new SyntaxToken(TokenKind.Plus, beginLocation);
-                            }
+
+                            Token = new SyntaxToken(TokenKind.Plus, beginLocation);
                             return;
 
                         case '-':
                             beginLocation = new TokenLocation(Column, Line);
                             Column += 1;
 
+                            // 先読み
                             if (PeekChar() == '=')
                             {
                                 ReadChar();
                                 Column += 1;
                                 Token = new SyntaxToken(TokenKind.MinusEq, beginLocation);
+                                return;
                             }
-                            else
-                            {
-                                Token = new SyntaxToken(TokenKind.Minus, beginLocation);
-                            }
+
+                            Token = new SyntaxToken(TokenKind.Minus, beginLocation);
                             return;
 
                         case '/':
                             beginLocation = new TokenLocation(Column, Line);
                             Column += 1;
 
+                            // 先読み
                             if (PeekChar() == '=')
                             {
                                 ReadChar();
                                 Column += 1;
                                 Token = new SyntaxToken(TokenKind.SlashEq, beginLocation);
+                                return;
                             }
-                            else
-                            {
-                                Token = new SyntaxToken(TokenKind.Slash, beginLocation);
-                            }
+
+                            Token = new SyntaxToken(TokenKind.Slash, beginLocation);
                             return;
                     }
                     break;
