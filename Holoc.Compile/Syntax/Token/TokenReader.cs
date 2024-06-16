@@ -1,4 +1,4 @@
-namespace Holoc.Compile.Syntax;
+namespace Holoc.Compile.Syntax.Token;
 
 public class TokenReader
 {
@@ -9,8 +9,6 @@ public class TokenReader
     public int Line { get; private set; }
     public SyntaxToken? Token { get; private set; }
     public string? Error { get; private set; }
-
-    public TokenKind TokenKind => Token.Kind;
 
     private void ReadChar()
     {
@@ -60,7 +58,7 @@ public class TokenReader
 
     public string CreateUnexpectedError()
     {
-        if (TokenKind == TokenKind.Word)
+        if (Token!.Kind == TokenKind.Word)
         {
             return $"Unexpected token: {(string)Token!.Value!} {Token.Location.Line}:{Token.Location.Column}";
         }

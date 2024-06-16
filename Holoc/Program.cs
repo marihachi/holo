@@ -44,7 +44,7 @@ public class Program
             if (unitNode == null)
             {
                 Console.Error.WriteLine("parse failed:");
-                foreach (var error in parser.Errors)
+                foreach (var error in parser.Ctx.Errors)
                 {
                     Console.Error.WriteLine(error);
                 }
