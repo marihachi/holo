@@ -171,7 +171,7 @@ public class Parser
 
         if (!Expect(TokenKind.Word)) return;
 
-        // Identifierトークンが読み出されているためValueはnullではない
+        // Wordトークンが読み出されているためValueはnullではない
         var name = (string)Reader.Token!.Value!;
 
         if (!Next()) return;
