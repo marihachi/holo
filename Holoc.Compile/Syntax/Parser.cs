@@ -152,14 +152,36 @@ public class Parser
     /// 繰り返しの途中でパース関数がエラーを返した場合、繰り返し呼び出し全体が失敗として終了します。
     /// </summary>
     /// <param name="parseFunc">パース関数</param>
-    /// <param name="termination">繰り返しの完了条件</param>
-    private void Repeat(Action parseFunc, Predicate<TokenKind> termination)
+    /// <param name="terminator">繰り返し終了のトークン</param>
+    private void Repeat(Action parseFunc, Predicate<SyntaxToken> terminator)
+    {
+        Repeat(parseFunc, terminator, null);
+    }
+
+    /// <summary>
+    /// 指定したパース関数を繰り返し適用します。
+    /// 繰り返し完了条件に一致するまで処理は継続されます。
+    /// 繰り返しの途中でパース関数がエラーを返した場合、繰り返し呼び出し全体が失敗として終了します。
+    /// </summary>
+    /// <param name="parseFunc">パース関数</param>
+    /// <param name="terminator">繰り返し終了のトークン</param>
+    /// <param name="separator">区切り文字のトークン</param>
+    private void Repeat(Action parseFunc, Predicate<SyntaxToken> terminator, Predicate<SyntaxToken>? separator)
     {
         Results = null;
 
         var items = new List<SyntaxNode>();
-        while (!termination(Reader.TokenKind))
+        while (!terminator(Reader.Token!))
         {
+            if (separator != null && items.Count > 0)
+            {
+                if (!separator(Reader.Token!))
+                {
+                    GenerateError(Reader.CreateUnexpectedError());
+                    return;
+                }
+                if (!Next()) return;
+            }
             parseFunc();
             if (Result == null) return;
             items.Add(Result);
@@ -186,53 +208,48 @@ public class Parser
     private void ParseUnit()
     {
         Result = null;
-
         var location = CreateLocation();
-
         location.MarkBegin(Reader);
 
-        Repeat(ParseFunctionDecl, k => k == TokenKind.EOF);
+        Repeat(ParseFunctionDecl, x => x.Kind == TokenKind.EOF);
         if (Results == null) return;
-        var body = Results;
+        List<SyntaxNode> body = [];
+        body.AddRange(Results);
 
         location.MarkEnd(Reader);
-
         Result = SyntaxNode.CreateUnit(body, location);
     }
 
     private void ParseFunctionDecl()
     {
         Result = null;
-
         var location = CreateLocation();
-
         location.MarkBegin(Reader);
 
         if (!NextWith("fn")) return;
 
+        // name
         if (!Expect(TokenKind.Word)) return;
-
-        // Wordトークンが読み出されているためValueはnullではない
         var name = (string)Reader.Token!.Value!;
-
         if (!Next()) return;
 
+        // parameters
         if (!NextWith(TokenKind.OpenParen)) return;
-
-        // TODO: arguments
-
+        Repeat(ParseFunctionParameter, x => x.Kind == TokenKind.CloseParen, x => x.Kind == TokenKind.Comma);
+        if (Results == null) return;
+        List<SyntaxNode> paramList = [];
+        paramList.AddRange(Results);
         if (!NextWith(TokenKind.CloseParen)) return;
 
         // body
-        var body = new List<SyntaxNode>();
-
+        List<SyntaxNode>? body = null;
         if (Try(TokenKind.OpenBrace))
         {
             if (!Next()) return;
-
-            Repeat(ParseStatement, x => x == TokenKind.CloseBrace);
+            Repeat(ParseStatement, x => x.Kind == TokenKind.CloseBrace);
             if (Results == null) return;
-
+            body = [];
+            body.AddRange(Results);
             if (!NextWith(TokenKind.CloseBrace)) return;
         }
         else
@@ -241,9 +258,21 @@ public class Parser
         }
 
         location.MarkEnd(Reader);
-
         Result = SyntaxNode.CreateFunctionDecl(name, body, location);
-        return;
+    }
+
+    private void ParseFunctionParameter()
+    {
+        Result = null;
+        var location = CreateLocation();
+        location.MarkBegin(Reader);
+
+        if (!Expect(TokenKind.Word)) return;
+        var name = (string)Reader.Token!.Value!;
+        if (!Next()) return;
+
+        location.MarkEnd(Reader);
+        Result = SyntaxNode.CreateFunctionParameter(name, location);
     }
 
     private void ParseExpression()
@@ -254,9 +283,7 @@ public class Parser
     private void ParseStatement()
     {
         Result = null;
-
         var location = CreateLocation();
-
         location.MarkBegin(Reader);
 
         if (Try("return"))
@@ -269,7 +296,6 @@ public class Parser
         }
 
         // TODO: statements
-
         GenerateError(Reader.CreateUnexpectedError());
     }
 }

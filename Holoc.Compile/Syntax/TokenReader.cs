@@ -154,6 +154,12 @@ public class TokenReader
                     Token = new SyntaxToken(TokenKind.CloseParen, beginLocation);
                     return;
 
+                case ',':
+                    beginLocation = new TokenLocation(Column, Line);
+                    Column += 1;
+                    Token = new SyntaxToken(TokenKind.Comma, beginLocation);
+                    return;
+
                 case ';':
                     beginLocation = new TokenLocation(Column, Line);
                     Column += 1;

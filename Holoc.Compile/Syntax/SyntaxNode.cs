@@ -4,6 +4,7 @@ public enum NodeKind : byte
 {
     Unit,
     FunctionDecl,
+    FunctionParameter,
     VariableDecl,
     WhileStatement,
     AssignStatement,
@@ -87,7 +88,7 @@ public class SyntaxNode
     }
 
     public static SyntaxNode CreateFunctionDecl
-        (string name, List<SyntaxNode> body, NodeLocation location)
+        (string name, List<SyntaxNode>? body, NodeLocation location)
     {
         return new SyntaxNode
         {
@@ -95,6 +96,17 @@ public class SyntaxNode
             Location = location,
             Name = name,
             Body = body,
+        };
+    }
+
+    public static SyntaxNode CreateFunctionParameter
+        (string name, NodeLocation location)
+    {
+        return new SyntaxNode
+        {
+            Kind = NodeKind.FunctionParameter,
+            Location = location,
+            Name = name,
         };
     }
 
