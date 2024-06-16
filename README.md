@@ -1,3 +1,5 @@
+# It is currently being developed in C#. We plan to replace the current implementation.
+
 # holo
 A system programming language of modern syntaxes with LLVM.
 
