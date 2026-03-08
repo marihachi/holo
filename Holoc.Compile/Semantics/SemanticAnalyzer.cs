@@ -1,5 +1,6 @@
 namespace Holoc.Compile.Semantics;
 
-public class SemanticResolver
+public class SemanticAnalyzer
 {
+
 }
