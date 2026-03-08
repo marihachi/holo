@@ -10,6 +10,16 @@ public class TokenReader
     public SyntaxToken? Token { get; private set; }
     public string? Error { get; private set; }
 
+    public void Initialize(StreamReader stream)
+    {
+        Stream = stream;
+        CurrentChar = null;
+        Column = 1;
+        Line = 1;
+        Token = null;
+        Error = null;
+    }
+
     private void ReadChar()
     {
         if (Stream!.EndOfStream)
@@ -44,26 +54,6 @@ public class TokenReader
         }
 
         return ch;
-    }
-
-    public void Initialize(Stream stream)
-    {
-        Stream = new StreamReader(stream);
-        CurrentChar = null;
-        Column = 1;
-        Line = 1;
-        Token = null;
-        Error = null;
-    }
-
-    public string CreateUnexpectedError()
-    {
-        if (Token!.Kind == TokenKind.Word)
-        {
-            return $"Unexpected token: {(string)Token!.Value!} {Token.Location.Line}:{Token.Location.Column}";
-        }
-
-        return $"Unexpected token: {Token!.Kind} {Token.Location.Line}:{Token.Location.Column}";
     }
 
     /// <summary>
@@ -295,5 +285,15 @@ public class TokenReader
     public void Peek()
     {
         throw new NotImplementedException();
+    }
+
+    public string CreateUnexpectedError()
+    {
+        if (Token!.Kind == TokenKind.Word)
+        {
+            return $"Unexpected token: {(string)Token!.Value!} {Token.Location.Line}:{Token.Location.Column}";
+        }
+
+        return $"Unexpected token: {Token!.Kind} {Token.Location.Line}:{Token.Location.Column}";
     }
 }

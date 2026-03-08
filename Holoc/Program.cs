@@ -1,6 +1,7 @@
-using System.CommandLine;
-using System.IO.MemoryMappedFiles;
 using Holoc.Compile.Syntax;
+using Holoc.Compile.Syntax.Node;
+using System.CommandLine;
+using System.Text;
 
 public class Program
 {
@@ -35,11 +36,21 @@ public class Program
         foreach (var filepath in input)
         {
             // Open a file as MMF stream
-            using var mmf = MemoryMappedFile.CreateFromFile(filepath);
-            using var stream = mmf.CreateViewStream();
+            // .holo files may be large and should be read in small (1KB) blocks to avoid memory pressure.
+            //using var mmf = MemoryMappedFile.CreateFromFile(filepath);
+            //using var stream = mmf.CreateViewStream();
 
-            // Parse .holo file
-            var unitNode = parser.Parse(stream);
+            SyntaxNode? unitNode;
+            using (var reader = new StreamReader(
+                filepath,
+                Encoding.UTF8,
+                detectEncodingFromByteOrderMarks: true,
+                bufferSize: 1024 * 1024) // 1MB
+                )
+            {
+                // Parse .holo file
+                unitNode = parser.Parse(reader);
+            }
 
             if (unitNode == null)
             {

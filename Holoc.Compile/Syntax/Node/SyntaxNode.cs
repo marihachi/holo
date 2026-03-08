@@ -9,6 +9,7 @@ public class SyntaxNode
     public List<SyntaxNode>? Body { get; set; }
     public string? Name { get; set; }
     public object? Value { get; set; }
+    public bool IsExternal { get; set; }
 
     public static SyntaxNode CreateUnit(List<SyntaxNode> body, NodeLocation location)
     {
@@ -21,14 +22,16 @@ public class SyntaxNode
     }
 
     public static SyntaxNode CreateFunctionDecl
-        (string name, List<SyntaxNode>? body, NodeLocation location)
+        (string name, List<SyntaxNode>? parameters, List<SyntaxNode>? body, bool isExternal, NodeLocation location)
     {
         return new SyntaxNode
         {
             Kind = NodeKind.FunctionDecl,
             Location = location,
             Name = name,
+            Operands = parameters,
             Body = body,
+            IsExternal = isExternal,
         };
     }
 
@@ -44,7 +47,7 @@ public class SyntaxNode
     }
 
     public static SyntaxNode CreateVariableDecl
-        (string name, SyntaxNode? initializer, NodeLocation location)
+        (string name, SyntaxNode? variableType, SyntaxNode? initializer, NodeLocation location)
     {
         return new SyntaxNode
         {
@@ -56,14 +59,13 @@ public class SyntaxNode
     }
 
     public static SyntaxNode CreateWhileStatement
-        (SyntaxNode condition, List<SyntaxNode> body, NodeLocation location)
+        (SyntaxNode condition, SyntaxNode body, NodeLocation location)
     {
         return new SyntaxNode
         {
             Kind = NodeKind.WhileStatement,
             Location = location,
-            Operands = [condition],
-            Body = body,
+            Operands = [condition, body],
         };
     }
 

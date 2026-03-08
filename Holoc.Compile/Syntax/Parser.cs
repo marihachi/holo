@@ -8,7 +8,7 @@ namespace Holoc.Compile.Syntax;
 /// </summary>
 public partial class Parser
 {
-    private TokenReader Reader = new TokenReader();
+    private TokenReader Reader = new();
 
     public SyntaxNode? Result;
     public List<SyntaxNode>? Results;
@@ -22,7 +22,7 @@ public partial class Parser
         return new NodeLocation(TokenLocation.Empty, TokenLocation.Empty);
     }
 
-    private void Initialize(Stream stream)
+    private void Initialize(StreamReader stream)
     {
         // 状態のクリア
         Reader.Initialize(stream);
@@ -47,7 +47,7 @@ public partial class Parser
     /// </summary>
     private bool Expect(TokenKind kind)
     {
-        if (Reader.Token.Kind != kind)
+        if (GetKind() != kind)
         {
             GenerateError(Reader.CreateUnexpectedError());
             return false;
@@ -61,7 +61,16 @@ public partial class Parser
     /// </summary>
     private TokenKind GetKind()
     {
-        return Reader.Token.Kind;
+        return Reader.Token!.Kind;
+    }
+
+    /// <summary>
+    /// 現在のトークンの値を取得します。
+    /// </summary>
+    /// <returns></returns>
+    public string GetTokenValue()
+    {
+        return (string)Reader.Token!.Value!;
     }
 
     /// <summary>
@@ -69,7 +78,7 @@ public partial class Parser
     /// </summary>
     private bool Try(TokenKind kind)
     {
-        if (Reader.Token.Kind != kind)
+        if (GetKind() != kind)
         {
             return false;
         }
@@ -82,7 +91,7 @@ public partial class Parser
     /// </summary>
     private bool Try(string keyword)
     {
-        if (Reader.Token.Kind != TokenKind.Word)
+        if (GetKind() != TokenKind.Word)
         {
             return false;
         }
@@ -114,7 +123,7 @@ public partial class Parser
     /// </summary>
     private bool NextWith(TokenKind kind)
     {
-        if (Reader.Token.Kind != kind)
+        if (GetKind() != kind)
         {
             GenerateError(Reader.CreateUnexpectedError());
             return false;
@@ -134,7 +143,7 @@ public partial class Parser
     /// </summary>
     private bool NextWith(string keyword)
     {
-        if (Reader.Token.Kind != TokenKind.Word)
+        if (GetKind() != TokenKind.Word)
         {
             GenerateError(Reader.CreateUnexpectedError());
             return false;
@@ -206,7 +215,7 @@ public partial class Parser
         Results = items;
     }
 
-    public SyntaxNode? Parse(Stream stream)
+    public SyntaxNode? Parse(StreamReader stream)
     {
         Initialize(stream);
         ParseUnit();

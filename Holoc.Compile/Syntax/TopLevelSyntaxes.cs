@@ -14,7 +14,7 @@ public partial class Parser
         var location = CreateLocation();
         location.MarkBegin(Reader);
 
-        Repeat(ParseFunctionDecl, x => x.Kind == TokenKind.EOF);
+        Repeat(ParseTopLevelDecl, x => x.Kind == TokenKind.EOF);
         if (Results == null) return;
         List<SyntaxNode> body = [];
         body.AddRange(Results);
@@ -24,9 +24,32 @@ public partial class Parser
     }
 
     /// <summary>
+    /// トップレベル宣言
+    /// </summary>
+    private void ParseTopLevelDecl()
+    {
+        Result = null;
+
+        var isExternal = false;
+        if (Try("external"))
+        {
+            Next();
+            isExternal = true;
+        }
+
+        if (Try("fn"))
+        {
+            ParseFunctionDecl(isExternal);
+            return;
+        }
+
+        GenerateError(Reader.CreateUnexpectedError());
+    }
+
+    /// <summary>
     /// 関数宣言
     /// </summary>
-    private void ParseFunctionDecl()
+    private void ParseFunctionDecl(bool isExternal)
     {
         Result = null;
         var location = CreateLocation();
@@ -36,7 +59,7 @@ public partial class Parser
 
         // name
         if (!Expect(TokenKind.Word)) return;
-        var name = (string)Reader.Token!.Value!;
+        var name =  GetTokenValue();
         if (!Next()) return;
 
         // parameters
@@ -64,7 +87,7 @@ public partial class Parser
         }
 
         location.MarkEnd(Reader);
-        Result = SyntaxNode.CreateFunctionDecl(name, body, location);
+        Result = SyntaxNode.CreateFunctionDecl(name, paramList, body, isExternal, location);
     }
 
     /// <summary>
@@ -79,6 +102,8 @@ public partial class Parser
         if (!Expect(TokenKind.Word)) return;
         var name = (string)Reader.Token!.Value!;
         if (!Next()) return;
+
+
 
         location.MarkEnd(Reader);
         Result = SyntaxNode.CreateFunctionParameter(name, location);
