@@ -8,166 +8,146 @@ public partial class Parser
     /// <summary>
     /// 文
     /// </summary>
-    private void ParseStatement()
+    private SyntaxNode? ParseStatement()
     {
-        Result = null;
-
         if (Try("break"))
         {
-            ParseBreakStatement();
-            return;
+            return ParseBreakStatement();
         }
 
         if (Try("continue"))
         {
-            ParseContinueStatement();
-            return;
+            return ParseContinueStatement();
         }
 
         if (Try("return"))
         {
-            ParseReturn();
-            return;
+            return ParseReturn();
         }
 
         if (Try("var"))
         {
-            ParseVariableDeclaration();
-            return;
+            return ParseVariableDeclaration();
         }
 
         if (Try("while"))
         {
-            ParseWhileStatement();
-            return;
+            return ParseWhileStatement();
         }
 
         GenerateError(Reader.CreateUnexpectedError());
+        return null;
     }
 
     /// <summary>
     /// break文
     /// </summary>
-    private void ParseBreakStatement()
+    private SyntaxNode? ParseBreakStatement()
     {
-        Result = null;
         var location = CreateLocation();
         location.MarkBegin(Reader);
 
-        if (!NextWith("break")) return;
-        if (!NextWith(TokenKind.SemiColon)) return;
+        if (!NextWith("break")) return null;
+        if (!NextWith(TokenKind.SemiColon)) return null;
 
         location.MarkEnd(Reader);
-        Result = SyntaxNode.CreateBreakStatement(location);
+        return SyntaxNode.CreateBreakStatement(location);
     }
 
     /// <summary>
     /// continue文
     /// </summary>
-    private void ParseContinueStatement()
+    private SyntaxNode? ParseContinueStatement()
     {
-        Result = null;
         var location = CreateLocation();
         location.MarkBegin(Reader);
 
-        if (!NextWith("continue")) return;
-        if (!NextWith(TokenKind.SemiColon)) return;
+        if (!NextWith("continue")) return null;
+        if (!NextWith(TokenKind.SemiColon)) return null;
 
         location.MarkEnd(Reader);
-        Result = SyntaxNode.CreateContinueStatement(location);
+        return SyntaxNode.CreateContinueStatement(location);
     }
 
     /// <summary>
     /// return文
     /// </summary>
-    private void ParseReturn()
+    private SyntaxNode? ParseReturn()
     {
-        Result = null;
         var location = CreateLocation();
         location.MarkBegin(Reader);
 
-        if (!NextWith("return")) return;
-        if (!NextWith(TokenKind.SemiColon)) return;
+        if (!NextWith("return")) return null;
+        if (!NextWith(TokenKind.SemiColon)) return null;
 
         location.MarkEnd(Reader);
-        Result = SyntaxNode.CreateReturnStatement(null, location);
+        return SyntaxNode.CreateReturnStatement(null, location);
     }
 
-    private void ParseVariableDeclaration()
+    private SyntaxNode? ParseVariableDeclaration()
     {
-        Result = null;
         var location = CreateLocation();
         location.MarkBegin(Reader);
 
-        if (!NextWith("var")) return;
+        if (!NextWith("var")) return null;
 
-        if (!Expect(TokenKind.Word)) return;
+        if (!Expect(TokenKind.Word)) return null;
         var name = (string)Reader.Token!.Value!;
-        if (!Next()) return;
+        if (!Next()) return null;
 
-        SyntaxNode? variableType;
+        SyntaxNode? variableType = null;
         if (Try(TokenKind.Colon))
         {
-            if (!Next()) return;
+            if (!Next()) return null;
 
-            ParseTypeReference();
-            if (Result == null) return;
-            variableType = Result;
-        }
-        else
-        {
-            variableType = null;
+            variableType = ParseTypeReference();
+            if (variableType == null) return null;
         }
 
-        SyntaxNode? initializer;
+        SyntaxNode? initializer = null;
         if (Try(TokenKind.Eq))
         {
-            if (!Next()) return;
+            if (!Next()) return null;
 
-            ParseExpression();
-            if (Result == null) return;
-            initializer = Result;
-        }
-        else
-        {
-            initializer = null;
+            initializer = ParseExpression();
+            if (initializer == null) return null;
         }
 
         location.MarkEnd(Reader);
-        Result = SyntaxNode.CreateVariableDecl(name, variableType, initializer, location);
+        return SyntaxNode.CreateVariableDecl(name, variableType, initializer, location);
     }
 
-    private void ParseWhileStatement()
+    private SyntaxNode? ParseWhileStatement()
     {
-        Result = null;
+        object? resultObj;
+
         var location = CreateLocation();
         location.MarkBegin(Reader);
 
-        if (!NextWith("while")) return;
+        if (!NextWith("while")) return null;
 
-        ParseExpression();
-        if (Result == null) return;
-        var condition = Result;
+        var condition = ParseExpression();
+        if (condition == null) return null;
 
         SyntaxNode? body;
         var bodyLocation = CreateLocation();
         bodyLocation.MarkBegin(Reader);
-        ParseBlockOrStatement();
+        resultObj = ParseBlockOrStatement();
         bodyLocation.MarkEnd(Reader);
-        if (Results != null)
+        if (resultObj is List<SyntaxNode> nodeList)
         {
-            body = SyntaxNode.CreateBlock(Results, bodyLocation);
+            body = SyntaxNode.CreateBlock(nodeList, bodyLocation);
         }
-        else if (Result != null)
+        else if (resultObj is SyntaxNode node)
         {
-            body = Result;
+            body = node;
         }
         else
         {
-            return;
+            return null;
         }
 
         location.MarkEnd(Reader);
-        Result = SyntaxNode.CreateWhileStatement(condition, body, location);
+        return SyntaxNode.CreateWhileStatement(condition, body, location);
     }
 }

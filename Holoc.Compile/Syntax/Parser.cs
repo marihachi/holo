@@ -10,8 +10,6 @@ public partial class Parser
 {
     private TokenReader Reader = new();
 
-    public SyntaxNode? Result;
-    public List<SyntaxNode>? Results;
     public List<string> Errors = [];
 
     /// <summary>
@@ -26,8 +24,6 @@ public partial class Parser
     {
         // 状態のクリア
         Reader.Initialize(stream);
-        Result = null;
-        Results = null;
         Errors.Clear();
 
         // 最初のトークンを読み取り
@@ -171,9 +167,9 @@ public partial class Parser
     /// </summary>
     /// <param name="parseFunc">パース関数</param>
     /// <param name="terminator">繰り返し終了のトークン</param>
-    private void Repeat(Action parseFunc, Predicate<SyntaxToken> terminator)
+    private List<SyntaxNode>? Repeat(Func<SyntaxNode?> parseFunc, Predicate<SyntaxToken> terminator)
     {
-        Repeat(parseFunc, terminator, null);
+        return Repeat(parseFunc, terminator, null);
     }
 
     /// <summary>
@@ -184,10 +180,8 @@ public partial class Parser
     /// <param name="parseItem">パース関数</param>
     /// <param name="terminator">繰り返し終了のトークンかを確認する関数</param>
     /// <param name="separator">区切り文字のトークンかを確認する関数</param>
-    private void Repeat(Action parseItem, Predicate<SyntaxToken> terminator, Predicate<SyntaxToken>? separator)
+    private List<SyntaxNode>? Repeat(Func<SyntaxNode?> parseItem, Predicate<SyntaxToken> terminator, Predicate<SyntaxToken>? separator)
     {
-        Results = null;
-
         var items = new List<SyntaxNode>();
 
         // 終端のトークンかを確認する
@@ -200,25 +194,24 @@ public partial class Parser
                 if (!separator(Reader.Token!))
                 {
                     GenerateError(Reader.CreateUnexpectedError());
-                    return;
+                    return null;
                 }
 
-                if (!Next()) return;
+                if (!Next()) return null;
             }
 
-            parseItem();
-            if (Result == null) return;
+            var result = parseItem();
+            if (result == null) return null;
 
-            items.Add(Result);
+            items.Add(result);
         }
 
-        Results = items;
+        return items;
     }
 
     public SyntaxNode? Parse(StreamReader stream)
     {
         Initialize(stream);
-        ParseUnit();
-        return Result;
+        return ParseUnit();
     }
 }

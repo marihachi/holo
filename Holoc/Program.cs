@@ -16,21 +16,31 @@ public class Program
         var outputOption = new Option<string>("-o", "output filename.");
         command.Add(outputOption);
 
+        var showAstOption = new Option<string>("--ast", "show AST.");
+        command.Add(showAstOption);
+
         // Set a handler will be called after command parsing
         command.SetHandler(ctx =>
         {
             var inputValues = ctx.ParseResult.GetValueForArgument(inputArg);
-            var outputValues = ctx.ParseResult.GetValueForOption(outputOption);
+            var outputValue = ctx.ParseResult.GetValueForOption(outputOption);
+            var showAstValue = ctx.ParseResult.GetValueForOption(showAstOption);
 
-            ProcessCommand(inputValues, outputValues);
+            ProcessCommand(inputValues, outputValue, showAstValue);
         });
 
         // Execute the command parsing
         return command.InvokeAsync(args).Result;
     }
 
-    static void ProcessCommand(string[] input, string? output)
+    static void ProcessCommand(string[] input, string? output, string? showAst)
     {
+        if (input.Length == 0)
+        {
+            Console.Error.WriteLine("No input files specified.");
+            return;
+        }
+
         var parser = new Parser();
 
         foreach (var filepath in input)
@@ -54,12 +64,17 @@ public class Program
 
             if (unitNode == null)
             {
-                Console.Error.WriteLine("parse failed:");
+                Console.Error.WriteLine("Syntax error.");
                 foreach (var error in parser.Errors)
                 {
                     Console.Error.WriteLine(error);
                 }
                 return;
+            }
+
+            if (showAst != null && unitNode != null)
+            {
+                SyntaxNode.ShowSyntaxNode(unitNode);
             }
 
             // TODO: Resolve

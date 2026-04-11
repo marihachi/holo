@@ -8,28 +8,25 @@ public partial class Parser
     /// <summary>
     /// コンパイル単位
     /// </summary>
-    private void ParseUnit()
+    private SyntaxNode? ParseUnit()
     {
-        Result = null;
         var location = CreateLocation();
         location.MarkBegin(Reader);
 
-        Repeat(ParseTopLevelDecl, x => x.Kind == TokenKind.EOF);
-        if (Results == null) return;
+        var results = Repeat(ParseTopLevelDecl, x => x.Kind == TokenKind.EOF);
+        if (results == null) return null;
         List<SyntaxNode> body = [];
-        body.AddRange(Results);
+        body.AddRange(results);
 
         location.MarkEnd(Reader);
-        Result = SyntaxNode.CreateUnit(body, location);
+        return SyntaxNode.CreateUnit(body, location);
     }
 
     /// <summary>
     /// トップレベル宣言
     /// </summary>
-    private void ParseTopLevelDecl()
+    private SyntaxNode? ParseTopLevelDecl()
     {
-        Result = null;
-
         var isExternal = false;
         if (Try("external"))
         {
@@ -39,73 +36,72 @@ public partial class Parser
 
         if (Try("fn"))
         {
-            ParseFunctionDecl(isExternal);
-            return;
+            return ParseFunctionDecl(isExternal);
         }
 
         GenerateError(Reader.CreateUnexpectedError());
+        return null;
     }
 
     /// <summary>
     /// 関数宣言
     /// </summary>
-    private void ParseFunctionDecl(bool isExternal)
+    private SyntaxNode? ParseFunctionDecl(bool isExternal)
     {
-        Result = null;
+        List<SyntaxNode>? results;
         var location = CreateLocation();
         location.MarkBegin(Reader);
 
-        if (!NextWith("fn")) return;
+        if (!NextWith("fn")) return null;
 
         // name
-        if (!Expect(TokenKind.Word)) return;
+        if (!Expect(TokenKind.Word)) return null;
         var name =  GetTokenValue();
-        if (!Next()) return;
+        if (!Next()) return null;
 
         // parameters
-        if (!NextWith(TokenKind.OpenParen)) return;
-        Repeat(ParseFunctionParameter, x => x.Kind == TokenKind.CloseParen, x => x.Kind == TokenKind.Comma);
-        if (Results == null) return;
+        if (!NextWith(TokenKind.OpenParen)) return null;
+        results = Repeat(ParseFunctionParameter, x => x.Kind == TokenKind.CloseParen, x => x.Kind == TokenKind.Comma);
+        if (results == null) return null;
         List<SyntaxNode> paramList = [];
-        paramList.AddRange(Results);
-        if (!NextWith(TokenKind.CloseParen)) return;
+        paramList.AddRange(results);
+        if (!NextWith(TokenKind.CloseParen)) return null;
 
         // body
         List<SyntaxNode>? body = null;
         if (Try(TokenKind.OpenBrace))
         {
-            if (!Next()) return;
-            Repeat(ParseStatement, x => x.Kind == TokenKind.CloseBrace);
-            if (Results == null) return;
+            if (!Next()) return null;
+            results = Repeat(ParseStatement, x => x.Kind == TokenKind.CloseBrace);
+            if (results == null) return null;
             body = [];
-            body.AddRange(Results);
-            if (!NextWith(TokenKind.CloseBrace)) return;
+            body.AddRange(results);
+            if (!NextWith(TokenKind.CloseBrace)) return null;
         }
         else
         {
-            if (!NextWith(TokenKind.SemiColon)) return;
+            if (!NextWith(TokenKind.SemiColon)) return null;
         }
 
         location.MarkEnd(Reader);
-        Result = SyntaxNode.CreateFunctionDecl(name, paramList, body, isExternal, location);
+        return SyntaxNode.CreateFunctionDecl(name, paramList, body, isExternal, location);
     }
 
     /// <summary>
     /// 関数の仮引数
     /// </summary>
-    private void ParseFunctionParameter()
+    private SyntaxNode? ParseFunctionParameter()
     {
-        Result = null;
         var location = CreateLocation();
         location.MarkBegin(Reader);
 
-        if (!Expect(TokenKind.Word)) return;
+        if (!Expect(TokenKind.Word)) return null;
         var name = (string)Reader.Token!.Value!;
-        if (!Next()) return;
+        if (!Next()) return null;
 
 
 
         location.MarkEnd(Reader);
-        Result = SyntaxNode.CreateFunctionParameter(name, location);
+        return SyntaxNode.CreateFunctionParameter(name, location);
     }
 }

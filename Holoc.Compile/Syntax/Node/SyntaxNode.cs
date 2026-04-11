@@ -230,4 +230,69 @@ public class SyntaxNode
             Name = name,
         };
     }
+
+    /// <summary>
+    /// SyntaxNodeのツリー構造をコンソールに表示します。
+    /// </summary>
+    public static void ShowSyntaxNode(SyntaxNode? node)
+    {
+        if (node == null)
+        {
+            return;
+        }
+
+        ShowSyntaxNodeInternal(node, "", true);
+    }
+
+    private static void ShowSyntaxNodeInternal(SyntaxNode node, string indent, bool isLast)
+    {
+        // 現在のノードを表示
+        string prefix = isLast ? "└── " : "├── ";
+        Console.Write(indent + prefix);
+        Console.Write(node.Kind);
+
+        // ノードの付加情報を表示
+        if (!string.IsNullOrEmpty(node.Name))
+        {
+            Console.Write($" [Name: {node.Name}]");
+        }
+
+        if (node.Value != null)
+        {
+            Console.Write($" [Value: {node.Value}]");
+        }
+
+        if (node.Mode != NodeMode.None)
+        {
+            Console.Write($" [Mode: {node.Mode}]");
+        }
+
+        if (node.IsExternal)
+        {
+            Console.Write(" [External]");
+        }
+
+        Console.WriteLine();
+
+        // インデント文字列を更新
+        string nextIndent = indent + (isLast ? "    " : "│   ");
+
+        // Operandsを表示
+        if (node.Operands != null && node.Operands.Count > 0)
+        {
+            for (int i = 0; i < node.Operands.Count; i++)
+            {
+                ShowSyntaxNodeInternal(node.Operands[i], nextIndent, i == node.Operands.Count - 1 && (node.Body == null || node.Body.Count == 0));
+            }
+        }
+
+        // Bodyを表示
+        if (node.Body != null && node.Body.Count > 0)
+        {
+            for (int i = 0; i < node.Body.Count; i++)
+            {
+                ShowSyntaxNodeInternal(node.Body[i], nextIndent, i == node.Body.Count - 1);
+            }
+        }
+    }
 }

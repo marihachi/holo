@@ -5,52 +5,48 @@ namespace Holoc.Compile.Syntax;
 
 public partial class Parser
 {
-    private void ParseTypeReference()
+    private SyntaxNode? ParseTypeReference()
     {
-        Result = null;
         var location = CreateLocation();
         location.MarkBegin(Reader);
 
-        if (!Expect(TokenKind.Word)) return;
+        if (!Expect(TokenKind.Word)) return null;
         var name = (string)Reader.Token!.Value!;
-        if (!Next()) return;
+        if (!Next()) return null;
 
         location.MarkEnd(Reader);
-        Result = SyntaxNode.CreateTypeReference(name, location);
+        return SyntaxNode.CreateTypeReference(name, location);
     }
 
     /// <summary>
     /// ブロックまたは文をパースします。
-    /// ブロックの場合、結果はResultsにセットされます。
-    /// 文の場合、結果はResultにセットされます。
+    /// ブロックの場合、結果はList<SyntaxNode>が返されます。
+    /// 文の場合、結果はSyntaxNodeが返されます。
     /// </summary>
-    private void ParseBlockOrStatement()
+    private object? ParseBlockOrStatement()
     {
-        Result = null;
-        Results = null;
-
         if (Try(TokenKind.OpenBrace))
         {
-            ParseBlock();
-            return;
+            return ParseBlock();
         }
 
-        ParseStatement();
+        return ParseStatement();
     }
 
     /// <summary>
     /// ブロックをパースします。
-    /// 結果はResultsにセットされます。
     /// </summary>
-    private void ParseBlock()
+    private List<SyntaxNode>? ParseBlock()
     {
-        Results = null;
+        List<SyntaxNode>? results;
 
-        if (!NextWith(TokenKind.OpenBrace)) return;
+        if (!NextWith(TokenKind.OpenBrace)) return null;
 
-        Repeat(ParseStatement, x => x.Kind == TokenKind.CloseBrace);
-        if (Results == null) return;
+        results = Repeat(ParseStatement, x => x.Kind == TokenKind.CloseBrace);
+        if (results == null) return null;
 
-        if (!NextWith(TokenKind.CloseBrace)) return;
+        if (!NextWith(TokenKind.CloseBrace)) return null;
+
+        return results;
     }
 }
