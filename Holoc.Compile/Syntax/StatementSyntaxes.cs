@@ -80,11 +80,21 @@ public partial class Parser
         location.MarkBegin(Reader);
 
         if (!NextWith("return")) return null;
-        if (!NextWith(TokenKind.SemiColon)) return null;
+
+        SyntaxNode? expr = null;
+        if (Try(TokenKind.SemiColon))
+        {
+            if (!Next()) return null;
+        }
+        else
+        {
+            expr = ParseExpression();
+            if (expr == null) return null;
+        }
 
         location.MarkEnd(Reader);
 
-        return SyntaxNode.CreateReturnStatement(null, location);
+        return SyntaxNode.CreateReturnStatement(expr, location);
     }
 
     private SyntaxNode? ParseVariableDeclaration()
