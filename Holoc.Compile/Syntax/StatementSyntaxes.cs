@@ -51,6 +51,7 @@ public partial class Parser
         if (!NextWith(TokenKind.SemiColon)) return null;
 
         location.MarkEnd(Reader);
+
         return SyntaxNode.CreateBreakStatement(location);
     }
 
@@ -66,6 +67,7 @@ public partial class Parser
         if (!NextWith(TokenKind.SemiColon)) return null;
 
         location.MarkEnd(Reader);
+
         return SyntaxNode.CreateContinueStatement(location);
     }
 
@@ -81,6 +83,7 @@ public partial class Parser
         if (!NextWith(TokenKind.SemiColon)) return null;
 
         location.MarkEnd(Reader);
+
         return SyntaxNode.CreateReturnStatement(null, location);
     }
 
@@ -113,14 +116,15 @@ public partial class Parser
             if (initializer == null) return null;
         }
 
+        if (!NextWith(TokenKind.SemiColon)) return null;
+
         location.MarkEnd(Reader);
+
         return SyntaxNode.CreateVariableDecl(name, variableType, initializer, location);
     }
 
     private SyntaxNode? ParseWhileStatement()
     {
-        object? resultObj;
-
         var location = CreateLocation();
         location.MarkBegin(Reader);
 
@@ -129,25 +133,11 @@ public partial class Parser
         var condition = ParseExpression();
         if (condition == null) return null;
 
-        SyntaxNode? body;
-        var bodyLocation = CreateLocation();
-        bodyLocation.MarkBegin(Reader);
-        resultObj = ParseBlockOrStatement();
-        bodyLocation.MarkEnd(Reader);
-        if (resultObj is List<SyntaxNode> nodeList)
-        {
-            body = SyntaxNode.CreateBlock(nodeList, bodyLocation);
-        }
-        else if (resultObj is SyntaxNode node)
-        {
-            body = node;
-        }
-        else
-        {
-            return null;
-        }
+        var body = ParseBlockOrStatement();
+        if (body == null) return null;
 
         location.MarkEnd(Reader);
+
         return SyntaxNode.CreateWhileStatement(condition, body, location);
     }
 }

@@ -20,14 +20,20 @@ public partial class Parser
 
     /// <summary>
     /// ブロックまたは文をパースします。
-    /// ブロックの場合、結果はList<SyntaxNode>が返されます。
-    /// 文の場合、結果はSyntaxNodeが返されます。
     /// </summary>
-    private object? ParseBlockOrStatement()
+    private SyntaxNode? ParseBlockOrStatement()
     {
         if (Try(TokenKind.OpenBrace))
         {
-            return ParseBlock();
+            var blockLocation = CreateLocation();
+            blockLocation.MarkBegin(Reader);
+
+            var nodeList = ParseBlock();
+            if (nodeList == null) return null;
+
+            blockLocation.MarkEnd(Reader);
+
+            return SyntaxNode.CreateBlock(nodeList, blockLocation);
         }
 
         return ParseStatement();
@@ -38,15 +44,13 @@ public partial class Parser
     /// </summary>
     private List<SyntaxNode>? ParseBlock()
     {
-        List<SyntaxNode>? results;
-
         if (!NextWith(TokenKind.OpenBrace)) return null;
 
-        results = Repeat(ParseStatement, x => x.Kind == TokenKind.CloseBrace);
-        if (results == null) return null;
+        var children = Repeat(ParseStatement, x => x.Kind == TokenKind.CloseBrace);
+        if (children == null) return null;
 
         if (!NextWith(TokenKind.CloseBrace)) return null;
 
-        return results;
+        return children;
     }
 }

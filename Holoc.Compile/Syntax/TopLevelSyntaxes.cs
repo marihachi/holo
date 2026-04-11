@@ -39,6 +39,11 @@ public partial class Parser
             return ParseFunctionDecl(isExternal);
         }
 
+        if (Try("var") && !isExternal)
+        {
+            return ParseVariableDeclaration();
+        }
+
         GenerateError(Reader.CreateUnexpectedError());
         return null;
     }
@@ -49,6 +54,7 @@ public partial class Parser
     private SyntaxNode? ParseFunctionDecl(bool isExternal)
     {
         List<SyntaxNode>? results;
+
         var location = CreateLocation();
         location.MarkBegin(Reader);
 
@@ -84,6 +90,7 @@ public partial class Parser
         }
 
         location.MarkEnd(Reader);
+
         return SyntaxNode.CreateFunctionDecl(name, paramList, body, isExternal, location);
     }
 
