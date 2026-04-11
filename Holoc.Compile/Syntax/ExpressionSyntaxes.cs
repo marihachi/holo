@@ -1,4 +1,5 @@
 using Holoc.Compile.Syntax.Node;
+using Holoc.Compile.Syntax.Token;
 
 namespace Holoc.Compile.Syntax;
 
@@ -9,6 +10,18 @@ public partial class Parser
     /// </summary>
     private SyntaxNode? ParseExpression()
     {
-        throw new NotImplementedException();
+        if (Try(TokenKind.NumberLiteral))
+        {
+            var location = CreateLocation();
+            location.MarkBegin(Reader);
+            var value = GetTokenValue();
+            Next();
+            location.MarkEnd(Reader);
+
+            return SyntaxNode.CreateNumberLiteral(int.Parse(value), location);
+        }
+
+        GenerateError("Not implemented");
+        return null;
     }
 }

@@ -62,20 +62,21 @@ public class Program
                 unitNode = parser.Parse(reader);
             }
 
-            if (unitNode == null)
+            if (parser.Errors.Count > 0)
             {
                 Console.Error.WriteLine("Syntax error.");
                 foreach (var error in parser.Errors)
                 {
                     Console.Error.WriteLine(error);
                 }
-                return;
             }
 
             if (showAst != null && unitNode != null)
             {
                 SyntaxNode.ShowSyntaxNode(unitNode);
             }
+
+            if (unitNode == null) return;
 
             // TODO: Resolve
 
