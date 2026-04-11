@@ -241,14 +241,15 @@ public class SyntaxNode
             return;
         }
 
-        ShowSyntaxNodeInternal(node, "", true);
+        ShowSyntaxNodeInternal(node, "", true, false);
     }
 
-    private static void ShowSyntaxNodeInternal(SyntaxNode node, string indent, bool isLast)
+    private static void ShowSyntaxNodeInternal(SyntaxNode node, string indent, bool isLast, bool isOperand)
     {
         // 現在のノードを表示
         string prefix = isLast ? "└── " : "├── ";
         Console.Write(indent + prefix);
+        Console.Write(isOperand ? "[O] " : "");
         Console.Write(node.Kind);
 
         // ノードの付加情報を表示
@@ -282,7 +283,7 @@ public class SyntaxNode
         {
             for (int i = 0; i < node.Operands.Count; i++)
             {
-                ShowSyntaxNodeInternal(node.Operands[i], nextIndent, i == node.Operands.Count - 1 && (node.Body == null || node.Body.Count == 0));
+                ShowSyntaxNodeInternal(node.Operands[i], nextIndent, i == node.Operands.Count - 1 && (node.Body == null || node.Body.Count == 0), true);
             }
         }
 
@@ -291,7 +292,7 @@ public class SyntaxNode
         {
             for (int i = 0; i < node.Body.Count; i++)
             {
-                ShowSyntaxNodeInternal(node.Body[i], nextIndent, i == node.Body.Count - 1);
+                ShowSyntaxNodeInternal(node.Body[i], nextIndent, i == node.Body.Count - 1, false);
             }
         }
     }
