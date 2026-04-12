@@ -14,11 +14,13 @@ public partial class Parser
         {
             var location = CreateLocation();
             location.MarkBegin(Reader);
-            var value = GetTokenValue();
-            Next();
+
+            var value = GetTokenValue<int>();
+            if (!Next()) return null;
+
             location.MarkEnd(Reader);
 
-            return SyntaxNode.CreateNumberLiteral(int.Parse(value), location);
+            return SyntaxNode.CreateNumberLiteral(value, location);
         }
 
         GenerateError("Not implemented");

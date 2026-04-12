@@ -154,6 +154,12 @@ public class TokenReader
                     Token = new SyntaxToken(TokenKind.Eq, beginLocation);
                     return;
 
+                case ':':
+                    beginLocation = new TokenLocation(Column, Line);
+                    Column += 1;
+                    Token = new SyntaxToken(TokenKind.Colon, beginLocation);
+                    return;
+
                 case ';':
                     beginLocation = new TokenLocation(Column, Line);
                     Column += 1;
@@ -245,7 +251,7 @@ public class TokenReader
                     Column += 1;
                 }
 
-                string value = wholeNumber;
+                int value = int.Parse(wholeNumber);
                 Token = new SyntaxToken(TokenKind.NumberLiteral, beginLocation, value);
                 return;
             }

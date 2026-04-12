@@ -11,7 +11,7 @@ public partial class Parser
         location.MarkBegin(Reader);
 
         if (!Expect(TokenKind.Word)) return null;
-        var name = (string)Reader.Token!.Value!;
+        var name = GetTokenValue();
         if (!Next()) return null;
 
         location.MarkEnd(Reader);

@@ -5,7 +5,8 @@ public class SyntaxNode
     public NodeKind Kind { get; set; }
     public NodeMode Mode { get; set; } = NodeMode.None;
     public NodeLocation Location { get; set; } = NodeLocation.Empty;
-    public List<SyntaxNode>? Operands { get; set; }
+    public List<SyntaxNode?>? Operands { get; set; }
+    public List<SyntaxNode>? Parameters { get; set; }
     public List<SyntaxNode>? Body { get; set; }
     public string? Name { get; set; }
     public object? Value { get; set; }
@@ -22,26 +23,28 @@ public class SyntaxNode
     }
 
     public static SyntaxNode CreateFunctionDecl
-        (string name, List<SyntaxNode>? parameters, List<SyntaxNode>? body, bool isExternal, NodeLocation location)
+        (string name, SyntaxNode? returnType, List<SyntaxNode>? parameters, List<SyntaxNode>? body, bool isExternal, NodeLocation location)
     {
         return new SyntaxNode
         {
             Kind = NodeKind.FunctionDecl,
             Location = location,
             Name = name,
-            Operands = parameters,
+            Operands = [returnType],
+            Parameters = parameters,
             Body = body,
             IsExternal = isExternal,
         };
     }
 
     public static SyntaxNode CreateFunctionParameter
-        (string name, NodeLocation location)
+        (string name, SyntaxNode? paramType, NodeLocation location)
     {
         return new SyntaxNode
         {
             Kind = NodeKind.FunctionParameter,
             Location = location,
+            Operands = [paramType],
             Name = name,
         };
     }
@@ -54,7 +57,7 @@ public class SyntaxNode
             Kind = NodeKind.VariableDecl,
             Location = location,
             Name = name,
-            Operands = initializer != null ? [initializer] : [],
+            Operands = [variableType, initializer],
         };
     }
 
@@ -105,7 +108,7 @@ public class SyntaxNode
         {
             Kind = NodeKind.ReturnStatement,
             Location = location,
-            Operands = expression != null ? [expression] : [],
+            Operands = [expression],
         };
     }
 
@@ -129,9 +132,7 @@ public class SyntaxNode
             Kind = NodeKind.SwitchArm,
             Location = location,
             Mode = isDefaultArm ? NodeMode.DefaultArm : NodeMode.None,
-            Operands = condition != null
-                ? [expression, condition]
-                : [expression],
+            Operands = [expression, condition],
         };
     }
 
@@ -183,9 +184,7 @@ public class SyntaxNode
         {
             Kind = NodeKind.If,
             Location = location,
-            Operands = elseExpression != null
-                ? [condition, thenExpression, elseExpression]
-                : [condition, thenExpression],
+            Operands = [condition, thenExpression, elseExpression],
         };
     }
 
@@ -241,15 +240,15 @@ public class SyntaxNode
             return;
         }
 
-        ShowSyntaxNodeInternal(node, "", true, false);
+        ShowSyntaxNodeInternal(node, "", true, "");
     }
 
-    private static void ShowSyntaxNodeInternal(SyntaxNode node, string indent, bool isLast, bool isOperand)
+    private static void ShowSyntaxNodeInternal(SyntaxNode node, string indent, bool isLast, string labelName)
     {
         // 現在のノードを表示
         string prefix = isLast ? "└── " : "├── ";
         Console.Write(indent + prefix);
-        Console.Write(isOperand ? "[O] " : "");
+        Console.Write(labelName.Length > 0 ? $"[{labelName}] " : "");
         Console.Write(node.Kind);
 
         // ノードの付加情報を表示
@@ -283,7 +282,21 @@ public class SyntaxNode
         {
             for (int i = 0; i < node.Operands.Count; i++)
             {
-                ShowSyntaxNodeInternal(node.Operands[i], nextIndent, i == node.Operands.Count - 1 && (node.Body == null || node.Body.Count == 0), true);
+                var operand = node.Operands[i];
+
+                if (operand != null)
+                    ShowSyntaxNodeInternal(operand, nextIndent, i == node.Operands.Count - 1 && (node.Parameters == null || node.Parameters.Count == 0) && (node.Body == null || node.Body.Count == 0), "O");
+                else
+                    Console.WriteLine(nextIndent + (i == node.Operands.Count - 1 && (node.Parameters == null || node.Parameters.Count == 0) && (node.Body == null || node.Body.Count == 0) ? "└── " : "├── ") + "[O] <null>");
+            }
+        }
+
+        // Parametersを表示
+        if (node.Parameters != null && node.Parameters.Count > 0)
+        {
+            for (int i = 0; i < node.Parameters.Count; i++)
+            {
+                ShowSyntaxNodeInternal(node.Parameters[i], nextIndent, i == node.Parameters.Count - 1 && (node.Body == null || node.Body.Count == 0), "P");
             }
         }
 
@@ -292,7 +305,7 @@ public class SyntaxNode
         {
             for (int i = 0; i < node.Body.Count; i++)
             {
-                ShowSyntaxNodeInternal(node.Body[i], nextIndent, i == node.Body.Count - 1, false);
+                ShowSyntaxNodeInternal(node.Body[i], nextIndent, i == node.Body.Count - 1, "");
             }
         }
     }

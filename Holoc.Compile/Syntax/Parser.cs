@@ -55,8 +55,13 @@ public partial class Parser
     /// <summary>
     /// 現在のトークンの種類を取得します。
     /// </summary>
-    private TokenKind GetKind()
+    private TokenKind? GetKind()
     {
+        if (Reader.Token == null)
+        {
+            throw new Exception("トークンが存在しませんでした。");
+        }
+
         return Reader.Token!.Kind;
     }
 
@@ -67,6 +72,15 @@ public partial class Parser
     public string GetTokenValue()
     {
         return (string)Reader.Token!.Value!;
+    }
+
+    /// <summary>
+    /// 現在のトークンの値を取得します。
+    /// </summary>
+    /// <returns></returns>
+    public T GetTokenValue<T>()
+    {
+        return (T)Reader.Token!.Value!;
     }
 
     /// <summary>
@@ -92,7 +106,7 @@ public partial class Parser
             return false;
         }
 
-        if ((string)Reader.Token!.Value! != keyword)
+        if (GetTokenValue() != keyword)
         {
             return false;
         }
@@ -145,7 +159,7 @@ public partial class Parser
             return false;
         }
 
-        if ((string)Reader.Token!.Value! != keyword)
+        if (GetTokenValue() != keyword)
         {
             GenerateError(Reader.CreateUnexpectedError());
             return false;

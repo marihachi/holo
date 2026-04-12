@@ -62,7 +62,7 @@ public partial class Parser
 
         // name
         if (!Expect(TokenKind.Word)) return null;
-        var name =  GetTokenValue();
+        var name = GetTokenValue();
         if (!Next()) return null;
 
         // parameters
@@ -72,6 +72,16 @@ public partial class Parser
         List<SyntaxNode> paramList = [];
         paramList.AddRange(results);
         if (!NextWith(TokenKind.CloseParen)) return null;
+
+        // return type
+        SyntaxNode? returnType = null;
+        if (Try(TokenKind.Colon))
+        {
+            if (!Next()) return null;
+
+            returnType = ParseTypeReference();
+            if (returnType == null) return null;
+        }
 
         // body
         List<SyntaxNode>? body = null;
@@ -91,7 +101,7 @@ public partial class Parser
 
         location.MarkEnd(Reader);
 
-        return SyntaxNode.CreateFunctionDecl(name, paramList, body, isExternal, location);
+        return SyntaxNode.CreateFunctionDecl(name, returnType, paramList, body, isExternal, location);
     }
 
     /// <summary>
@@ -103,12 +113,20 @@ public partial class Parser
         location.MarkBegin(Reader);
 
         if (!Expect(TokenKind.Word)) return null;
-        var name = (string)Reader.Token!.Value!;
+        var name = GetTokenValue();
         if (!Next()) return null;
 
-        // TODO
+        SyntaxNode? paramType = null;
+        if (Try(TokenKind.Colon))
+        {
+            if (!Next()) return null;
+
+            paramType = ParseTypeReference();
+            if (paramType == null) return null;
+        }
 
         location.MarkEnd(Reader);
-        return SyntaxNode.CreateFunctionParameter(name, location);
+
+        return SyntaxNode.CreateFunctionParameter(name, paramType, location);
     }
 }

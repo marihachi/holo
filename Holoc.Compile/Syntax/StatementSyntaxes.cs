@@ -105,7 +105,7 @@ public partial class Parser
         if (!NextWith("var")) return null;
 
         if (!Expect(TokenKind.Word)) return null;
-        var name = (string)Reader.Token!.Value!;
+        var name = GetTokenValue();
         if (!Next()) return null;
 
         SyntaxNode? variableType = null;
