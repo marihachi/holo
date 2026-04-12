@@ -55,7 +55,7 @@ public partial class Parser
     /// <summary>
     /// 現在のトークンの種類を取得します。
     /// </summary>
-    private TokenKind? GetKind()
+    private TokenKind GetKind()
     {
         if (Reader.Token == null)
         {

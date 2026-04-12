@@ -167,13 +167,14 @@ public class SyntaxNode
     }
 
     public static SyntaxNode CreateBinaryOperation
-        (SyntaxNode left, SyntaxNode right, NodeLocation location)
+        (NodeMode mode, SyntaxNode left, SyntaxNode right, NodeLocation location)
     {
         return new SyntaxNode
         {
             Kind = NodeKind.BinaryOperation,
             Location = location,
             Operands = [left, right],
+            Mode = mode,
         };
     }
 

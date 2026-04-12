@@ -5,8 +5,6 @@ namespace Holoc.Compile.Syntax;
 
 public partial class Parser
 {
-    // WIP
-
     /// <summary>
     /// 式
     /// </summary>
@@ -15,28 +13,16 @@ public partial class Parser
         return ParsePratt(0);
     }
 
-    class PrefixOperatorInfo
-    {
-        public required SyntaxToken OperatorToken;
-        public required int BindPower;
-    }
+    private List<SingleOperatorInfo> PrefixOperators = [];
 
-    class InfixOperatorInfo
-    {
-        public required SyntaxToken OperatorToken;
-        public required int LeftBindPower;
-        public required int RightBindPower;
-    }
+    private List<InfixOperatorInfo> InfixOperators = [
+        new(TokenKind.Asterisk, 70, 71),
+        new(TokenKind.Slash, 70, 71),
+        new(TokenKind.Plus, 60, 61),
+        new(TokenKind.Minus, 60, 61),
+    ];
 
-    class PostfixOperatorInfo
-    {
-        public required SyntaxToken OperatorToken;
-        public required int BindPower;
-    }
-
-    private List<PrefixOperatorInfo> PrefixOperators = [];
-    private List<InfixOperatorInfo> InfixOperators = [];
-    private List<PostfixOperatorInfo> PostfixOperators = [];
+    private List<SingleOperatorInfo> PostfixOperators = [];
 
     private SyntaxNode? ParsePratt(int minimumBindPower)
     {
@@ -45,12 +31,14 @@ public partial class Parser
 
         SyntaxNode? left = null;
 
+        var kind = GetKind();
+
         // find prefix operator
-        PrefixOperatorInfo? prefix = null;
+        SingleOperatorInfo? prefix = PrefixOperators.Find(x => x.OperatorToken == kind);
 
         if (prefix != null)
         {
-            left = ParsePrefix();
+            left = ParsePrefix(prefix);
             if (left == null) return null;
         }
         else
@@ -61,23 +49,37 @@ public partial class Parser
 
         while (true)
         {
+            kind = GetKind();
+
             // find postfix operator
-            PostfixOperatorInfo? postfix = null;
+            SingleOperatorInfo? postfix = PostfixOperators.Find(x => x.OperatorToken == kind);
 
             if (postfix != null)
             {
-                left = ParsePostfix();
+                if (postfix.BindPower < minimumBindPower)
+                {
+                    break;
+                }
+
+                left = ParsePostfix(postfix, left);
                 if (left == null) return null;
+
                 continue;
             }
 
             // find infix operator
-            InfixOperatorInfo? infix = null;
+            InfixOperatorInfo? infix = InfixOperators.Find(x => x.OperatorToken == kind);
 
             if (infix != null)
             {
-                left = ParseInfix();
+                if (infix.LeftBindPower < minimumBindPower)
+                {
+                    break;
+                }
+
+                left = ParseInfix(infix, left);
                 if (left == null) return null;
+
                 continue;
             }
 
@@ -87,19 +89,53 @@ public partial class Parser
         return left;
     }
 
-    private SyntaxNode? ParsePrefix()
+    private SyntaxNode? ParsePrefix(SingleOperatorInfo operatorInfo)
     {
+        // TODO
         return null;
     }
 
-    private SyntaxNode? ParsePostfix()
+    private SyntaxNode? ParsePostfix(SingleOperatorInfo operatorInfo, SyntaxNode left)
     {
+        // TODO
         return null;
     }
 
-    private SyntaxNode? ParseInfix()
+    private SyntaxNode? ParseInfix(InfixOperatorInfo operatorInfo, SyntaxNode left)
     {
-        return null;
+        var location = CreateLocation();
+        location.MarkBegin(Reader);
+
+        if (!Next()) return null;
+
+        location.MarkEnd(Reader);
+
+        var right = ParsePratt(operatorInfo.RightBindPower);
+        if (right == null) return null;
+
+        NodeMode mode;
+        if (operatorInfo.OperatorToken == TokenKind.Plus)
+        {
+            mode = NodeMode.Add;
+        }
+        else if (operatorInfo.OperatorToken == TokenKind.Minus)
+        {
+            mode = NodeMode.Sub;
+        }
+        else if (operatorInfo.OperatorToken == TokenKind.Asterisk)
+        {
+            mode = NodeMode.Mul;
+        }
+        else if (operatorInfo.OperatorToken == TokenKind.Slash)
+        {
+            mode = NodeMode.Div;
+        }
+        else
+        {
+            return null;
+        }
+        
+        return SyntaxNode.CreateBinaryOperation(mode, left, right, location);
     }
 
     private SyntaxNode? ParseAtom()
@@ -119,5 +155,31 @@ public partial class Parser
 
         GenerateError(Reader.CreateUnexpectedError());
         return null;
+    }
+
+    class SingleOperatorInfo
+    {
+        public TokenKind OperatorToken;
+        public int BindPower;
+
+        public SingleOperatorInfo(TokenKind operatorToken, int bindPower)
+        {
+            OperatorToken = operatorToken;
+            BindPower = bindPower;
+        }
+    }
+
+    class InfixOperatorInfo
+    {
+        public TokenKind OperatorToken;
+        public int LeftBindPower;
+        public int RightBindPower;
+
+        public InfixOperatorInfo(TokenKind operatorToken, int leftBindPower, int rightBindPower)
+        {
+            OperatorToken = operatorToken;
+            LeftBindPower = leftBindPower;
+            RightBindPower = rightBindPower;
+        }
     }
 }
