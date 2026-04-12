@@ -48,15 +48,15 @@ namespace Holoc.Compile.Tests
             var functionDecl = result.Body[0];
             Assert.Equal(NodeKind.FunctionDecl, functionDecl.Kind);
 
-            Assert.NotNull(functionDecl.Operands);
-            Assert.Equal(2, functionDecl.Operands.Count);
+            Assert.NotNull(functionDecl.Parameters);
+            Assert.Equal(2, functionDecl.Parameters.Count);
 
-            var param = functionDecl.Operands[0];
+            var param = functionDecl.Parameters[0];
             Assert.NotNull(param);
             Assert.Equal(NodeKind.FunctionParameter, param.Kind);
             Assert.Equal("a", param.Name);
 
-            param = functionDecl.Operands[1];
+            param = functionDecl.Parameters[1];
             Assert.NotNull(param);
             Assert.Equal(NodeKind.FunctionParameter, param.Kind);
             Assert.Equal("b", param.Name);
@@ -68,7 +68,7 @@ namespace Holoc.Compile.Tests
         [Fact]
         public void FunctionParamsTest()
         {
-            using var stream = new MemoryStream(Encoding.UTF8.GetBytes("fn abc(a: int, b: int) { }"));
+            using var stream = new MemoryStream(Encoding.UTF8.GetBytes("fn abc(a: int, b: int): int { }"));
             using var reader = new StreamReader(stream);
 
             var result = Parser.Parse(reader);
@@ -81,10 +81,15 @@ namespace Holoc.Compile.Tests
             var functionDecl = result.Body[0];
             Assert.Equal(NodeKind.FunctionDecl, functionDecl.Kind);
 
-            Assert.NotNull(functionDecl.Operands);
-            Assert.Equal(2, functionDecl.Operands.Count);
+            var returnType = functionDecl.Operands?[0];
+            Assert.NotNull(returnType);
+            Assert.Equal(NodeKind.TypeReference, returnType.Kind);
+            Assert.Equal("int", returnType.Name);
 
-            var param = functionDecl.Operands[0];
+            Assert.NotNull(functionDecl.Parameters);
+            Assert.Equal(2, functionDecl.Parameters.Count);
+
+            var param = functionDecl.Parameters[0];
             Assert.NotNull(param);
             Assert.Equal(NodeKind.FunctionParameter, param.Kind);
             Assert.Equal("a", param.Name);
@@ -96,7 +101,7 @@ namespace Holoc.Compile.Tests
             Assert.Equal(NodeKind.TypeReference, paramType.Kind);
             Assert.Equal("int", paramType.Name);
 
-            param = functionDecl.Operands[0];
+            param = functionDecl.Parameters[0];
             Assert.NotNull(param);
             Assert.Equal(NodeKind.FunctionParameter, param.Kind);
             Assert.Equal("a", param.Name);
