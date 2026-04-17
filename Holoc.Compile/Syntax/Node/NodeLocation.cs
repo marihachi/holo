@@ -30,6 +30,7 @@ public class NodeLocation(SyntaxToken? begin, SyntaxToken? end)
         if (End == null)
             throw new InvalidOperationException("ノードの終了位置が設定されていません。");
 
+        // 最初のトークンの開始位置と最後のトークンの終了位置を使って、ノード全体の位置を返します。
         return $"{Begin.BeginLocation} - {End.EndLocation}";
     }
 }
