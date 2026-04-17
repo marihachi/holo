@@ -1,5 +1,4 @@
 using Holoc.Compile.Syntax.Token;
-using System.Xml.Linq;
 
 namespace Holoc.Compile.Syntax.Node;
 
