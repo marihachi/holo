@@ -273,6 +273,7 @@ public class SyntaxNode
             Console.Write(" [External]");
         }
 
+        Console.Write($" ({node.Location.GetLocationString()})");
         Console.WriteLine();
 
         // インデント文字列を更新

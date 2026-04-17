@@ -106,11 +106,17 @@ public struct TokenLocation(long column, long line)
     public long Line = line;
 
     public static TokenLocation Empty => new(-1, -1);
+
+    public override string ToString()
+    {
+        return $"{Line}:{Column}";
+    }
 }
 
-public class SyntaxToken(TokenKind kind, TokenLocation location, object? value = null)
+public class SyntaxToken(TokenKind kind, TokenLocation beginLocation, TokenLocation endLocation, object? value = null)
 {
     public TokenKind Kind { get; set; } = kind;
-    public TokenLocation Location { get; set; } = location;
+    public TokenLocation BeginLocation { get; set; } = beginLocation;
+    public TokenLocation EndLocation { get; set; } = endLocation;
     public object? Value { get; set; } = value;
 }

@@ -17,7 +17,7 @@ public partial class Parser
     /// </summary>
     private static NodeLocation CreateLocation()
     {
-        return new NodeLocation(TokenLocation.Empty, TokenLocation.Empty);
+        return NodeLocation.Empty;
     }
 
     private void Initialize(StreamReader stream)

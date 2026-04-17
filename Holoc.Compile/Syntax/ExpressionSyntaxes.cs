@@ -157,7 +157,7 @@ public partial class Parser
         return null;
     }
 
-    class SingleOperatorInfo
+    private class SingleOperatorInfo
     {
         public TokenKind OperatorToken;
         public int BindPower;
@@ -169,7 +169,7 @@ public partial class Parser
         }
     }
 
-    class InfixOperatorInfo
+    private class InfixOperatorInfo
     {
         public TokenKind OperatorToken;
         public int LeftBindPower;

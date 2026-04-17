@@ -1,26 +1,36 @@
 using Holoc.Compile.Syntax.Token;
+using System.Xml.Linq;
 
 namespace Holoc.Compile.Syntax.Node;
 
-public class NodeLocation(TokenLocation begin, TokenLocation end)
+public class NodeLocation(SyntaxToken? begin, SyntaxToken? end)
 {
-    public TokenLocation Begin = begin;
-    public TokenLocation End = end;
+    public SyntaxToken? Begin = begin;
+    public SyntaxToken? End = end;
 
     public void MarkBegin(TokenReader reader)
     {
-        var tokenLocation = new TokenLocation(reader.Column, reader.Line);
-        Begin = tokenLocation;
+        Begin = reader.Token;
     }
 
     public void MarkEnd(TokenReader reader)
     {
-        if (Begin.Column == -1 || Begin.Line == -1)
+        if (Begin == null)
             throw new InvalidOperationException("ノードの開始位置が設定されていません。");
 
-        var tokenLocation = new TokenLocation(reader.Column, reader.Line);
-        End = tokenLocation;
+        End = reader.Token;
     }
 
-    public static NodeLocation Empty => new(TokenLocation.Empty, TokenLocation.Empty);
+    public static NodeLocation Empty => new(null, null);
+
+    public string GetLocationString()
+    {
+        if (Begin == null)
+            throw new InvalidOperationException("ノードの開始位置が設定されていません。");
+
+        if (End == null)
+            throw new InvalidOperationException("ノードの終了位置が設定されていません。");
+
+        return $"{Begin.BeginLocation} - {End.EndLocation}";
+    }
 }
