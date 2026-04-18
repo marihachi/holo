@@ -9,7 +9,7 @@ public class NodeLocation(SyntaxToken? begin, SyntaxToken? end)
 
     public void MarkBegin(TokenReader reader)
     {
-        Begin = reader.Token;
+        Begin = reader.NextToken;
     }
 
     public void MarkEnd(TokenReader reader)
@@ -17,7 +17,7 @@ public class NodeLocation(SyntaxToken? begin, SyntaxToken? end)
         if (Begin == null)
             throw new InvalidOperationException("ノードの開始位置が設定されていません。");
 
-        End = reader.Token;
+        End = reader.CurrentToken;
     }
 
     public static NodeLocation Empty => new(null, null);

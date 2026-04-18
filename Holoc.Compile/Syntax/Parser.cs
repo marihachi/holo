@@ -57,12 +57,12 @@ public partial class Parser
     /// </summary>
     private TokenKind GetKind()
     {
-        if (Reader.Token == null)
+        if (Reader.NextToken == null)
         {
             throw new Exception("トークンが存在しませんでした。");
         }
 
-        return Reader.Token!.Kind;
+        return Reader.NextToken!.Kind;
     }
 
     /// <summary>
@@ -71,7 +71,7 @@ public partial class Parser
     /// <returns></returns>
     public string GetTokenValue()
     {
-        return (string)Reader.Token!.Value!;
+        return (string)Reader.NextToken!.Value!;
     }
 
     /// <summary>
@@ -80,7 +80,7 @@ public partial class Parser
     /// <returns></returns>
     public T GetTokenValue<T>()
     {
-        return (T)Reader.Token!.Value!;
+        return (T)Reader.NextToken!.Value!;
     }
 
     /// <summary>
@@ -199,13 +199,13 @@ public partial class Parser
         var items = new List<SyntaxNode>();
 
         // 終端のトークンかを確認する
-        while (!terminator(Reader.Token!))
+        while (!terminator(Reader.NextToken!))
         {
             // 2個目の項目以降は、前に区切りトークンがあることを期待する
             if (separator != null && items.Count > 0)
             {
                 // 区切りトークンかを確認する
-                if (!separator(Reader.Token!))
+                if (!separator(Reader.NextToken!))
                 {
                     GenerateError(Reader.CreateUnexpectedError());
                     return null;
