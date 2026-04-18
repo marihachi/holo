@@ -338,9 +338,9 @@ public class TokenReader
     {
         if (NextToken!.Kind == TokenKind.Word)
         {
-            return $"Unexpected token: {(string)NextToken!.Value!} {NextToken.BeginLocation.Line}:{NextToken.BeginLocation.Column}";
+            return $"Unexpected token: {(string)NextToken!.Value!} ({NextToken.BeginLocation} - {NextToken.EndLocation})";
         }
 
-        return $"Unexpected token: {NextToken!.Kind} {NextToken.BeginLocation.Line}:{NextToken.BeginLocation.Column}";
+        return $"Unexpected token: {NextToken!.Kind} ({NextToken.BeginLocation} - {NextToken.EndLocation})";
     }
 }
