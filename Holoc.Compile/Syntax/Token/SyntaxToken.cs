@@ -100,10 +100,20 @@ public enum TokenKind : byte
     //While,
 }
 
-public struct TokenLocation(long column, long line)
+public struct TokenLocation(long line, long column)
 {
     public long Column = column;
     public long Line = line;
+
+    public TokenLocation MoveRight()
+    {
+        return new(Line, Column + 1);
+    }
+
+    public TokenLocation MoveNewLine()
+    {
+        return new(Line + 1, 0);
+    }
 
     public static TokenLocation Empty => new(-1, -1);
 

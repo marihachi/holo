@@ -4,17 +4,13 @@ public class TokenReader
 {
     private StreamReader? Stream;
 
-    private char? CurrentChar;
-
-    public int PrevLine { get; private set; }
-
-    public int PrevColumn { get; private set; }
-
-    public int Line { get; private set; }
-
-    public int Column { get; private set; }
+    public TokenLocation CurrentLocation { get; private set; }
 
     public SyntaxToken? CurrentToken { get; private set; }
+
+    private char? NextChar;
+
+    public TokenLocation NextLocation { get; private set; }
 
     // NextTokenはSetNextTokenから設定する。CurrentTokenへの反映が必要なため。
     public SyntaxToken? NextToken { get; private set; }
@@ -24,60 +20,85 @@ public class TokenReader
     public void Initialize(StreamReader stream)
     {
         Stream = stream;
-        CurrentChar = null;
-        PrevLine = 1;
-        PrevColumn = 1;
-        Line = 1;
-        Column = 1;
+        CurrentLocation = new(0, 0);
         CurrentToken = null;
+        NextChar = null;
+        NextLocation = new(0, 0);
         NextToken = null;
         Error = null;
 
-        // 最初の文字を読み取る
-        ReadChar();
+        // 初回読み取り
+        ReadNextCharInternal(true);
     }
 
-    private bool ReadChar()
+    private bool ReadNextChar()
     {
-        ReadCharInternal();
-        return CurrentChar != null;
+        //Console.WriteLine("[ReadNextChar]");
+        ReadNextCharInternal(false);
+        return NextChar != null;
     }
 
-    private void ReadCharInternal()
+    private void ReadNextCharInternal(bool firstRead)
     {
         if (Stream!.EndOfStream)
         {
-            SetCurrentChar(null);
+            SetNextChar(null);
             return;
         }
 
-        var ch = (char)Stream.Read();
-
-        if (ch == '\r')
+        if (firstRead)
         {
-            // 位置に影響を与えないため無視
-        }
-        else if (ch == '\n')
-        {
-            MoveNewLine();
+            NextLocation = new(1, 0);
         }
         else
         {
-            MoveRight();
+            CurrentLocation = NextLocation;
+            //Console.WriteLine($"CurrentLocation = {CurrentLocation}");
         }
 
-        if (ch == '\0')
+        char? ch;
+        while (true)
         {
-            SetCurrentChar(null);
-            return;
+            int data = Stream.Read();
+
+            if (data == -1)
+            {
+                ch = null;
+            }
+            else
+            {
+                ch = (char)data;
+            }
+
+            if (ch == '\r')
+            {
+                continue;
+            }
+
+            if (ch == '\n')
+            {
+                MoveNewLine();
+                continue;
+            }
+
+            MoveRight();
+            break;
         }
 
-        SetCurrentChar(ch);
+        SetNextChar(ch);
+
+        if (firstRead)
+        {
+            CurrentLocation = new(1, 1);
+            //Console.WriteLine($"CurrentLocation = {CurrentLocation}");
+        }
     }
 
-    private void SetCurrentChar(char? ch)
+    private void SetNextChar(char? ch)
     {
-        CurrentChar = ch;
+        //Console.WriteLine($"NextChar = '{ch}'");
+
+        NextChar = ch;
     }
 
     /// <summary>
@@ -85,11 +106,8 @@ public class TokenReader
     /// </summary>
     private void MoveRight()
     {
-        PrevLine = Line;
-        PrevColumn = Column;
-
-        Column += 1;
-        //Console.WriteLine($"{Line}:{Column}");
+        NextLocation = NextLocation.MoveRight();
+        //Console.WriteLine($"NextLocation = {NextLocation}");
     }
 
     /// <summary>
@@ -97,28 +115,25 @@ public class TokenReader
     /// </summary>
     private void MoveNewLine()
     {
-        PrevLine = Line;
-        PrevColumn = Column;
-
-        Column = 1;
-        Line += 1;
-        //Console.WriteLine($"{Line}:{Column}");
-    }
-
-    private char? GetChar()
-    {
-        return CurrentChar;
+        NextLocation = NextLocation.MoveNewLine();
+        //Console.WriteLine($"NextLocation = {NextLocation}");
     }
 
     private void SetNextToken(SyntaxToken token)
     {
         CurrentToken = NextToken;
         NextToken = token;
+        //Console.WriteLine($"[{token.Kind}] {token.BeginLocation} - {token.EndLocation}");
     }
 
-    private TokenLocation GetLocation()
+    private TokenLocation GetNextLocation()
     {
-        return new TokenLocation(PrevColumn, PrevLine);
+        return NextLocation;
+    }
+
+    private TokenLocation GetCurrentLocation()
+    {
+        return CurrentLocation;
     }
 
     /// <summary>
@@ -127,14 +142,14 @@ public class TokenReader
     /// </summary>
     public bool Read()
     {
+        //Console.WriteLine("[Read]");
+
         ReadInternal();
-        return NextToken != null;
+        return Error == null;
     }
 
     private void ReadInternal()
     {
-        // NOTE: ReadCharしたら必ず位置の更新を行う。
-
         TokenLocation beginLocation;
 
         if (Stream == null)
@@ -145,160 +160,144 @@ public class TokenReader
         while (true)
         {
             // ストリームの終わりに達していたら
-            if (GetChar() == null)
+            if (NextChar == null)
             {
-                SetNextToken(new SyntaxToken(TokenKind.EOF, GetLocation(), GetLocation()));
+                SetNextToken(new SyntaxToken(TokenKind.EOF, GetNextLocation(), GetNextLocation()));
                 return;
             }
 
-            switch (GetChar())
+            switch (NextChar)
             {
                 case ' ':
-                    ReadChar();
+                    ReadNextChar();
                     continue;
 
                 case '\t':
-                    ReadChar();
-                    continue;
-
-                // LF
-                case '\n':
-                    ReadChar();
-                    continue;
-
-                // CR
-                case '\r':
-                    ReadChar();
-
-                    // LFが続いていたら一緒に消費する
-                    if (GetChar() == '\n')
-                    {
-                        ReadChar();
-                    }
+                    ReadNextChar();
                     continue;
 
                 case '{':
-                    beginLocation = GetLocation();
-                    ReadChar();
-                    SetNextToken(new SyntaxToken(TokenKind.OpenBrace, beginLocation, GetLocation()));
+                    beginLocation = GetNextLocation();
+                    ReadNextChar();
+                    SetNextToken(new SyntaxToken(TokenKind.OpenBrace, beginLocation, GetCurrentLocation()));
                     return;
 
                 case '}':
-                    beginLocation = GetLocation();
-                    ReadChar();
-                    SetNextToken(new SyntaxToken(TokenKind.CloseBrace, beginLocation, GetLocation()));
+                    beginLocation = GetNextLocation();
+                    ReadNextChar();
+                    SetNextToken(new SyntaxToken(TokenKind.CloseBrace, beginLocation, GetCurrentLocation()));
                     return;
 
                 case '(':
-                    beginLocation = GetLocation();
-                    ReadChar();
-                    SetNextToken(new SyntaxToken(TokenKind.OpenParen, beginLocation, GetLocation()));
+                    beginLocation = GetNextLocation();
+                    ReadNextChar();
+                    SetNextToken(new SyntaxToken(TokenKind.OpenParen, beginLocation, GetCurrentLocation()));
                     return;
 
                 case ')':
-                    beginLocation = GetLocation();
-                    ReadChar();
-                    SetNextToken(new SyntaxToken(TokenKind.CloseParen, beginLocation, GetLocation()));
+                    beginLocation = GetNextLocation();
+                    ReadNextChar();
+                    SetNextToken(new SyntaxToken(TokenKind.CloseParen, beginLocation, GetCurrentLocation()));
                     return;
 
                 case ',':
-                    beginLocation = GetLocation();
-                    ReadChar();
-                    SetNextToken(new SyntaxToken(TokenKind.Comma, beginLocation, GetLocation()));
+                    beginLocation = GetNextLocation();
+                    ReadNextChar();
+                    SetNextToken(new SyntaxToken(TokenKind.Comma, beginLocation, GetCurrentLocation()));
                     return;
 
                 case '=':
-                    beginLocation = GetLocation();
-                    ReadChar();
-                    SetNextToken(new SyntaxToken(TokenKind.Eq, beginLocation, GetLocation()));
+                    beginLocation = GetNextLocation();
+                    ReadNextChar();
+                    SetNextToken(new SyntaxToken(TokenKind.Eq, beginLocation, GetCurrentLocation()));
                     return;
 
                 case ':':
-                    beginLocation = GetLocation();
-                    ReadChar();
-                    SetNextToken(new SyntaxToken(TokenKind.Colon, beginLocation, GetLocation()));
+                    beginLocation = GetNextLocation();
+                    ReadNextChar();
+                    SetNextToken(new SyntaxToken(TokenKind.Colon, beginLocation, GetCurrentLocation()));
                     return;
 
                 case ';':
-                    beginLocation = GetLocation();
-                    ReadChar();
-                    SetNextToken(new SyntaxToken(TokenKind.SemiColon, beginLocation, GetLocation()));
+                    beginLocation = GetNextLocation();
+                    ReadNextChar();
+                    SetNextToken(new SyntaxToken(TokenKind.SemiColon, beginLocation, GetCurrentLocation()));
                     return;
 
                 case '*':
-                    beginLocation = GetLocation();
-                    ReadChar();
+                    beginLocation = GetNextLocation();
+                    ReadNextChar();
 
                     // 先読み
-                    if (GetChar() == '=')
+                    if (NextChar == '=')
                     {
-                        ReadChar();
-                        SetNextToken(new SyntaxToken(TokenKind.AsterEq, beginLocation, GetLocation()));
+                        ReadNextChar();
+                        SetNextToken(new SyntaxToken(TokenKind.AsterEq, beginLocation, GetCurrentLocation()));
                         return;
                     }
 
-                    SetNextToken(new SyntaxToken(TokenKind.Asterisk, beginLocation, GetLocation()));
+                    SetNextToken(new SyntaxToken(TokenKind.Asterisk, beginLocation, GetCurrentLocation()));
                     return;
 
                 case '+':
-                    beginLocation = GetLocation();
-                    ReadChar();
+                    beginLocation = GetNextLocation();
+                    ReadNextChar();
 
                     // 先読み
-                    if (GetChar() == '=')
+                    if (NextChar == '=')
                     {
-                        ReadChar();
-                        SetNextToken(new SyntaxToken(TokenKind.PlusEq, beginLocation, GetLocation()));
+                        ReadNextChar();
+                        SetNextToken(new SyntaxToken(TokenKind.PlusEq, beginLocation, GetCurrentLocation()));
                         return;
                     }
 
-                    SetNextToken(new SyntaxToken(TokenKind.Plus, beginLocation, GetLocation()));
+                    SetNextToken(new SyntaxToken(TokenKind.Plus, beginLocation, GetCurrentLocation()));
                     return;
 
                 case '-':
-                    beginLocation = GetLocation();
-                    ReadChar();
+                    beginLocation = GetNextLocation();
+                    ReadNextChar();
 
                     // 先読み
-                    if (GetChar() == '=')
+                    if (NextChar == '=')
                     {
-                        ReadChar();
-                        SetNextToken(new SyntaxToken(TokenKind.MinusEq, beginLocation, GetLocation()));
+                        ReadNextChar();
+                        SetNextToken(new SyntaxToken(TokenKind.MinusEq, beginLocation, GetCurrentLocation()));
                         return;
                     }
 
-                    SetNextToken(new SyntaxToken(TokenKind.Minus, beginLocation, GetLocation()));
+                    SetNextToken(new SyntaxToken(TokenKind.Minus, beginLocation, GetCurrentLocation()));
                     return;
 
                 case '/':
-                    beginLocation = GetLocation();
-                    ReadChar();
+                    beginLocation = GetNextLocation();
+                    ReadNextChar();
 
                     // 先読み
-                    if (GetChar() == '=')
+                    if (NextChar == '=')
                     {
-                        ReadChar();
-                        SetNextToken(new SyntaxToken(TokenKind.SlashEq, beginLocation, GetLocation()));
+                        ReadNextChar();
+                        SetNextToken(new SyntaxToken(TokenKind.SlashEq, beginLocation, GetCurrentLocation()));
                         return;
                     }
 
-                    SetNextToken(new SyntaxToken(TokenKind.Slash, beginLocation, GetLocation()));
+                    SetNextToken(new SyntaxToken(TokenKind.Slash, beginLocation, GetCurrentLocation()));
                     return;
             }
 
             // 数字
-            if (GetChar() >= '0' && GetChar() <= '9')
+            if (NextChar >= '0' && NextChar <= '9')
             {
-                beginLocation = GetLocation();
+                beginLocation = GetNextLocation();
                 string wholeNumber = "";
 
-                wholeNumber += GetChar();
-                ReadChar();
+                wholeNumber += NextChar;
+                ReadNextChar();
 
                 // 後続の文字を読む
                 while (true)
                 {
-                    var ch = GetChar();
+                    var ch = NextChar;
 
                     if (ch == null || !(ch >= '0' && ch <= '9'))
                     {
@@ -306,29 +305,29 @@ public class TokenReader
                     }
 
                     wholeNumber += ch;
-                    ReadChar();
+                    ReadNextChar();
                 }
 
                 int value = int.Parse(wholeNumber);
-                SetNextToken(new SyntaxToken(TokenKind.NumberLiteral, beginLocation, GetLocation(), value));
+                SetNextToken(new SyntaxToken(TokenKind.NumberLiteral, beginLocation, GetCurrentLocation(), value));
                 return;
             }
 
             // 識別子またはキーワード
-            if (GetChar() >= 'A' && GetChar() <= 'Z' ||
-                GetChar() >= 'a' && GetChar() <= 'z' ||
-                GetChar() == '_')
+            if (NextChar >= 'A' && NextChar <= 'Z' ||
+                NextChar >= 'a' && NextChar <= 'z' ||
+                NextChar == '_')
             {
-                beginLocation = GetLocation();
+                beginLocation = GetNextLocation();
                 string value = "";
 
-                value += GetChar();
-                ReadChar();
+                value += NextChar;
+                ReadNextChar();
 
                 // 後続の文字を読む
                 while (true)
                 {
-                    var ch = GetChar();
+                    var ch = NextChar;
 
                     if (ch == null || !(
                         ch >= '0' && ch <= '9' ||
@@ -340,14 +339,14 @@ public class TokenReader
                     }
 
                     value += ch;
-                    ReadChar();
+                    ReadNextChar();
                 }
 
-                SetNextToken(new SyntaxToken(TokenKind.Word, beginLocation, GetLocation(), value));
+                SetNextToken(new SyntaxToken(TokenKind.Word, beginLocation, GetCurrentLocation(), value));
                 return;
             }
 
-            Error = $"Unexpected char: '{GetChar()}' ({Line}:{Column})";
+            Error = $"Unexpected char: '{NextChar}' ({NextLocation})";
             return;
         }
     }
