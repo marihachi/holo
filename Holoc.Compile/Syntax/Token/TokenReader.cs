@@ -179,49 +179,49 @@ public class TokenReader
                 case '{':
                     beginLocation = GetNextLocation();
                     ReadNextChar();
-                    SetNextToken(new SyntaxToken(TokenKind.OpenBrace, beginLocation, GetCurrentLocation()));
+                    SetNextToken(new SyntaxToken(TokenKind.OpenBrace, beginLocation, GetCurrentLocation().MoveRight()));
                     return;
 
                 case '}':
                     beginLocation = GetNextLocation();
                     ReadNextChar();
-                    SetNextToken(new SyntaxToken(TokenKind.CloseBrace, beginLocation, GetCurrentLocation()));
+                    SetNextToken(new SyntaxToken(TokenKind.CloseBrace, beginLocation, GetCurrentLocation().MoveRight()));
                     return;
 
                 case '(':
                     beginLocation = GetNextLocation();
                     ReadNextChar();
-                    SetNextToken(new SyntaxToken(TokenKind.OpenParen, beginLocation, GetCurrentLocation()));
+                    SetNextToken(new SyntaxToken(TokenKind.OpenParen, beginLocation, GetCurrentLocation().MoveRight()));
                     return;
 
                 case ')':
                     beginLocation = GetNextLocation();
                     ReadNextChar();
-                    SetNextToken(new SyntaxToken(TokenKind.CloseParen, beginLocation, GetCurrentLocation()));
+                    SetNextToken(new SyntaxToken(TokenKind.CloseParen, beginLocation, GetCurrentLocation().MoveRight()));
                     return;
 
                 case ',':
                     beginLocation = GetNextLocation();
                     ReadNextChar();
-                    SetNextToken(new SyntaxToken(TokenKind.Comma, beginLocation, GetCurrentLocation()));
+                    SetNextToken(new SyntaxToken(TokenKind.Comma, beginLocation, GetCurrentLocation().MoveRight()));
                     return;
 
                 case '=':
                     beginLocation = GetNextLocation();
                     ReadNextChar();
-                    SetNextToken(new SyntaxToken(TokenKind.Eq, beginLocation, GetCurrentLocation()));
+                    SetNextToken(new SyntaxToken(TokenKind.Eq, beginLocation, GetCurrentLocation().MoveRight()));
                     return;
 
                 case ':':
                     beginLocation = GetNextLocation();
                     ReadNextChar();
-                    SetNextToken(new SyntaxToken(TokenKind.Colon, beginLocation, GetCurrentLocation()));
+                    SetNextToken(new SyntaxToken(TokenKind.Colon, beginLocation, GetCurrentLocation().MoveRight()));
                     return;
 
                 case ';':
                     beginLocation = GetNextLocation();
                     ReadNextChar();
-                    SetNextToken(new SyntaxToken(TokenKind.SemiColon, beginLocation, GetCurrentLocation()));
+                    SetNextToken(new SyntaxToken(TokenKind.SemiColon, beginLocation, GetCurrentLocation().MoveRight()));
                     return;
 
                 case '*':
@@ -232,11 +232,11 @@ public class TokenReader
                     if (NextChar == '=')
                     {
                         ReadNextChar();
-                        SetNextToken(new SyntaxToken(TokenKind.AsterEq, beginLocation, GetCurrentLocation()));
+                        SetNextToken(new SyntaxToken(TokenKind.AsterEq, beginLocation, GetCurrentLocation().MoveRight()));
                         return;
                     }
 
-                    SetNextToken(new SyntaxToken(TokenKind.Asterisk, beginLocation, GetCurrentLocation()));
+                    SetNextToken(new SyntaxToken(TokenKind.Asterisk, beginLocation, GetCurrentLocation().MoveRight()));
                     return;
 
                 case '+':
@@ -247,11 +247,11 @@ public class TokenReader
                     if (NextChar == '=')
                     {
                         ReadNextChar();
-                        SetNextToken(new SyntaxToken(TokenKind.PlusEq, beginLocation, GetCurrentLocation()));
+                        SetNextToken(new SyntaxToken(TokenKind.PlusEq, beginLocation, GetCurrentLocation().MoveRight()));
                         return;
                     }
 
-                    SetNextToken(new SyntaxToken(TokenKind.Plus, beginLocation, GetCurrentLocation()));
+                    SetNextToken(new SyntaxToken(TokenKind.Plus, beginLocation, GetCurrentLocation().MoveRight()));
                     return;
 
                 case '-':
@@ -262,11 +262,11 @@ public class TokenReader
                     if (NextChar == '=')
                     {
                         ReadNextChar();
-                        SetNextToken(new SyntaxToken(TokenKind.MinusEq, beginLocation, GetCurrentLocation()));
+                        SetNextToken(new SyntaxToken(TokenKind.MinusEq, beginLocation, GetCurrentLocation().MoveRight()));
                         return;
                     }
 
-                    SetNextToken(new SyntaxToken(TokenKind.Minus, beginLocation, GetCurrentLocation()));
+                    SetNextToken(new SyntaxToken(TokenKind.Minus, beginLocation, GetCurrentLocation().MoveRight()));
                     return;
 
                 case '/':
@@ -277,11 +277,11 @@ public class TokenReader
                     if (NextChar == '=')
                     {
                         ReadNextChar();
-                        SetNextToken(new SyntaxToken(TokenKind.SlashEq, beginLocation, GetCurrentLocation()));
+                        SetNextToken(new SyntaxToken(TokenKind.SlashEq, beginLocation, GetCurrentLocation().MoveRight()));
                         return;
                     }
 
-                    SetNextToken(new SyntaxToken(TokenKind.Slash, beginLocation, GetCurrentLocation()));
+                    SetNextToken(new SyntaxToken(TokenKind.Slash, beginLocation, GetCurrentLocation().MoveRight()));
                     return;
             }
 
@@ -309,7 +309,7 @@ public class TokenReader
                 }
 
                 int value = int.Parse(wholeNumber);
-                SetNextToken(new SyntaxToken(TokenKind.NumberLiteral, beginLocation, GetCurrentLocation(), value));
+                SetNextToken(new SyntaxToken(TokenKind.NumberLiteral, beginLocation, GetCurrentLocation().MoveRight(), value));
                 return;
             }
 
@@ -342,7 +342,7 @@ public class TokenReader
                     ReadNextChar();
                 }
 
-                SetNextToken(new SyntaxToken(TokenKind.Word, beginLocation, GetCurrentLocation(), value));
+                SetNextToken(new SyntaxToken(TokenKind.Word, beginLocation, GetCurrentLocation().MoveRight(), value));
                 return;
             }
 
