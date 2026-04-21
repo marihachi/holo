@@ -40,6 +40,7 @@ public class TokenReader
 
     private void ReadNextCharInternal(bool firstRead)
     {
+        // EOFかチェック
         if (Stream!.EndOfStream)
         {
             SetNextChar(null);
@@ -56,33 +57,16 @@ public class TokenReader
             //Console.WriteLine($"CurrentLocation = {CurrentLocation}");
         }
 
-        char? ch;
-        while (true)
+        // -1(EOF)が返ることはないため、直接charにキャストできる
+        var ch = (char)Stream.Read();
+
+        if (ch == '\n')
         {
-            int data = Stream.Read();
-
-            if (data == -1)
-            {
-                ch = null;
-            }
-            else
-            {
-                ch = (char)data;
-            }
-
-            if (ch == '\r')
-            {
-                continue;
-            }
-
-            if (ch == '\n')
-            {
-                MoveNewLine();
-                continue;
-            }
-
+            MoveNewLine();
+        }
+        else if (ch != '\r')
+        {
             MoveRight();
-            break;
         }
 
         SetNextChar(ch);
@@ -96,9 +80,8 @@ public class TokenReader
 
     private void SetNextChar(char? ch)
     {
-        //Console.WriteLine($"NextChar = '{ch}'");
-
         NextChar = ch;
+        //Console.WriteLine($"NextChar = '{ch}'");
     }
 
     /// <summary>
@@ -176,6 +159,22 @@ public class TokenReader
                     ReadNextChar();
                     continue;
 
+                // LF
+                case '\n':
+                    ReadNextChar();
+                    continue;
+
+                // CR
+                case '\r':
+                    ReadNextChar();
+
+                    // LFが続いていたらCRLFとして消費する
+                    if (NextChar == '\n')
+                    {
+                        ReadNextChar();
+                    }
+                    continue;
+
                 case '{':
                     beginLocation = GetNextLocation();
                     ReadNextChar();
@@ -228,7 +227,7 @@ public class TokenReader
                     beginLocation = GetNextLocation();
                     ReadNextChar();
 
-                    // 先読み
+                    // =が続いていたら、*=として消費する
                     if (NextChar == '=')
                     {
                         ReadNextChar();
@@ -243,7 +242,7 @@ public class TokenReader
                     beginLocation = GetNextLocation();
                     ReadNextChar();
 
-                    // 先読み
+                    // =が続いていたら、+=として消費する
                     if (NextChar == '=')
                     {
                         ReadNextChar();
@@ -258,7 +257,7 @@ public class TokenReader
                     beginLocation = GetNextLocation();
                     ReadNextChar();
 
-                    // 先読み
+                    // =が続いていたら、-=として消費する
                     if (NextChar == '=')
                     {
                         ReadNextChar();
@@ -273,7 +272,7 @@ public class TokenReader
                     beginLocation = GetNextLocation();
                     ReadNextChar();
 
-                    // 先読み
+                    // =が続いていたら、/=として消費する
                     if (NextChar == '=')
                     {
                         ReadNextChar();
