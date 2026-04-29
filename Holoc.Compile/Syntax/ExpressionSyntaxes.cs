@@ -258,7 +258,7 @@ public partial class Parser
 
         location.MarkEnd(Reader);
 
-        return SyntaxNode.CreateIf(condExpr, thenExpr, elseExpr, location);
+        return SyntaxNode.CreateIfExpression(condExpr, thenExpr, elseExpr, location);
     }
 
     /// <summary>

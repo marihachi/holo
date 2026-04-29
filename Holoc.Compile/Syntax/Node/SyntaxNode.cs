@@ -178,14 +178,14 @@ public class SyntaxNode
         };
     }
 
-    public static SyntaxNode CreateIf
-        (SyntaxNode condition, SyntaxNode thenExpression, SyntaxNode? elseExpression, NodeLocation location)
+    public static SyntaxNode CreateIfExpression
+        (SyntaxNode condition, SyntaxNode thenNode, SyntaxNode? elseNode, NodeLocation location)
     {
         return new SyntaxNode
         {
             Kind = NodeKind.If,
             Location = location,
-            Operands = [condition, thenExpression, elseExpression],
+            Operands = [condition, thenNode, elseNode],
         };
     }
 
