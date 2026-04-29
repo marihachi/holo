@@ -11,7 +11,7 @@ public enum NodeKind : byte
     BreakStatement,
     ContinueStatement,
     ReturnStatement,
-    SwitchStatement,
+    Switch,
     SwitchArm,
     ExpressionStatement,
     NumberLiteral,

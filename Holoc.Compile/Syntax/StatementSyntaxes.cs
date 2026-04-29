@@ -35,27 +35,40 @@ public partial class Parser
             return ParseWhileStatement();
         }
 
+        if (Try("if"))
+        {
+            return ParseIfStatement();
+        }
+
+        var location = CreateLocation();
+        location.MarkBegin(Reader);
+
+        // block statement
         if (Try(TokenKind.OpenBrace))
         {
-            var blockLocation = CreateLocation();
-            blockLocation.MarkBegin(Reader);
-
             var nodeList = ParseBlock();
             if (nodeList == null) return null;
 
-            blockLocation.MarkEnd(Reader);
+            location.MarkEnd(Reader);
 
-            return SyntaxNode.CreateBlock(nodeList, blockLocation);
+            return SyntaxNode.CreateBlock(nodeList, location);
         }
 
-        // if statement
+        // 式文
+        var expr = ParseExpression();
+        if (expr != null)
+        {
+            if (!NextWith(TokenKind.SemiColon)) return null;
 
-        // switch statement
+            location.MarkEnd(Reader);
 
-        // expression statement
-
-        GenerateError(Reader.CreateUnexpectedError());
-        return null;
+            return SyntaxNode.CreateExpressionStatement(expr, location);
+        }
+        else
+        {
+            GenerateError(Reader.CreateUnexpectedError());
+            return null;
+        }
     }
 
     /// <summary>
@@ -109,6 +122,8 @@ public partial class Parser
         {
             expr = ParseExpression();
             if (expr == null) return null;
+
+            if (!NextWith(TokenKind.SemiColon)) return null;
         }
 
         location.MarkEnd(Reader);
@@ -172,5 +187,37 @@ public partial class Parser
         location.MarkEnd(Reader);
 
         return SyntaxNode.CreateWhileStatement(condition, body, location);
+    }
+
+    /// <summary>
+    /// if文
+    /// </summary>
+    private SyntaxNode? ParseIfStatement()
+    {
+        var location = CreateLocation();
+        location.MarkBegin(Reader);
+
+        if (!NextWith("if")) return null;
+
+        if (!NextWith(TokenKind.OpenParen)) return null;
+        var condExpr = ParseExpression();
+        if (condExpr == null) return null;
+        if (!NextWith(TokenKind.CloseParen)) return null;
+
+        var thenStmt = ParseStatement();
+        if (thenStmt == null) return null;
+
+        SyntaxNode? elseStmt = null;
+        if (Try("else"))
+        {
+            if (!Next()) return null;
+
+            elseStmt = ParseStatement();
+            if (elseStmt == null) return null;
+        }
+
+        location.MarkEnd(Reader);
+
+        return SyntaxNode.CreateIf(condExpr, thenStmt, elseStmt, location);
     }
 }

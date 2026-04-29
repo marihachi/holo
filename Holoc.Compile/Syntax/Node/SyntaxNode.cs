@@ -112,12 +112,12 @@ public class SyntaxNode
         };
     }
 
-    public static SyntaxNode CreateSwitchStatement
+    public static SyntaxNode CreateSwitch
         (SyntaxNode condition, List<SyntaxNode> arms, NodeLocation location)
     {
         return new SyntaxNode
         {
-            Kind = NodeKind.SwitchStatement,
+            Kind = NodeKind.Switch,
             Location = location,
             Operands = [condition],
             Body = arms,

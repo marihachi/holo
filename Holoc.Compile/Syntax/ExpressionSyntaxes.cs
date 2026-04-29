@@ -13,6 +13,32 @@ public partial class Parser
         return ParsePratt(0);
     }
 
+    private class SingleOperatorInfo
+    {
+        public TokenKind OperatorToken;
+        public int BindPower;
+
+        public SingleOperatorInfo(TokenKind operatorToken, int bindPower)
+        {
+            OperatorToken = operatorToken;
+            BindPower = bindPower;
+        }
+    }
+
+    private class InfixOperatorInfo
+    {
+        public TokenKind OperatorToken;
+        public int LeftBindPower;
+        public int RightBindPower;
+
+        public InfixOperatorInfo(TokenKind operatorToken, int leftBindPower, int rightBindPower)
+        {
+            OperatorToken = operatorToken;
+            LeftBindPower = leftBindPower;
+            RightBindPower = rightBindPower;
+        }
+    }
+
     private List<SingleOperatorInfo> PrefixOperators = [
         //new(TokenKind.Hat, 80),
         //new(TokenKind.Not, 80),
@@ -162,37 +188,103 @@ public partial class Parser
             return SyntaxNode.CreateNumberLiteral(value, location);
         }
 
-        // if expression
+        if (Try("if"))
+        {
+            return ParseIfExpression();
+        }
 
-        // switch expression
+        if (Try("switch"))
+        {
+            return ParseSwitchExpression();
+        }
+
+        if (Try(TokenKind.Word))
+        {
+            var location = CreateLocation();
+            location.MarkBegin(Reader);
+
+            var name = GetTokenValue<string>();
+            if (!Next()) return null;
+
+            location.MarkEnd(Reader);
+
+            return SyntaxNode.CreateReference(name, location);
+        }
+
+        // block expression
+        if (Try(TokenKind.OpenBrace))
+        {
+            var location = CreateLocation();
+            location.MarkBegin(Reader);
+
+            var nodeList = ParseBlock();
+            if (nodeList == null) return null;
+
+            location.MarkEnd(Reader);
+
+            return SyntaxNode.CreateBlock(nodeList, location);
+        }
 
         GenerateError(Reader.CreateUnexpectedError());
         return null;
     }
 
-    private class SingleOperatorInfo
+    /// <summary>
+    /// if式
+    /// </summary>
+    private SyntaxNode? ParseIfExpression()
     {
-        public TokenKind OperatorToken;
-        public int BindPower;
+        var location = CreateLocation();
+        location.MarkBegin(Reader);
 
-        public SingleOperatorInfo(TokenKind operatorToken, int bindPower)
+        if (!NextWith("if")) return null;
+
+        if (!NextWith(TokenKind.OpenParen)) return null;
+        var condExpr = ParseExpression();
+        if (condExpr == null) return null;
+        if (!NextWith(TokenKind.CloseParen)) return null;
+
+        var thenExpr = ParseExpression();
+        if (thenExpr == null) return null;
+
+        SyntaxNode? elseExpr = null;
+        if (Try("else"))
         {
-            OperatorToken = operatorToken;
-            BindPower = bindPower;
+            if (!Next()) return null;
+
+            elseExpr = ParseExpression();
+            if (elseExpr == null) return null;
         }
+
+        location.MarkEnd(Reader);
+
+        return SyntaxNode.CreateIf(condExpr, thenExpr, elseExpr, location);
     }
 
-    private class InfixOperatorInfo
+    /// <summary>
+    /// switch式
+    /// </summary>
+    private SyntaxNode? ParseSwitchExpression()
     {
-        public TokenKind OperatorToken;
-        public int LeftBindPower;
-        public int RightBindPower;
+        var location = CreateLocation();
+        location.MarkBegin(Reader);
 
-        public InfixOperatorInfo(TokenKind operatorToken, int leftBindPower, int rightBindPower)
-        {
-            OperatorToken = operatorToken;
-            LeftBindPower = leftBindPower;
-            RightBindPower = rightBindPower;
-        }
+        if (!NextWith("switch")) return null;
+
+        if (!NextWith(TokenKind.OpenParen)) return null;
+        var condExpr = ParseExpression();
+        if (condExpr == null) return null;
+        if (!NextWith(TokenKind.CloseParen)) return null;
+
+        if (!NextWith(TokenKind.OpenBrace)) return null;
+
+        // TODO: arms
+        var arms = new List<SyntaxNode>();
+
+        if (!NextWith(TokenKind.CloseBrace)) return null;
+
+        location.MarkEnd(Reader);
+
+        return SyntaxNode.CreateSwitch(condExpr, arms, location);
     }
 }
