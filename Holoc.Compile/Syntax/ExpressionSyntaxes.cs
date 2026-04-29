@@ -145,23 +145,8 @@ public partial class Parser
 
         if (operatorInfo.OperatorToken == TokenKind.OpenParen)
         {
-            var args = new List<SyntaxNode>();
-
-            if (!Try(TokenKind.CloseParen))
-            {
-                var head = ParseExpression();
-                if (head == null) return null;
-                args.Add(head);
-
-                while (Try(TokenKind.Comma))
-                {
-                    if (!Next()) return null;
-
-                    var arg = ParseExpression();
-                    if (arg == null) return null;
-                    args.Add(arg);
-                }
-            }
+            var args = Repeat(ParseExpression, t => t.Kind == TokenKind.CloseParen, s => s.Kind == TokenKind.Comma);
+            if (args == null) return null;
 
             if (!NextWith(TokenKind.CloseParen)) return null;
 
