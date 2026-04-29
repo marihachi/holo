@@ -61,7 +61,7 @@ public partial class Parser
     ];
 
     private List<SingleOperatorInfo> PostfixOperators = [
-        //new(TokenKind.OpenParen, 90),
+        new(TokenKind.OpenParen, 90),
         //new(TokenKind.OpenBracket, 90),
     ];
 
@@ -138,7 +138,38 @@ public partial class Parser
 
     private SyntaxNode? ParsePostfix(SingleOperatorInfo operatorInfo, SyntaxNode left)
     {
-        // TODO
+        var location = CreateLocation();
+        location.MarkBegin(Reader);
+
+        if (!Next()) return null;
+
+        if (operatorInfo.OperatorToken == TokenKind.OpenParen)
+        {
+            var args = new List<SyntaxNode>();
+
+            if (!Try(TokenKind.CloseParen))
+            {
+                var head = ParseExpression();
+                if (head == null) return null;
+                args.Add(head);
+
+                while (Try(TokenKind.Comma))
+                {
+                    if (!Next()) return null;
+
+                    var arg = ParseExpression();
+                    if (arg == null) return null;
+                    args.Add(arg);
+                }
+            }
+
+            if (!NextWith(TokenKind.CloseParen)) return null;
+
+            location.MarkEnd(Reader);
+
+            return SyntaxNode.CreateCall(left, args, location);
+        }
+
         return null;
     }
 

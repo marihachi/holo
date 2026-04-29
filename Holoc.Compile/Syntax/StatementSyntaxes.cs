@@ -56,15 +56,24 @@ public partial class Parser
                 location);
         }
 
-        // 式文
+        // 式文 or 式
         var expr = ParseExpression();
         if (expr != null)
         {
-            if (!NextWith(TokenKind.SemiColon)) return null;
+            if (Try(TokenKind.SemiColon))
+            {
+                if (!Next()) return null;
 
-            location.MarkEnd(Reader);
+                location.MarkEnd(Reader);
 
-            return SyntaxNode.CreateExpressionStatement(expr, location);
+                return SyntaxNode.CreateExpressionStatement(
+                    expr,
+                    location);
+            }
+            else
+            {
+                return expr;
+            }
         }
         else
         {
