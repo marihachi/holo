@@ -48,6 +48,12 @@ public partial class Parser
             return SyntaxNode.CreateBlock(nodeList, blockLocation);
         }
 
+        // if statement
+
+        // switch statement
+
+        // expression statement
+
         GenerateError(Reader.CreateUnexpectedError());
         return null;
     }

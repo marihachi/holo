@@ -13,16 +13,25 @@ public partial class Parser
         return ParsePratt(0);
     }
 
-    private List<SingleOperatorInfo> PrefixOperators = [];
+    private List<SingleOperatorInfo> PrefixOperators = [
+        //new(TokenKind.Hat, 80),
+        //new(TokenKind.Not, 80),
+        //new(TokenKind.Plus, 80),
+        //new(TokenKind.Minus, 80),
+    ];
 
     private List<InfixOperatorInfo> InfixOperators = [
+        //new(TokenKind.Dot, 90, 91),
         new(TokenKind.Asterisk, 70, 71),
         new(TokenKind.Slash, 70, 71),
         new(TokenKind.Plus, 60, 61),
         new(TokenKind.Minus, 60, 61),
     ];
 
-    private List<SingleOperatorInfo> PostfixOperators = [];
+    private List<SingleOperatorInfo> PostfixOperators = [
+        //new(TokenKind.OpenParen, 90),
+        //new(TokenKind.OpenBracket, 90),
+    ];
 
     private SyntaxNode? ParsePratt(int minimumBindPower)
     {
@@ -152,6 +161,10 @@ public partial class Parser
 
             return SyntaxNode.CreateNumberLiteral(value, location);
         }
+
+        // if expression
+
+        // switch expression
 
         GenerateError(Reader.CreateUnexpectedError());
         return null;
