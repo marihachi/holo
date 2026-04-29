@@ -208,6 +208,15 @@ public class TokenReader
                 case '=':
                     beginLocation = GetNextLocation();
                     ReadNextChar();
+
+                    // =が続いていたら、==として消費する
+                    if (NextChar == '=')
+                    {
+                        ReadNextChar();
+                        SetNextToken(new SyntaxToken(TokenKind.Eq2, beginLocation, GetCurrentLocation().MoveRight()));
+                        return;
+                    }
+
                     SetNextToken(new SyntaxToken(TokenKind.Eq, beginLocation, GetCurrentLocation().MoveRight()));
                     return;
 
@@ -282,6 +291,37 @@ public class TokenReader
 
                     SetNextToken(new SyntaxToken(TokenKind.Slash, beginLocation, GetCurrentLocation().MoveRight()));
                     return;
+
+                case '>':
+                    beginLocation = GetNextLocation();
+                    ReadNextChar();
+
+                    // =が続いていたら、>=として消費する
+                    if (NextChar == '=')
+                    {
+                        ReadNextChar();
+                        SetNextToken(new SyntaxToken(TokenKind.GtEq, beginLocation, GetCurrentLocation().MoveRight()));
+                        return;
+                    }
+
+                    SetNextToken(new SyntaxToken(TokenKind.Gt, beginLocation, GetCurrentLocation().MoveRight()));
+                    return;
+
+                case '<':
+                    beginLocation = GetNextLocation();
+                    ReadNextChar();
+
+                    // =が続いていたら、<=として消費する
+                    if (NextChar == '=')
+                    {
+                        ReadNextChar();
+                        SetNextToken(new SyntaxToken(TokenKind.LtEq, beginLocation, GetCurrentLocation().MoveRight()));
+                        return;
+                    }
+
+                    SetNextToken(new SyntaxToken(TokenKind.Lt, beginLocation, GetCurrentLocation().MoveRight()));
+                    return;
+
             }
 
             // 数字

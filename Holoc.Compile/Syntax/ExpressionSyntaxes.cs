@@ -52,6 +52,12 @@ public partial class Parser
         new(TokenKind.Slash, 70, 71),
         new(TokenKind.Plus, 60, 61),
         new(TokenKind.Minus, 60, 61),
+        new(TokenKind.Gt, 50, 51),
+        new(TokenKind.GtEq, 50, 51),
+        new(TokenKind.Lt, 50, 51),
+        new(TokenKind.LtEq, 50, 51),
+        new(TokenKind.Eq2, 40, 41),
+        new(TokenKind.NotEq, 40, 41),
     ];
 
     private List<SingleOperatorInfo> PostfixOperators = [
@@ -148,7 +154,10 @@ public partial class Parser
         var right = ParsePratt(operatorInfo.RightBindPower);
         if (right == null) return null;
 
+        // TODO: 変換テーブルを使ってTokenKindからModeに変換
+
         NodeMode mode;
+        // math
         if (operatorInfo.OperatorToken == TokenKind.Plus)
         {
             mode = NodeMode.Add;
@@ -164,6 +173,31 @@ public partial class Parser
         else if (operatorInfo.OperatorToken == TokenKind.Slash)
         {
             mode = NodeMode.Div;
+        }
+        // compare
+        else if (operatorInfo.OperatorToken == TokenKind.Gt)
+        {
+            mode = NodeMode.Gt;
+        }
+        else if (operatorInfo.OperatorToken == TokenKind.Lt)
+        {
+            mode = NodeMode.Lt;
+        }
+        else if (operatorInfo.OperatorToken == TokenKind.GtEq)
+        {
+            mode = NodeMode.GtEq;
+        }
+        else if (operatorInfo.OperatorToken == TokenKind.LtEq)
+        {
+            mode = NodeMode.LtEq;
+        }
+        else if (operatorInfo.OperatorToken == TokenKind.Eq2)
+        {
+            mode = NodeMode.Eq;
+        }
+        else if (operatorInfo.OperatorToken == TokenKind.NotEq)
+        {
+            mode = NodeMode.NotEq;
         }
         else
         {
@@ -193,10 +227,10 @@ public partial class Parser
             return ParseIfExpression();
         }
 
-        if (Try("switch"))
-        {
-            return ParseSwitchExpression();
-        }
+        //if (Try("switch"))
+        //{
+        //    return ParseSwitchExpression();
+        //}
 
         if (Try(TokenKind.Word))
         {
