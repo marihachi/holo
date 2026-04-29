@@ -35,6 +35,19 @@ public partial class Parser
             return ParseWhileStatement();
         }
 
+        if (Try(TokenKind.OpenBrace))
+        {
+            var blockLocation = CreateLocation();
+            blockLocation.MarkBegin(Reader);
+
+            var nodeList = ParseBlock();
+            if (nodeList == null) return null;
+
+            blockLocation.MarkEnd(Reader);
+
+            return SyntaxNode.CreateBlock(nodeList, blockLocation);
+        }
+
         GenerateError(Reader.CreateUnexpectedError());
         return null;
     }
@@ -140,10 +153,14 @@ public partial class Parser
 
         if (!NextWith("while")) return null;
 
+        if (!NextWith(TokenKind.OpenParen)) return null;
+
         var condition = ParseExpression();
         if (condition == null) return null;
 
-        var body = ParseBlockOrStatement();
+        if (!NextWith(TokenKind.CloseParen)) return null;
+
+        var body = ParseStatement();
         if (body == null) return null;
 
         location.MarkEnd(Reader);

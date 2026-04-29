@@ -19,27 +19,6 @@ public partial class Parser
     }
 
     /// <summary>
-    /// ブロックまたは文をパースします。
-    /// </summary>
-    private SyntaxNode? ParseBlockOrStatement()
-    {
-        if (Try(TokenKind.OpenBrace))
-        {
-            var blockLocation = CreateLocation();
-            blockLocation.MarkBegin(Reader);
-
-            var nodeList = ParseBlock();
-            if (nodeList == null) return null;
-
-            blockLocation.MarkEnd(Reader);
-
-            return SyntaxNode.CreateBlock(nodeList, blockLocation);
-        }
-
-        return ParseStatement();
-    }
-
-    /// <summary>
     /// ブロックをパースします。
     /// </summary>
     private List<SyntaxNode>? ParseBlock()

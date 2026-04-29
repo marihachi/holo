@@ -87,12 +87,8 @@ public partial class Parser
         List<SyntaxNode>? body = null;
         if (Try(TokenKind.OpenBrace))
         {
-            if (!Next()) return null;
-            results = Repeat(ParseStatement, x => x.Kind == TokenKind.CloseBrace);
-            if (results == null) return null;
-            body = [];
-            body.AddRange(results);
-            if (!NextWith(TokenKind.CloseBrace)) return null;
+            body = ParseBlock();
+            if (body == null) return null;
         }
         else
         {
