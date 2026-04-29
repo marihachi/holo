@@ -222,7 +222,7 @@ public partial class Parser
 
             location.MarkEnd(Reader);
 
-            return SyntaxNode.CreateBlock(nodeList, location);
+            return SyntaxNode.CreateBlockExpression(nodeList, location);
         }
 
         GenerateError(Reader.CreateUnexpectedError());
@@ -285,6 +285,6 @@ public partial class Parser
 
         location.MarkEnd(Reader);
 
-        return SyntaxNode.CreateSwitch(condExpr, arms, location);
+        return SyntaxNode.CreateSwitchExpression(condExpr, arms, location);
     }
 }

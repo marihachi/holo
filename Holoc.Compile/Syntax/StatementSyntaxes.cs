@@ -51,7 +51,9 @@ public partial class Parser
 
             location.MarkEnd(Reader);
 
-            return SyntaxNode.CreateBlock(nodeList, location);
+            return SyntaxNode.CreateExpressionStatement(
+                SyntaxNode.CreateBlockExpression(nodeList, location),
+                location);
         }
 
         // 式文

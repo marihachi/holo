@@ -112,12 +112,12 @@ public class SyntaxNode
         };
     }
 
-    public static SyntaxNode CreateSwitch
+    public static SyntaxNode CreateSwitchExpression
         (SyntaxNode condition, List<SyntaxNode> arms, NodeLocation location)
     {
         return new SyntaxNode
         {
-            Kind = NodeKind.Switch,
+            Kind = NodeKind.SwitchExpression,
             Location = location,
             Operands = [condition],
             Body = arms,
@@ -183,17 +183,17 @@ public class SyntaxNode
     {
         return new SyntaxNode
         {
-            Kind = NodeKind.If,
+            Kind = NodeKind.IfExpression,
             Location = location,
             Operands = [condition, thenNode, elseNode],
         };
     }
 
-    public static SyntaxNode CreateBlock(List<SyntaxNode> body, NodeLocation location)
+    public static SyntaxNode CreateBlockExpression(List<SyntaxNode> body, NodeLocation location)
     {
         return new SyntaxNode
         {
-            Kind = NodeKind.Block,
+            Kind = NodeKind.BlockExpression,
             Location = location,
             Body = body,
         };
