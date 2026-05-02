@@ -238,9 +238,9 @@ public partial class Parser
             return SyntaxNode.CreateNumberLiteral(value, location);
         }
 
-        if (Try("if"))
+        if (Try("when"))
         {
-            return ParseIfExpression();
+            return ParseWhenExpression();
         }
 
         //if (Try("switch"))
@@ -282,12 +282,12 @@ public partial class Parser
     /// <summary>
     /// if式
     /// </summary>
-    private SyntaxNode? ParseIfExpression()
+    private SyntaxNode? ParseWhenExpression()
     {
         var location = CreateLocation();
         location.MarkBegin(Reader);
 
-        if (!NextWith("if")) return null;
+        if (!NextWith("when")) return null;
 
         if (!NextWith(TokenKind.OpenParen)) return null;
         var condExpr = ParseExpression();

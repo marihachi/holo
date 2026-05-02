@@ -43,37 +43,30 @@ public partial class Parser
         var location = CreateLocation();
         location.MarkBegin(Reader);
 
-        // block statement
-        if (Try(TokenKind.OpenBrace))
+        //// block statement
+        //if (Try(TokenKind.OpenBrace))
+        //{
+        //    var nodeList = ParseBlock();
+        //    if (nodeList == null) return null;
+
+        //    location.MarkEnd(Reader);
+
+        //    return SyntaxNode.CreateExpressionStatement(
+        //        SyntaxNode.CreateBlockExpression(nodeList, location),
+        //        location);
+        //}
+
+        // 式文
+        var expr = ParseExpression();
+        if (expr != null)
         {
-            var nodeList = ParseBlock();
-            if (nodeList == null) return null;
+            if (!NextWith(TokenKind.SemiColon)) return null;
 
             location.MarkEnd(Reader);
 
             return SyntaxNode.CreateExpressionStatement(
-                SyntaxNode.CreateBlockExpression(nodeList, location),
+                expr,
                 location);
-        }
-
-        // 式文 or 式
-        var expr = ParseExpression();
-        if (expr != null)
-        {
-            if (Try(TokenKind.SemiColon))
-            {
-                if (!Next()) return null;
-
-                location.MarkEnd(Reader);
-
-                return SyntaxNode.CreateExpressionStatement(
-                    expr,
-                    location);
-            }
-            else
-            {
-                return expr;
-            }
         }
         else
         {
@@ -124,6 +117,14 @@ public partial class Parser
 
         if (!NextWith("return")) return null;
 
+        var isForceReturnFunc = false;
+        if (Try("fn"))
+        {
+            if (!Next()) return null;
+
+            isForceReturnFunc = true;
+        }
+
         SyntaxNode? expr = null;
         if (Try(TokenKind.SemiColon))
         {
@@ -139,7 +140,7 @@ public partial class Parser
 
         location.MarkEnd(Reader);
 
-        return SyntaxNode.CreateReturnStatement(expr, location);
+        return SyntaxNode.CreateReturnStatement(expr, isForceReturnFunc, location);
     }
 
     private SyntaxNode? ParseVariableDeclaration()

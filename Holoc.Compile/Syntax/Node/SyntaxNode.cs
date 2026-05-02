@@ -11,6 +11,7 @@ public class SyntaxNode
     public string? Name { get; set; }
     public object? Value { get; set; }
     public bool IsExternal { get; set; }
+    public bool IsForceReturnFunc { get; set; }
 
     public static SyntaxNode CreateUnit(List<SyntaxNode> body, NodeLocation location)
     {
@@ -102,13 +103,14 @@ public class SyntaxNode
         };
     }
 
-    public static SyntaxNode CreateReturnStatement(SyntaxNode? expression, NodeLocation location)
+    public static SyntaxNode CreateReturnStatement(SyntaxNode? expression, bool isForceReturnFunc, NodeLocation location)
     {
         return new SyntaxNode
         {
             Kind = NodeKind.ReturnStatement,
             Location = location,
             Operands = [expression],
+            IsForceReturnFunc = isForceReturnFunc,
         };
     }
 
@@ -271,6 +273,11 @@ public class SyntaxNode
         if (node.IsExternal)
         {
             Console.Write(" [External]");
+        }
+
+        if (node.IsForceReturnFunc)
+        {
+            Console.Write(" [ForceReturnFunc]");
         }
 
         Console.Write($" ({node.Location.GetLocationString()})");
