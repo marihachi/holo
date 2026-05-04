@@ -22,7 +22,7 @@ public partial class Parser
 
         if (Try("return"))
         {
-            return ParseReturn();
+            return ParseReturnStatement();
         }
 
         if (Try("var"))
@@ -110,7 +110,7 @@ public partial class Parser
     /// <summary>
     /// return文
     /// </summary>
-    private SyntaxNode? ParseReturn()
+    private SyntaxNode? ParseReturnStatement()
     {
         var location = CreateLocation();
         location.MarkBegin(Reader);
@@ -230,8 +230,6 @@ public partial class Parser
 
         location.MarkEnd(Reader);
 
-        return SyntaxNode.CreateExpressionStatement(
-            SyntaxNode.CreateIfExpression(condExpr, thenStmt, elseStmt, location),
-            location);
+        return SyntaxNode.CreateIfStatement(condExpr, thenStmt, elseStmt, location);
     }
 }

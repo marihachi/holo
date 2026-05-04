@@ -114,24 +114,24 @@ public class SyntaxNode
         };
     }
 
-    public static SyntaxNode CreateSwitchExpression
-        (SyntaxNode condition, List<SyntaxNode> arms, NodeLocation location)
+    public static SyntaxNode CreateWhenExpression
+        (List<SyntaxNode> arms, NodeLocation location)
     {
         return new SyntaxNode
         {
-            Kind = NodeKind.SwitchExpression,
+            Kind = NodeKind.WhenExpression,
             Location = location,
-            Operands = [condition],
+            Operands = [],
             Body = arms,
         };
     }
 
-    public static SyntaxNode CreateSwitchArm
+    public static SyntaxNode CreateWhenArm
         (bool isDefaultArm, SyntaxNode? condition, SyntaxNode expression, NodeLocation location)
     {
         return new SyntaxNode
         {
-            Kind = NodeKind.SwitchArm,
+            Kind = NodeKind.WhenArm,
             Location = location,
             Mode = isDefaultArm ? NodeMode.DefaultArm : NodeMode.None,
             Operands = [expression, condition],
@@ -158,13 +158,14 @@ public class SyntaxNode
         };
     }
 
-    public static SyntaxNode CreateUnaryOperation(SyntaxNode expression, NodeLocation location)
+    public static SyntaxNode CreateUnaryOperation(NodeMode mode, SyntaxNode expression, NodeLocation location)
     {
         return new SyntaxNode
         {
             Kind = NodeKind.UnaryOperation,
             Location = location,
             Operands = [expression],
+            Mode = mode,
         };
     }
 
@@ -180,14 +181,14 @@ public class SyntaxNode
         };
     }
 
-    public static SyntaxNode CreateIfExpression
-        (SyntaxNode condition, SyntaxNode thenNode, SyntaxNode? elseNode, NodeLocation location)
+    public static SyntaxNode CreateIfStatement
+        (SyntaxNode condition, SyntaxNode thenStatement, SyntaxNode? elseStatement, NodeLocation location)
     {
         return new SyntaxNode
         {
-            Kind = NodeKind.IfExpression,
+            Kind = NodeKind.IfStatement,
             Location = location,
-            Operands = [condition, thenNode, elseNode],
+            Operands = [condition, thenStatement, elseStatement],
         };
     }
 

@@ -26,6 +26,6 @@ public enum NodeMode : byte
     Eq,
     NotEq,
 
-    // switch arm
+    // when arm
     DefaultArm,
 }

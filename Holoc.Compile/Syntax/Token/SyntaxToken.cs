@@ -86,17 +86,15 @@ public enum TokenKind : byte
     CloseBrace,
 
     //Break,
-    //Case,
     //Continue,
-    //Default,
     //Do,
     //Else,
     //External,
     //Fn,
     //If,
     //Return,
-    //Switch,
     //Var,
+    //When,
     //While,
 }
 

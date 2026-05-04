@@ -42,8 +42,8 @@ public partial class Parser
     private List<SingleOperatorInfo> PrefixOperators = [
         //new(TokenKind.Hat, 80),
         //new(TokenKind.Not, 80),
-        //new(TokenKind.Plus, 80),
-        //new(TokenKind.Minus, 80),
+        new(TokenKind.Plus, 80),
+        new(TokenKind.Minus, 80),
     ];
 
     private List<InfixOperatorInfo> InfixOperators = [
@@ -132,8 +132,31 @@ public partial class Parser
 
     private SyntaxNode? ParsePrefix(SingleOperatorInfo operatorInfo)
     {
-        // TODO
-        return null;
+        var location = CreateLocation();
+        location.MarkBegin(Reader);
+
+        if (!Next()) return null;
+
+        var right = ParsePratt(operatorInfo.BindPower);
+        if (right == null) return null;
+
+        NodeMode mode;
+        if (operatorInfo.OperatorToken == TokenKind.Plus)
+        {
+            mode = NodeMode.Add;
+        }
+        else if (operatorInfo.OperatorToken == TokenKind.Minus)
+        {
+            mode = NodeMode.Sub;
+        }
+        else
+        {
+            return null;
+        }
+
+        location.MarkEnd(Reader);
+
+        return SyntaxNode.CreateUnaryOperation(mode, right, location);
     }
 
     private SyntaxNode? ParsePostfix(SingleOperatorInfo operatorInfo, SyntaxNode left)
@@ -243,11 +266,6 @@ public partial class Parser
             return ParseWhenExpression();
         }
 
-        //if (Try("switch"))
-        //{
-        //    return ParseSwitchExpression();
-        //}
-
         if (Try(TokenKind.Word))
         {
             var location = CreateLocation();
@@ -280,61 +298,41 @@ public partial class Parser
     }
 
     /// <summary>
-    /// if式
+    /// when式
     /// </summary>
     private SyntaxNode? ParseWhenExpression()
     {
         var location = CreateLocation();
         location.MarkBegin(Reader);
 
-        if (!NextWith("when")) return null;
+        var arms = new List<SyntaxNode>();
+        while (Try("when"))
+        {
+            if (!Next()) return null;
 
-        if (!NextWith(TokenKind.OpenParen)) return null;
-        var condExpr = ParseExpression();
-        if (condExpr == null) return null;
-        if (!NextWith(TokenKind.CloseParen)) return null;
+            if (!NextWith(TokenKind.OpenParen)) return null;
+            var condExpr = ParseExpression();
+            if (condExpr == null) return null;
+            if (!NextWith(TokenKind.CloseParen)) return null;
 
-        var thenExpr = ParseExpression();
-        if (thenExpr == null) return null;
+            var thenExpr = ParseExpression();
+            if (thenExpr == null) return null;
 
-        SyntaxNode? elseExpr = null;
+            arms.Add(SyntaxNode.CreateWhenArm(false, condExpr, thenExpr, location));
+        }
+
         if (Try("else"))
         {
             if (!Next()) return null;
 
-            elseExpr = ParseExpression();
+            var elseExpr = ParseExpression();
             if (elseExpr == null) return null;
+
+            arms.Add(SyntaxNode.CreateWhenArm(true, null, elseExpr, location));
         }
 
         location.MarkEnd(Reader);
 
-        return SyntaxNode.CreateIfExpression(condExpr, thenExpr, elseExpr, location);
-    }
-
-    /// <summary>
-    /// switch式
-    /// </summary>
-    private SyntaxNode? ParseSwitchExpression()
-    {
-        var location = CreateLocation();
-        location.MarkBegin(Reader);
-
-        if (!NextWith("switch")) return null;
-
-        if (!NextWith(TokenKind.OpenParen)) return null;
-        var condExpr = ParseExpression();
-        if (condExpr == null) return null;
-        if (!NextWith(TokenKind.CloseParen)) return null;
-
-        if (!NextWith(TokenKind.OpenBrace)) return null;
-
-        // TODO: arms
-        var arms = new List<SyntaxNode>();
-
-        if (!NextWith(TokenKind.CloseBrace)) return null;
-
-        location.MarkEnd(Reader);
-
-        return SyntaxNode.CreateSwitchExpression(condExpr, arms, location);
+        return SyntaxNode.CreateWhenExpression(arms, location);
     }
 }

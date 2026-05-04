@@ -2,24 +2,32 @@ namespace Holoc.Compile.Syntax.Node;
 
 public enum NodeKind : byte
 {
+    // Common
+    Reference,
+    TypeReference,
+    Call,
+    BlockExpression,
+
+    // Core
     Unit,
+
+    // Statements
     FunctionDecl,
     FunctionParameter,
     VariableDecl,
-    WhileStatement,
     AssignStatement,
+    IfStatement,
+    WhileStatement,
+    //ForStatement,
     BreakStatement,
     ContinueStatement,
     ReturnStatement,
-    SwitchExpression,
-    SwitchArm,
     ExpressionStatement,
+
+    // Expressions
+    WhenExpression,
+    WhenArm,
     NumberLiteral,
     UnaryOperation,
     BinaryOperation,
-    IfExpression,
-    BlockExpression,
-    Reference,
-    Call,
-    TypeReference,
 }
