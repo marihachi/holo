@@ -2,15 +2,20 @@
 
 ## 数値リテラル
 - 数値リテラルは数値を返します。
+- 型推論は要検討
 
 ```
 var x: int = 123;
-var y: ubyte = 32;
+var y: byte = 32;
 8;
 ```
 生成コード:
 ```c
-int x = 123;
+#include <stdint.h>
+
+// ...
+
+int32_t x = 123;
 uint8_t y = 32;
 8;
 ```
@@ -53,6 +58,8 @@ var x = null;
 生成コード：
 ```c
 #include <stddef.h>
+
+// ...
 
 int *x = NULL;
 ```
