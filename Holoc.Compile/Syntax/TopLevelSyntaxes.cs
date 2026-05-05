@@ -28,7 +28,7 @@ public partial class Parser
     private SyntaxNode? ParseTopLevelDecl()
     {
         var isExternal = false;
-        if (Try("external"))
+        if (Try("extern"))
         {
             Next();
             isExternal = true;
