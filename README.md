@@ -1,5 +1,5 @@
 # holo
-A system programming language of modern syntaxes with LLVM.
+A system programming language of modern syntaxes that transpiles to C.
 
 WIP!
 
@@ -10,7 +10,7 @@ WIP!
 - Type system
   - 参照型のサポート
   - いずれかの型であることを表すユニオン型のサポート
-- Generate LLVM IR code
+- Transpile to C code
 
 ## Syntax image
 ```
