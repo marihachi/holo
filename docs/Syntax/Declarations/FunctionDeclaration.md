@@ -1,14 +1,24 @@
-## 関数定義
+## 関数宣言
+
+宣言のみの場合:
 ```
-fn add(x: int, y: int): int {
-  x + y
-}
+fn add(x: int, y: int): int;
+```
+生成コード:
+```c
+int add(int x, int y);
 ```
 
-関数定義はLLVM-IRのdefine命令を生成する。
-```llvm
-define i32 @add(i32 %x, i32 %y) {
-  ; ...
+関数本体を定義する場合:
+```
+fn add(x: int, y: int): int {
+  return x + y;
+}
+```
+生成コード:
+```c
+int add(int x, int y) {
+  return x + y;
 }
 ```
 
@@ -18,8 +28,7 @@ define i32 @add(i32 %x, i32 %y) {
 ```
 external fn max(x: int, y: int): int;
 ```
-
-この宣言はLLVM-IRのdeclare命令を生成する。
-```llvm
-declare i32 @max(i32 %x, i32 %y)
+生成コード:
+```c
+extern int max(int x, int y);
 ```
