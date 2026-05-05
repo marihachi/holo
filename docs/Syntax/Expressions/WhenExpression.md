@@ -21,20 +21,10 @@ var y =
 ```
 生成コード:
 ```c
-int x;
-int y;
+int x = (a == 1) ? 1 : 2;
 
-if (a == 1) {
-  x = 1;
-} else {
-  x = 2;
-}
-
-if (a > b) {
-  y = 1;
-} else if (a < b) {
-  y = -1;
-} else {
-  y = 0;
-}
+int y =
+  (a > b) ? 1 :
+  (a < b) ? -1 :
+  0;
 ```
