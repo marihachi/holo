@@ -1,3 +1,5 @@
+using Holoc.Compile.CLang;
+using Holoc.Compile.IR;
 using Holoc.Compile.Syntax;
 using Holoc.Compile.Syntax.Node;
 using System.CommandLine;
@@ -78,9 +80,14 @@ public class Program
 
             if (unitNode == null) return;
 
-            // TODO: Resolve
+            // TODO: semantic analysis
 
-            // TODO: Emit LLVM-IR
+            var holoIr = new HoloIRBuilder().Build(unitNode);
+            var cIr = new CIRBuilder().Build(holoIr);
+            var cCode = new CEmitter().Emit(cIr);
+
+            var outputPath = output ?? Path.ChangeExtension(filepath, ".c");
+            File.WriteAllText(outputPath, cCode, Encoding.UTF8);
         }
     }
 }

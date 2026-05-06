@@ -12,9 +12,9 @@ public enum NodeKind : byte
     Unit,
 
     // Statements
-    FunctionDecl,
+    FunctionDeclaration,
     FunctionParameter,
-    VariableDecl,
+    VariableDeclaration,
     AssignStatement,
     IfStatement,
     WhileStatement,

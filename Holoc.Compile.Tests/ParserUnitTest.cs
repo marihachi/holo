@@ -25,7 +25,7 @@ namespace Holoc.Compile.Tests
             Assert.Single(result.Body);
 
             var functionDecl = result.Body[0];
-            Assert.Equal(NodeKind.FunctionDecl, functionDecl.Kind);
+            Assert.Equal(NodeKind.FunctionDeclaration, functionDecl.Kind);
             Assert.Equal("abc", functionDecl.Name);
         }
 
@@ -46,7 +46,7 @@ namespace Holoc.Compile.Tests
             Assert.Single(result.Body);
 
             var functionDecl = result.Body[0];
-            Assert.Equal(NodeKind.FunctionDecl, functionDecl.Kind);
+            Assert.Equal(NodeKind.FunctionDeclaration, functionDecl.Kind);
 
             Assert.NotNull(functionDecl.Parameters);
             Assert.Equal(2, functionDecl.Parameters.Count);
@@ -79,7 +79,7 @@ namespace Holoc.Compile.Tests
             Assert.Single(result.Body);
 
             var functionDecl = result.Body[0];
-            Assert.Equal(NodeKind.FunctionDecl, functionDecl.Kind);
+            Assert.Equal(NodeKind.FunctionDeclaration, functionDecl.Kind);
 
             var returnType = functionDecl.Operands?[0];
             Assert.NotNull(returnType);

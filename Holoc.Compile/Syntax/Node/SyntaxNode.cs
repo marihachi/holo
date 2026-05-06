@@ -28,7 +28,7 @@ public class SyntaxNode
     {
         return new SyntaxNode
         {
-            Kind = NodeKind.FunctionDecl,
+            Kind = NodeKind.FunctionDeclaration,
             Location = location,
             Name = name,
             Operands = [returnType],
@@ -55,7 +55,7 @@ public class SyntaxNode
     {
         return new SyntaxNode
         {
-            Kind = NodeKind.VariableDecl,
+            Kind = NodeKind.VariableDeclaration,
             Location = location,
             Name = name,
             Operands = [variableType, initializer],
