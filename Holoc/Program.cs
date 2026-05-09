@@ -1,8 +1,10 @@
+using Holoc;
 using Holoc.Compile.CLang;
 using Holoc.Compile.IR;
 using Holoc.Compile.Syntax;
 using Holoc.Compile.Syntax.Node;
 using System.CommandLine;
+using System.Diagnostics;
 using System.Text;
 
 public class Program
@@ -22,20 +24,20 @@ public class Program
         command.Add(showAstOption);
 
         // Set a handler will be called after command parsing
-        command.SetHandler(ctx =>
+        command.SetHandler(async ctx =>
         {
             var inputValues = ctx.ParseResult.GetValueForArgument(inputArg);
             var outputValue = ctx.ParseResult.GetValueForOption(outputOption);
             var showAstValue = ctx.ParseResult.GetValueForOption(showAstOption);
 
-            ProcessCommand(inputValues, outputValue, showAstValue);
+            await ProcessCommand(inputValues, outputValue, showAstValue);
         });
 
         // Execute the command parsing
         return command.InvokeAsync(args).Result;
     }
 
-    static void ProcessCommand(string[] input, string? output, string? showAst)
+    static async Task ProcessCommand(string[] input, string? output, string? showAst)
     {
         if (input.Length == 0)
         {
@@ -43,9 +45,15 @@ public class Program
             return;
         }
 
+        var config = HoloConfigLoader.Load();
         var parser = new Parser();
 
-        foreach (var filepath in input)
+        // objフォルダを取得
+        var objDirPath = config.ObjDir;
+        Directory.CreateDirectory(objDirPath);
+
+        var cFileList = new List<string>();
+        foreach (var filePath in input)
         {
             // Open a file as MMF stream
             // .holo files may be large and should be read in small (1KB) blocks to avoid memory pressure.
@@ -54,11 +62,11 @@ public class Program
 
             SyntaxNode? unitNode;
             using (var reader = new StreamReader(
-                filepath,
+                filePath,
                 Encoding.UTF8,
                 detectEncodingFromByteOrderMarks: true,
                 bufferSize: 1024 * 1024) // 1MB
-                )
+            )
             {
                 // Parse .holo file
                 unitNode = parser.Parse(reader);
@@ -80,14 +88,46 @@ public class Program
 
             if (unitNode == null) return;
 
+            // AST -> Holo IR
+            var holoIrBuilder = new HoloIRBuilder();
+            holoIrBuilder.Build(unitNode);
+            var holoIr = holoIrBuilder.HoloUnit;
+
             // TODO: semantic analysis
 
-            var holoIr = new HoloIRBuilder().Build(unitNode);
-            var cIr = new CIRBuilder().Build(holoIr);
-            var cCode = new CEmitter().Emit(cIr);
+            // Holo IR -> C IR
+            var cIrBuilder = new CIRBuilder();
+            cIrBuilder.Build(holoIr);
+            var cUnit = cIrBuilder.CUnit;
 
-            var outputPath = output ?? Path.ChangeExtension(filepath, ".c");
-            File.WriteAllText(outputPath, cCode, Encoding.UTF8);
+            // C IR -> C code
+            var cCode = new CEmitter().Emit(cUnit);
+
+            // write C code
+            var cFilePath = Path.Combine(objDirPath, Path.GetFileName(Path.ChangeExtension(filePath, ".c")));
+            File.WriteAllText(cFilePath, cCode, Encoding.UTF8);
+
+            cFileList.Add(cFilePath);
         }
+
+        var sourceFiles = string.Join(" ", cFileList.Select(path => $"\"{path}\""));
+        var binPath = Path.ChangeExtension(output, ".exe");
+
+        // compile and link
+        var clangArgs = $"{sourceFiles} -o {binPath}";
+        if (!string.IsNullOrWhiteSpace(config.ClangExtraArgs))
+        {
+            clangArgs += $" {config.ClangExtraArgs}";
+        }
+
+        await Process.Start(new ProcessStartInfo
+        {
+            FileName = config.ClangPath,
+            Arguments = clangArgs,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+        })!.WaitForExitAsync();
     }
 }
