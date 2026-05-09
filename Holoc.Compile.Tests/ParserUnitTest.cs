@@ -113,5 +113,71 @@ namespace Holoc.Compile.Tests
             Assert.Equal(NodeKind.TypeReference, paramType.Kind);
             Assert.Equal("int", paramType.Name);
         }
+
+        /// <summary>
+        /// 初期化付きの変数宣言
+        /// </summary>
+        [Fact]
+        public void VariableInitTest()
+        {
+            using var stream = new MemoryStream(Encoding.UTF8.GetBytes("var x: int = 1;"));
+            using var reader = new StreamReader(stream);
+
+            var result = Parser.Parse(reader);
+
+            Assert.NotNull(result);
+            Assert.Equal(NodeKind.Unit, result.Kind);
+            Assert.NotNull(result.Body);
+            Assert.Single(result.Body);
+
+            var variableDecl = result.Body[0];
+            Assert.Equal(NodeKind.VariableDeclaration, variableDecl.Kind);
+            Assert.Equal("x", variableDecl.Name);
+
+            Assert.NotNull(variableDecl.Operands);
+            Assert.Equal(2, variableDecl.Operands.Count);
+
+            var variableType = variableDecl.Operands[0];
+            Assert.NotNull(variableType);
+            Assert.Equal(NodeKind.TypeReference, variableType.Kind);
+            Assert.Equal("int", variableType.Name);
+
+            var initializer = variableDecl.Operands[1];
+            Assert.NotNull(initializer);
+            Assert.Equal(NodeKind.NumberLiteral, initializer.Kind);
+            Assert.Equal(1, initializer.Value);
+        }
+
+        /// <summary>
+        /// 初期化なしの変数宣言
+        /// </summary>
+        [Fact]
+        public void VariableWithoutInitTest()
+        {
+            using var stream = new MemoryStream(Encoding.UTF8.GetBytes("var x: int;"));
+            using var reader = new StreamReader(stream);
+
+            var result = Parser.Parse(reader);
+
+            Assert.NotNull(result);
+            Assert.Equal(NodeKind.Unit, result.Kind);
+            Assert.NotNull(result.Body);
+            Assert.Single(result.Body);
+
+            var variableDecl = result.Body[0];
+            Assert.Equal(NodeKind.VariableDeclaration, variableDecl.Kind);
+            Assert.Equal("x", variableDecl.Name);
+
+            Assert.NotNull(variableDecl.Operands);
+            Assert.Equal(2, variableDecl.Operands.Count);
+
+            var variableType = variableDecl.Operands[0];
+            Assert.NotNull(variableType);
+            Assert.Equal(NodeKind.TypeReference, variableType.Kind);
+            Assert.Equal("int", variableType.Name);
+
+            var initializer = variableDecl.Operands[1];
+            Assert.Null(initializer);
+        }
     }
 }
