@@ -45,8 +45,8 @@ public class SyntaxNode
         {
             Kind = NodeKind.FunctionParameter,
             Location = location,
-            Operands = [paramType],
             Name = name,
+            Operands = [paramType],
         };
     }
 

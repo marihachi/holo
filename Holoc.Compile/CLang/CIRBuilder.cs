@@ -27,8 +27,12 @@ public class CIRBuilder
 
     private CFunctionDecl BuildFunctionDecl(HoloFunctionDecl decl)
     {
+        var returnType = MapType(decl.ReturnType);
+
         // C言語の仕様でmain関数の戻り値はintでなければならない
-        var returnType = decl.Name == "main" ? "int" : MapType(decl.ReturnType);
+        if (decl.Name == "main")
+            returnType = "int";
+
         var parameters = new List<CParam>();
         foreach (var p in decl.Parameters)
         {
