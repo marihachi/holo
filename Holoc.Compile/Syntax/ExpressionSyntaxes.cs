@@ -253,7 +253,7 @@ public partial class Parser
             var location = CreateLocation();
             location.MarkBegin(Reader);
 
-            var value = GetTokenValue<int>();
+            var value = GetTokenValue<long>();
             if (!Next()) return null;
 
             location.MarkEnd(Reader);

@@ -347,7 +347,7 @@ public class TokenReader
                     ReadNextChar();
                 }
 
-                int value = int.Parse(wholeNumber);
+                long value = long.Parse(wholeNumber);
                 SetNextToken(new SyntaxToken(TokenKind.NumberLiteral, beginLocation, GetCurrentLocation().MoveRight(), value));
                 return;
             }

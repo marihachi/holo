@@ -42,7 +42,9 @@ public record HoloBlockStmt(HoloBlock Block) : HoloStmt;
 
 public abstract record HoloExpr;
 
-public record HoloNumberLiteral(object Value) : HoloExpr;
+public record HoloNumberLiteral(long Value) : HoloExpr;
+
+public record HoloBoolLiteral(bool Value) : HoloExpr;
 
 public record HoloReference(string Name) : HoloExpr;
 
@@ -76,7 +78,7 @@ public enum HoloBinaryOp
 
 public enum HoloAssignOp
 {
-    Assign,
+    None,
     Add, Sub, Mul, Div, Rem,
     BitAnd, BitOr, Xor,
     ShiftLeft, ShiftRight,

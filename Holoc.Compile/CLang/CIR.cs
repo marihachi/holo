@@ -38,7 +38,9 @@ public record CBlockStmt(CBlock Block) : CStmt;
 
 public abstract record CExpr;
 
-public record CNumberLiteral(object Value) : CExpr;
+public record CNumberLiteral(long Value) : CExpr;
+
+public record CBoolLiteral(bool Value) : CExpr;
 
 public record CIdentifier(string Name) : CExpr;
 

@@ -148,7 +148,7 @@ public class SyntaxNode
         };
     }
 
-    public static SyntaxNode CreateNumberLiteral(int value, NodeLocation location)
+    public static SyntaxNode CreateNumberLiteral(long value, NodeLocation location)
     {
         return new SyntaxNode
         {

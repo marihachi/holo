@@ -186,6 +186,10 @@ public class CEmitter
                 Write(e.Value.ToString()!);
                 break;
 
+            case CBoolLiteral e:
+                Write(e.Value ? "true" : "false");
+                break;
+
             case CIdentifier e:
                 Write(e.Name);
                 break;

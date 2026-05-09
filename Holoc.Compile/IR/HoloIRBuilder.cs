@@ -18,6 +18,9 @@ public class HoloIRBuilder
 
     public void Build(SyntaxNode unit)
     {
+        if (unit.Kind != NodeKind.Unit)
+            throw new NotSupportedException($"Unsupported node kind: {unit.Kind}");
+
         var functions = new List<HoloFunctionDecl>();
         foreach (var node in unit.Body!)
         {
@@ -116,7 +119,9 @@ public class HoloIRBuilder
     private HoloStmt BuildElseStmt(SyntaxNode node)
     {
         if (node.Kind == NodeKind.IfStatement)
+        {
             return BuildIfStmt(node);
+        }
 
         return new HoloBlockStmt(BuildInlineBlock(node));
     }
@@ -124,23 +129,38 @@ public class HoloIRBuilder
     private HoloExpr BuildExpression(SyntaxNode node)
     {
         if (node.Kind == NodeKind.NumberLiteral)
-            return new HoloNumberLiteral(node.Value!);
+        {
+            return new HoloNumberLiteral((long)node.Value!);
+        }
 
         if (node.Kind == NodeKind.Reference)
+        {
+            var name = node.Name!;
+
+            if (name == "true" || name == "false")
+            {
+                return new HoloBoolLiteral(name == "true");
+            }
+
             return new HoloReference(node.Name!);
+        }
 
         if (node.Kind == NodeKind.UnaryOperation)
+        {
             return new HoloUnaryExpr(
                 node.Mode == NodeMode.Sub ? HoloUnaryOp.Neg : HoloUnaryOp.Pos,
                 BuildExpression(node.Operands![0]!)
             );
+        }
 
         if (node.Kind == NodeKind.BinaryOperation)
+        {
             return new HoloBinaryExpr(
                 BuildExpression(node.Operands![0]!),
                 ToBinaryOp(node.Mode),
                 BuildExpression(node.Operands[1]!)
             );
+        }
 
         if (node.Kind == NodeKind.Call)
         {
@@ -182,37 +202,44 @@ public class HoloIRBuilder
 
     private static HoloAssignOp ToAssignOp(NodeMode mode)
     {
-        if (mode == NodeMode.Add) return HoloAssignOp.Add;
-        if (mode == NodeMode.Sub) return HoloAssignOp.Sub;
-        if (mode == NodeMode.Mul) return HoloAssignOp.Mul;
-        if (mode == NodeMode.Div) return HoloAssignOp.Div;
-        if (mode == NodeMode.Rem) return HoloAssignOp.Rem;
-        if (mode == NodeMode.BitAnd) return HoloAssignOp.BitAnd;
-        if (mode == NodeMode.BitOr) return HoloAssignOp.BitOr;
-        if (mode == NodeMode.Xor) return HoloAssignOp.Xor;
-        if (mode == NodeMode.ShiftLeft) return HoloAssignOp.ShiftLeft;
-        if (mode == NodeMode.ShiftRight) return HoloAssignOp.ShiftRight;
-        return HoloAssignOp.Assign;
+        switch (mode)
+        {
+            case NodeMode.Add: return HoloAssignOp.Add;
+            case NodeMode.Sub: return HoloAssignOp.Sub;
+            case NodeMode.Mul: return HoloAssignOp.Mul;
+            case NodeMode.Div: return HoloAssignOp.Div;
+            case NodeMode.Rem: return HoloAssignOp.Rem;
+            case NodeMode.BitAnd: return HoloAssignOp.BitAnd;
+            case NodeMode.BitOr: return HoloAssignOp.BitOr;
+            case NodeMode.Xor: return HoloAssignOp.Xor;
+            case NodeMode.ShiftLeft: return HoloAssignOp.ShiftLeft;
+            case NodeMode.ShiftRight: return HoloAssignOp.ShiftRight;
+            default: return HoloAssignOp.None;
+        }
     }
 
     private static HoloBinaryOp ToBinaryOp(NodeMode mode)
     {
-        if (mode == NodeMode.Add) return HoloBinaryOp.Add;
-        if (mode == NodeMode.Sub) return HoloBinaryOp.Sub;
-        if (mode == NodeMode.Mul) return HoloBinaryOp.Mul;
-        if (mode == NodeMode.Div) return HoloBinaryOp.Div;
-        if (mode == NodeMode.Rem) return HoloBinaryOp.Rem;
-        if (mode == NodeMode.ShiftLeft) return HoloBinaryOp.ShiftLeft;
-        if (mode == NodeMode.ShiftRight) return HoloBinaryOp.ShiftRight;
-        if (mode == NodeMode.BitAnd) return HoloBinaryOp.BitAnd;
-        if (mode == NodeMode.BitOr) return HoloBinaryOp.BitOr;
-        if (mode == NodeMode.Xor) return HoloBinaryOp.Xor;
-        if (mode == NodeMode.Gt) return HoloBinaryOp.Gt;
-        if (mode == NodeMode.Lt) return HoloBinaryOp.Lt;
-        if (mode == NodeMode.GtEq) return HoloBinaryOp.GtEq;
-        if (mode == NodeMode.LtEq) return HoloBinaryOp.LtEq;
-        if (mode == NodeMode.Eq) return HoloBinaryOp.Eq;
-        if (mode == NodeMode.NotEq) return HoloBinaryOp.NotEq;
-        throw new NotSupportedException($"Unsupported binary op: {mode}");
+        switch (mode)
+        {
+            case NodeMode.Add: return HoloBinaryOp.Add;
+            case NodeMode.Sub: return HoloBinaryOp.Sub;
+            case NodeMode.Mul: return HoloBinaryOp.Mul;
+            case NodeMode.Div: return HoloBinaryOp.Div;
+            case NodeMode.Rem: return HoloBinaryOp.Rem;
+            case NodeMode.ShiftLeft: return HoloBinaryOp.ShiftLeft;
+            case NodeMode.ShiftRight: return HoloBinaryOp.ShiftRight;
+            case NodeMode.BitAnd: return HoloBinaryOp.BitAnd;
+            case NodeMode.BitOr: return HoloBinaryOp.BitOr;
+            case NodeMode.Xor: return HoloBinaryOp.Xor;
+            case NodeMode.Gt: return HoloBinaryOp.Gt;
+            case NodeMode.Lt: return HoloBinaryOp.Lt;
+            case NodeMode.GtEq: return HoloBinaryOp.GtEq;
+            case NodeMode.LtEq: return HoloBinaryOp.LtEq;
+            case NodeMode.Eq: return HoloBinaryOp.Eq;
+            case NodeMode.NotEq: return HoloBinaryOp.NotEq;
+            default:
+                throw new NotSupportedException($"Unsupported binary op: {mode}");
+        }
     }
 }

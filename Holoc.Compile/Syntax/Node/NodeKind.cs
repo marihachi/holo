@@ -27,7 +27,7 @@ public enum NodeKind : byte
     // Expressions
     WhenExpression,
     WhenArm,
-    NumberLiteral,
+    NumberLiteral, // value type: long
     UnaryOperation,
     BinaryOperation,
 }

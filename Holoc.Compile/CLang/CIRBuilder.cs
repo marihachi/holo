@@ -25,13 +25,27 @@ public class CIRBuilder
         }
     }
 
+    private void AddInclude(string header)
+    {
+        if (!CUnit!.Includes.Contains(header))
+        {
+            CUnit!.Includes.Add(header);
+        }
+    }
+
     private CFunctionDecl BuildFunctionDecl(HoloFunctionDecl decl)
     {
-        var returnType = MapType(decl.ReturnType);
+        string returnType;
 
         // C言語の仕様でmain関数の戻り値はintでなければならない
         if (decl.Name == "main")
+        {
             returnType = "int";
+        }
+        else
+        {
+            returnType = MapType(decl.ReturnType);
+        }
 
         var parameters = new List<CParam>();
         foreach (var p in decl.Parameters)
@@ -55,44 +69,62 @@ public class CIRBuilder
     private CStmt BuildStatement(HoloStmt stmt)
     {
         if (stmt is HoloVariableDeclStmt varDecl)
+        {
             return new CVariableDeclStmt(
                 MapType(varDecl.Type),
                 varDecl.Name,
                 varDecl.Initializer != null ? BuildExpression(varDecl.Initializer) : null
             );
-
+        }
+        
         if (stmt is HoloAssignStmt assign)
+        {
             return new CAssignStmt(
                 BuildExpression(assign.Target),
                 AssignOp(assign.Op),
                 BuildExpression(assign.Value)
             );
-
+        }
+        
         if (stmt is HoloIfStmt ifStmt)
+        {
             return BuildIfStmt(ifStmt);
-
+        }
+        
         if (stmt is HoloWhileStmt whileStmt)
+        {
             return new CWhileStmt(
                 BuildExpression(whileStmt.Condition),
                 BuildBlock(whileStmt.Body)
             );
-
+        }
+        
         if (stmt is HoloBreakStmt)
+        {
             return new CBreakStmt();
-
+        }
+        
         if (stmt is HoloContinueStmt)
+        {
             return new CContinueStmt();
-
+        }
+        
         if (stmt is HoloReturnStmt ret)
+        {
             return new CReturnStmt(
                 ret.Value != null ? BuildExpression(ret.Value) : null
             );
-
+        }
+        
         if (stmt is HoloExprStmt exprStmt)
+        {
             return new CExprStmt(BuildExpression(exprStmt.Expression));
-
+        }
+        
         if (stmt is HoloBlockStmt blockStmt)
+        {
             return new CBlockStmt(BuildBlock(blockStmt.Block));
+        }
 
         throw new NotSupportedException($"Unsupported statement: {stmt.GetType().Name}");
     }
@@ -121,6 +153,9 @@ public class CIRBuilder
     {
         if (expr is HoloNumberLiteral numLit)
             return new CNumberLiteral(numLit.Value);
+
+        if (expr is HoloBoolLiteral boolLit)
+            return new CBoolLiteral(boolLit.Value);
 
         if (expr is HoloReference reference)
             return new CIdentifier(reference.Name);
@@ -189,62 +224,82 @@ public class CIRBuilder
 
     private static string AssignOp(HoloAssignOp op)
     {
-        if (op == HoloAssignOp.Add) return "+=";
-        if (op == HoloAssignOp.Sub) return "-=";
-        if (op == HoloAssignOp.Mul) return "*=";
-        if (op == HoloAssignOp.Div) return "/=";
-        if (op == HoloAssignOp.Rem) return "%=";
-        if (op == HoloAssignOp.BitAnd) return "&=";
-        if (op == HoloAssignOp.BitOr) return "|=";
-        if (op == HoloAssignOp.Xor) return "^=";
-        if (op == HoloAssignOp.ShiftLeft) return "<<=";
-        if (op == HoloAssignOp.ShiftRight) return ">>=";
-        return "=";
+        switch (op)
+        {
+            case HoloAssignOp.Add: return "+=";
+            case HoloAssignOp.Sub: return "-=";
+            case HoloAssignOp.Mul: return "*=";
+            case HoloAssignOp.Div: return "/=";
+            case HoloAssignOp.Rem: return "%=";
+            case HoloAssignOp.BitAnd: return "&=";
+            case HoloAssignOp.BitOr: return "|=";
+            case HoloAssignOp.Xor: return "^=";
+            case HoloAssignOp.ShiftLeft: return "<<=";
+            case HoloAssignOp.ShiftRight: return ">>=";
+            case HoloAssignOp.None: return "=";
+        }
+        throw new NotSupportedException($"Unsupported assign op: {op}");
     }
 
     private static string BinaryOp(HoloBinaryOp op)
     {
-        if (op == HoloBinaryOp.Add) return "+";
-        if (op == HoloBinaryOp.Sub) return "-";
-        if (op == HoloBinaryOp.Mul) return "*";
-        if (op == HoloBinaryOp.Div) return "/";
-        if (op == HoloBinaryOp.Rem) return "%";
-        if (op == HoloBinaryOp.ShiftLeft) return "<<";
-        if (op == HoloBinaryOp.ShiftRight) return ">>";
-        if (op == HoloBinaryOp.BitAnd) return "&";
-        if (op == HoloBinaryOp.BitOr) return "|";
-        if (op == HoloBinaryOp.Xor) return "^";
-        if (op == HoloBinaryOp.Gt) return ">";
-        if (op == HoloBinaryOp.Lt) return "<";
-        if (op == HoloBinaryOp.GtEq) return ">=";
-        if (op == HoloBinaryOp.LtEq) return "<=";
-        if (op == HoloBinaryOp.Eq) return "==";
-        if (op == HoloBinaryOp.NotEq) return "!=";
+        switch (op)
+        {
+            case HoloBinaryOp.Add: return "+";
+            case HoloBinaryOp.Sub: return "-";
+            case HoloBinaryOp.Mul: return "*";
+            case HoloBinaryOp.Div: return "/";
+            case HoloBinaryOp.Rem: return "%";
+            case HoloBinaryOp.ShiftLeft: return "<<";
+            case HoloBinaryOp.ShiftRight: return ">>";
+            case HoloBinaryOp.BitAnd: return "&";
+            case HoloBinaryOp.BitOr: return "|";
+            case HoloBinaryOp.Xor: return "^";
+            case HoloBinaryOp.Gt: return ">";
+            case HoloBinaryOp.Lt: return "<";
+            case HoloBinaryOp.GtEq: return ">=";
+            case HoloBinaryOp.LtEq: return "<=";
+            case HoloBinaryOp.Eq: return "==";
+            case HoloBinaryOp.NotEq: return "!=";
+        }
         throw new NotSupportedException($"Unsupported binary op: {op}");
     }
 
     private string MapType(string holoType)
     {
         string cType;
-        if (holoType == "int") cType = "int32_t";
-        else if (holoType == "int8") cType = "int8_t";
-        else if (holoType == "int16") cType = "int16_t";
-        else if (holoType == "int32") cType = "int32_t";
-        else if (holoType == "int64") cType = "int64_t";
-        else if (holoType == "uint") cType = "uint32_t";
-        else if (holoType == "uint8") cType = "uint8_t";
-        else if (holoType == "uint16") cType = "uint16_t";
-        else if (holoType == "uint32") cType = "uint32_t";
-        else if (holoType == "uint64") cType = "uint64_t";
-        else if (holoType == "float32") cType = "float";
-        else if (holoType == "float64") cType = "double";
-        else if (holoType == "bool") cType = "int";
-        else if (holoType == "byte") cType = "uint8_t";
-        else if (holoType == "void") cType = "void";
-        else cType = holoType;
 
-        if (cType.EndsWith("_t"))
-            CUnit!.Includes.Add("<stdint.h>");
+        switch (holoType)
+        {
+            case "int8": cType = "int8_t"; break;
+            case "int16": cType = "int16_t"; break;
+            case "int32": cType = "int32_t"; break;
+            case "int64": cType = "int64_t"; break;
+            case "uint": cType = "uint32_t"; break;
+            case "uint8": cType = "uint8_t"; break;
+            case "uint16": cType = "uint16_t"; break;
+            case "uint32": cType = "uint32_t"; break;
+            case "uint64": cType = "uint64_t"; break;
+            case "float32": cType = "float"; break;
+            case "float64": cType = "double"; break;
+            case "void": cType = "void"; break;
+            case "bool": cType = "bool"; break; // C99以降はbool型がある
+            case "int": cType = "int32_t"; break; // エイリアス
+            case "byte": cType = "uint8_t"; break; // エイリアス
+            default: cType = holoType; break; // その他の型はそのまま使う（ユーザー定義型など）
+        }
+
+        var stdIntTypes = new[] { "int8_t", "int16_t", "int32_t", "int64_t", "uint8_t", "uint16_t", "uint32_t", "uint64_t" };
+
+        if (stdIntTypes.Contains(cType))
+        {
+            AddInclude("<stdint.h>");
+        }
+
+        if (cType == "bool")
+        {
+            AddInclude("<stdbool.h>");
+        }
 
         return cType;
     }
