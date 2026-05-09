@@ -24,12 +24,31 @@ public class CEmitter
         return _sb.ToString();
     }
 
-    private void PushIndent() => _indentStr = new string(' ', ++_indent * 4);
-    private void PopIndent() => _indentStr = new string(' ', --_indent * 4);
+    private void PushIndent()
+    {
+        _indentStr = new string(' ', ++_indent * 4);
+    }
 
-    private void Write(string s) => _sb.Append(s);
-    private void WriteIndent() => _sb.Append(_indentStr);
-    private void WriteIndented(string s) { _sb.Append(_indentStr); _sb.Append(s); }
+    private void PopIndent()
+    {
+        _indentStr = new string(' ', --_indent * 4);
+    }
+
+    private void Write(string s)
+    {
+        _sb.Append(s);
+    }
+
+    private void WriteIndent()
+    {
+        _sb.Append(_indentStr);
+    }
+
+    private void WriteIndented(string s)
+    {
+        _sb.Append(_indentStr);
+        _sb.Append(s);
+    }
 
     // --- Declarations ---
 

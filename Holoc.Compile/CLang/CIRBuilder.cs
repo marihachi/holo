@@ -4,13 +4,25 @@ namespace Holoc.Compile.CLang;
 
 public class CIRBuilder
 {
-    private readonly HashSet<string> _includes = [];
+    public CUnit CUnit;
 
-    public CUnit Build(HoloUnit unit)
+    public CIRBuilder()
     {
-        var decls = unit.Functions.Select(BuildFunctionDecl).ToList();
-        var includes = _includes.Order().ToList();
-        return new CUnit(includes, decls);
+        CUnit = new CUnit([], []);
+    }
+
+    public void Clear()
+    {
+        CUnit = new CUnit([], []);
+    }
+
+    public void Build(HoloUnit unit)
+    {
+        foreach (var decl in unit.Functions)
+        {
+            var cDecl = BuildFunctionDecl(decl);
+            CUnit.Declarations.Add(cDecl);
+        }
     }
 
     private CFunctionDecl BuildFunctionDecl(HoloFunctionDecl decl)
@@ -151,41 +163,41 @@ public class CIRBuilder
         return result;
     }
 
-    private static string AssignOp(HoloAssignOp op) => op switch
+    private static string AssignOp(HoloAssignOp op)
     {
-        HoloAssignOp.Add => "+=",
-        HoloAssignOp.Sub => "-=",
-        HoloAssignOp.Mul => "*=",
-        HoloAssignOp.Div => "/=",
-        HoloAssignOp.Rem => "%=",
-        HoloAssignOp.BitAnd => "&=",
-        HoloAssignOp.BitOr => "|=",
-        HoloAssignOp.Xor => "^=",
-        HoloAssignOp.ShiftLeft => "<<=",
-        HoloAssignOp.ShiftRight => ">>=",
-        _ => "=",
-    };
+        if (op == HoloAssignOp.Add) return "+=";
+        if (op == HoloAssignOp.Sub) return "-=";
+        if (op == HoloAssignOp.Mul) return "*=";
+        if (op == HoloAssignOp.Div) return "/=";
+        if (op == HoloAssignOp.Rem) return "%=";
+        if (op == HoloAssignOp.BitAnd) return "&=";
+        if (op == HoloAssignOp.BitOr) return "|=";
+        if (op == HoloAssignOp.Xor) return "^=";
+        if (op == HoloAssignOp.ShiftLeft) return "<<=";
+        if (op == HoloAssignOp.ShiftRight) return ">>=";
+        return "=";
+    }
 
-    private static string BinaryOp(HoloBinaryOp op) => op switch
+    private static string BinaryOp(HoloBinaryOp op)
     {
-        HoloBinaryOp.Add => "+",
-        HoloBinaryOp.Sub => "-",
-        HoloBinaryOp.Mul => "*",
-        HoloBinaryOp.Div => "/",
-        HoloBinaryOp.Rem => "%",
-        HoloBinaryOp.ShiftLeft => "<<",
-        HoloBinaryOp.ShiftRight => ">>",
-        HoloBinaryOp.BitAnd => "&",
-        HoloBinaryOp.BitOr => "|",
-        HoloBinaryOp.Xor => "^",
-        HoloBinaryOp.Gt => ">",
-        HoloBinaryOp.Lt => "<",
-        HoloBinaryOp.GtEq => ">=",
-        HoloBinaryOp.LtEq => "<=",
-        HoloBinaryOp.Eq => "==",
-        HoloBinaryOp.NotEq => "!=",
-        _ => throw new NotSupportedException($"Unsupported binary op: {op}"),
-    };
+        if (op == HoloBinaryOp.Add) return "+";
+        if (op == HoloBinaryOp.Sub) return "-";
+        if (op == HoloBinaryOp.Mul) return "*";
+        if (op == HoloBinaryOp.Div) return "/";
+        if (op == HoloBinaryOp.Rem) return "%";
+        if (op == HoloBinaryOp.ShiftLeft) return "<<";
+        if (op == HoloBinaryOp.ShiftRight) return ">>";
+        if (op == HoloBinaryOp.BitAnd) return "&";
+        if (op == HoloBinaryOp.BitOr) return "|";
+        if (op == HoloBinaryOp.Xor) return "^";
+        if (op == HoloBinaryOp.Gt) return ">";
+        if (op == HoloBinaryOp.Lt) return "<";
+        if (op == HoloBinaryOp.GtEq) return ">=";
+        if (op == HoloBinaryOp.LtEq) return "<=";
+        if (op == HoloBinaryOp.Eq) return "==";
+        if (op == HoloBinaryOp.NotEq) return "!=";
+        throw new NotSupportedException($"Unsupported binary op: {op}");
+    }
 
     private string MapType(string holoType)
     {
@@ -208,7 +220,7 @@ public class CIRBuilder
         else cType = holoType;
 
         if (cType.EndsWith("_t"))
-            _includes.Add("<stdint.h>");
+            CUnit!.Includes.Add("<stdint.h>");
 
         return cType;
     }

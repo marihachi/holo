@@ -4,9 +4,21 @@ namespace Holoc.Compile.IR;
 
 public class HoloIRBuilder
 {
-    public HoloUnit Build(SyntaxNode unit)
+    public HoloUnit HoloUnit;
+
+    public HoloIRBuilder()
     {
-        return new HoloUnit(unit.Body!.Select(BuildFunctionDecl).ToList());
+        HoloUnit = new HoloUnit(new List<HoloFunctionDecl>());
+    }
+
+    public void Clear()
+    {
+        HoloUnit = new HoloUnit(new List<HoloFunctionDecl>());
+    }
+
+    public void Build(SyntaxNode unit)
+    {
+        HoloUnit = new HoloUnit(unit.Body!.Select(BuildFunctionDecl).ToList());
     }
 
     private HoloFunctionDecl BuildFunctionDecl(SyntaxNode node)
