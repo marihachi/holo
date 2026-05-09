@@ -18,16 +18,23 @@ public class HoloIRBuilder
 
     public void Build(SyntaxNode unit)
     {
-        HoloUnit = new HoloUnit(unit.Body!.Select(BuildFunctionDecl).ToList());
+        var functions = new List<HoloFunctionDecl>();
+        foreach (var node in unit.Body!)
+        {
+            functions.Add(BuildFunctionDecl(node));
+        }
+        HoloUnit = new HoloUnit(functions);
     }
 
     private HoloFunctionDecl BuildFunctionDecl(SyntaxNode node)
     {
         var returnType = node.Operands![0]?.Name ?? "void";
 
-        var parameters = (node.Parameters ?? [])
-            .Select(p => new HoloParam(p.Name!, p.Operands?[0]?.Name ?? "int"))
-            .ToList();
+        var parameters = new List<HoloParam>();
+        foreach (var p in node.Parameters ?? [])
+        {
+            parameters.Add(new HoloParam(p.Name!, p.Operands?[0]?.Name ?? "int"));
+        }
 
         var body = node.IsExternal ? null : BuildBlock(node.Body ?? []);
 
@@ -36,7 +43,12 @@ public class HoloIRBuilder
 
     private HoloBlock BuildBlock(List<SyntaxNode> stmts)
     {
-        return new HoloBlock(stmts.Select(BuildStatement).ToList());
+        var statements = new List<HoloStmt>();
+        foreach (var stmt in stmts)
+        {
+            statements.Add(BuildStatement(stmt));
+        }
+        return new HoloBlock(statements);
     }
 
     private HoloBlock BuildInlineBlock(SyntaxNode node)
@@ -131,26 +143,39 @@ public class HoloIRBuilder
             );
 
         if (node.Kind == NodeKind.Call)
-            return new HoloCallExpr(
-                BuildExpression(node.Operands![0]!),
-                (node.Body ?? []).Select(BuildExpression).ToList()
-            );
+        {
+            var args = new List<HoloExpr>();
+            foreach (var arg in node.Body ?? [])
+            {
+                args.Add(BuildExpression(arg));
+            }
+            return new HoloCallExpr(BuildExpression(node.Operands![0]!), args);
+        }
 
         if (node.Kind == NodeKind.WhenExpression)
-            return new HoloWhenExpr(
-                node.Body!.Select(arm => new HoloWhenArm(
-                    arm.Mode == NodeMode.DefaultArm ? null : BuildExpression(arm.Operands![1]!),
-                    BuildExpression(arm.Operands![0]!)
-                )).ToList()
-            );
+        {
+            var whenArms = new List<HoloWhenArm>();
+            foreach (var arm in node.Body!)
+            {
+                var condition = arm.Mode == NodeMode.DefaultArm ? null : BuildExpression(arm.Operands![1]!);
+                var value = BuildExpression(arm.Operands![0]!);
+                whenArms.Add(new HoloWhenArm(condition, value));
+            }
+            return new HoloWhenExpr(whenArms);
+        }
 
         if (node.Kind == NodeKind.BlockExpression)
-            return new HoloBlockExpr(
-                (node.Body ?? [])
-                    .Where(n => n.Kind == NodeKind.ExpressionStatement)
-                    .Select(n => BuildExpression(n.Operands![0]!))
-                    .ToList()
-            );
+        {
+            var blockExprs = new List<HoloExpr>();
+            foreach (var n in node.Body ?? [])
+            {
+                if (n.Kind == NodeKind.ExpressionStatement)
+                {
+                    blockExprs.Add(BuildExpression(n.Operands![0]!));
+                }
+            }
+            return new HoloBlockExpr(blockExprs);
+        }
 
         throw new NotSupportedException($"Unsupported expression: {node.Kind}");
     }

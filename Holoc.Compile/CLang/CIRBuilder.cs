@@ -29,14 +29,23 @@ public class CIRBuilder
     {
         // C言語の仕様でmain関数の戻り値はintでなければならない
         var returnType = decl.Name == "main" ? "int" : MapType(decl.ReturnType);
-        var parameters = decl.Parameters.Select(p => new CParam(MapType(p.Type), p.Name)).ToList();
+        var parameters = new List<CParam>();
+        foreach (var p in decl.Parameters)
+        {
+            parameters.Add(new CParam(MapType(p.Type), p.Name));
+        }
         var body = decl.Body != null ? BuildBlock(decl.Body) : null;
         return new CFunctionDecl(returnType, decl.Name, parameters, body);
     }
 
     private CBlock BuildBlock(HoloBlock block)
     {
-        return new CBlock(block.Statements.Select(BuildStatement).ToList());
+        var stmts = new List<CStmt>();
+        foreach (var stmt in block.Statements)
+        {
+            stmts.Add(BuildStatement(stmt));
+        }
+        return new CBlock(stmts);
     }
 
     private CStmt BuildStatement(HoloStmt stmt)
@@ -126,16 +135,27 @@ public class CIRBuilder
             );
 
         if (expr is HoloCallExpr call)
-            return new CCallExpr(
-                BuildExpression(call.Callee),
-                call.Args.Select(BuildExpression).ToList()
-            );
+        {
+            var args = new List<CExpr>();
+            foreach (var arg in call.Args)
+            {
+                args.Add(BuildExpression(arg));
+            }
+            return new CCallExpr(BuildExpression(call.Callee), args);
+        }
 
         if (expr is HoloWhenExpr when)
             return BuildWhenExpression(when.Arms);
 
         if (expr is HoloBlockExpr blockExpr)
-            return new CStmtExpr(blockExpr.Expressions.Select(BuildExpression).ToList());
+        {
+            var exprs = new List<CExpr>();
+            foreach (var e in blockExpr.Expressions)
+            {
+                exprs.Add(BuildExpression(e));
+            }
+            return new CStmtExpr(exprs);
+        }
 
         throw new NotSupportedException($"Unsupported expression: {expr.GetType().Name}");
     }

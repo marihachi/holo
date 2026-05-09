@@ -110,7 +110,12 @@ public class Program
             cFileList.Add(cFilePath);
         }
 
-        var sourceFiles = string.Join(" ", cFileList.Select(path => $"\"{path}\""));
+        var quotedPaths = new List<string>();
+        foreach (var path in cFileList)
+        {
+            quotedPaths.Add($"\"{path}\"");
+        }
+        var sourceFiles = string.Join(" ", quotedPaths);
         var binPath = Path.ChangeExtension(output, ".exe");
 
         // compile and link
