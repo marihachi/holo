@@ -5,8 +5,6 @@ WIP!
 
 ## Concept
 - Modern syntax introducing elements of functional languages.
-  - if式やswitch式のサポート
-  - ブロック式による値のReturn
 - Type system
   - 参照型のサポート
   - いずれかの型であることを表すユニオン型のサポート
@@ -19,32 +17,22 @@ var x: int;
 fn main(argc: int, argv: char*[]): int {
   var x: int = 1;
 
-  if (x == 1) {
-    0
-  } else {
-    1
-  }
+  return when (x == 1) 0 else 1;
 }
 ```
 
-## How to compile
+## How to compile (Windows)
 `clang` command is required (clang 16 or 17 recommended).
 
 ```sh
 # install holo
-npm i
-npm run build
-
-# compile lib
-cd lib/
-./build.sh
-cd ../
+install.sh
 
 # compile
-npm run holoc ./debug/main.ho ./lib/dist/system.a
+Holoc.exe main.holo lib/dist/system.a -o main.exe
 
 # run
-./main
+main.exe
 ```
 
 ## Author
