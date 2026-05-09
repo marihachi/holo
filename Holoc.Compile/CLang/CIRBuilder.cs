@@ -52,14 +52,15 @@ public class CIRBuilder
         {
             parameters.Add(new CParam(MapType(p.Type), p.Name));
         }
+
         var body = decl.Body != null ? BuildBlock(decl.Body) : null;
         return new CFunctionDecl(returnType, decl.Name, parameters, body);
     }
 
-    private CBlock BuildBlock(HoloBlock block)
+    private CBlock BuildBlock(List<HoloStmt> block)
     {
         var stmts = new List<CStmt>();
-        foreach (var stmt in block.Statements)
+        foreach (var stmt in block)
         {
             stmts.Add(BuildStatement(stmt));
         }
@@ -134,11 +135,11 @@ public class CIRBuilder
         return new CIfStmt(
             BuildExpression(stmt.Condition),
             BuildBlock(stmt.Then),
-            stmt.Else != null ? BuildElseStmt(stmt.Else) : null
+            stmt.Else != null ? BuildElse(stmt.Else) : null
         );
     }
 
-    private CStmt BuildElseStmt(HoloStmt stmt)
+    private CStmt BuildElse(HoloStmt stmt)
     {
         if (stmt is HoloIfStmt elseIf)
             return BuildIfStmt(elseIf);

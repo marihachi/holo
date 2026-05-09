@@ -145,7 +145,7 @@ namespace Holoc.Compile.Tests
             var initializer = variableDecl.Operands[1];
             Assert.NotNull(initializer);
             Assert.Equal(NodeKind.NumberLiteral, initializer.Kind);
-            Assert.Equal(1, initializer.Value);
+            Assert.Equal(1L, initializer.Value);
         }
 
         /// <summary>

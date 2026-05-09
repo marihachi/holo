@@ -44,22 +44,22 @@ public class HoloIRBuilder
         return new HoloFunctionDecl(node.Name!, returnType, parameters, body);
     }
 
-    private HoloBlock BuildBlock(List<SyntaxNode> stmts)
+    private List<HoloStmt> BuildBlock(List<SyntaxNode> stmts)
     {
         var statements = new List<HoloStmt>();
         foreach (var stmt in stmts)
         {
             statements.Add(BuildStatement(stmt));
         }
-        return new HoloBlock(statements);
+        return statements;
     }
 
-    private HoloBlock BuildInlineBlock(SyntaxNode node)
+    private List<HoloStmt> BuildInlineBlock(SyntaxNode node)
     {
         if (node.Kind == NodeKind.BlockExpression)
             return BuildBlock(node.Body ?? []);
 
-        return new HoloBlock([BuildStatement(node)]);
+        return [BuildStatement(node)];
     }
 
     private HoloStmt BuildStatement(SyntaxNode node)
@@ -112,11 +112,11 @@ public class HoloIRBuilder
         return new HoloIfStmt(
             BuildExpression(node.Operands![0]!),
             BuildInlineBlock(node.Operands[1]!),
-            node.Operands[2] is { } elseNode ? BuildElseStmt(elseNode) : null
+            node.Operands[2] is { } elseNode ? BuildElse(elseNode) : null
         );
     }
 
-    private HoloStmt BuildElseStmt(SyntaxNode node)
+    private HoloStmt BuildElse(SyntaxNode node)
     {
         if (node.Kind == NodeKind.IfStatement)
         {

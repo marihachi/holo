@@ -6,12 +6,10 @@ public record HoloFunctionDecl(
     string Name,
     string ReturnType,
     List<HoloParam> Parameters,
-    HoloBlock? Body    // null = extern
+    List<HoloStmt>? Body    // null = extern
 );
 
 public record HoloParam(string Name, string Type);
-
-public record HoloBlock(List<HoloStmt> Statements);
 
 
 // Statements
@@ -22,10 +20,10 @@ public record HoloVariableDeclStmt(string Name, string Type, HoloExpr? Initializ
 
 public record HoloAssignStmt(HoloExpr Target, HoloAssignOp Op, HoloExpr Value) : HoloStmt;
 
-public record HoloIfStmt(HoloExpr Condition, HoloBlock Then, HoloStmt? Else) : HoloStmt;
+public record HoloIfStmt(HoloExpr Condition, List<HoloStmt> Then, HoloStmt? Else) : HoloStmt;
 // Else: null = no else, HoloIfStmt = else-if, HoloBlockStmt = else { }
 
-public record HoloWhileStmt(HoloExpr Condition, HoloBlock Body) : HoloStmt;
+public record HoloWhileStmt(HoloExpr Condition, List<HoloStmt> Body) : HoloStmt;
 
 public record HoloBreakStmt() : HoloStmt;
 
@@ -35,7 +33,7 @@ public record HoloReturnStmt(HoloExpr? Value) : HoloStmt;
 
 public record HoloExprStmt(HoloExpr Expression) : HoloStmt;
 
-public record HoloBlockStmt(HoloBlock Block) : HoloStmt;
+public record HoloBlockStmt(List<HoloStmt> Block) : HoloStmt;
 
 
 // Expressions
