@@ -26,7 +26,7 @@ fn main(argc: int, argv: char*[]): int {
 
 ```sh
 # install holo
-install.sh
+install.bat
 
 # compile
 Holoc.exe main.holo lib/dist/system.a -o main.exe
