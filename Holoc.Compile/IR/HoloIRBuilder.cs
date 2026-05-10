@@ -19,7 +19,9 @@ public class HoloIRBuilder
     public void Build(SyntaxNode unit)
     {
         if (unit.Kind != NodeKind.Unit)
+        {
             throw new NotSupportedException($"Unsupported node kind: {unit.Kind}");
+        }
 
         var functions = new List<HoloFunctionDecl>();
         foreach (var node in unit.Body!)
@@ -57,7 +59,9 @@ public class HoloIRBuilder
     private List<HoloStmt> BuildInlineBlock(SyntaxNode node)
     {
         if (node.Kind == NodeKind.BlockExpression)
+        {
             return BuildBlock(node.Body ?? []);
+        }
 
         return [BuildStatement(node)];
     }
@@ -65,44 +69,62 @@ public class HoloIRBuilder
     private HoloStmt BuildStatement(SyntaxNode node)
     {
         if (node.Kind == NodeKind.VariableDeclaration)
+        {
             return new HoloVariableDeclStmt(
                 node.Name!,
                 node.Operands![0]?.Name ?? "int",
                 node.Operands[1] is { } init ? BuildExpression(init) : null
             );
+        }
 
         if (node.Kind == NodeKind.AssignStatement)
+        {
             return new HoloAssignStmt(
                 BuildExpression(node.Operands![0]!),
                 ToAssignOp(node.Mode),
                 BuildExpression(node.Operands[1]!)
             );
+        }
 
         if (node.Kind == NodeKind.IfStatement)
+        {
             return BuildIfStmt(node);
+        }
 
         if (node.Kind == NodeKind.WhileStatement)
+        {
             return new HoloWhileStmt(
                 BuildExpression(node.Operands![0]!),
                 BuildInlineBlock(node.Operands[1]!)
             );
+        }
 
         if (node.Kind == NodeKind.BreakStatement)
+        {
             return new HoloBreakStmt();
+        }
 
         if (node.Kind == NodeKind.ContinueStatement)
+        {
             return new HoloContinueStmt();
+        }
 
         if (node.Kind == NodeKind.ReturnStatement)
+        {
             return new HoloReturnStmt(
                 node.Operands?[0] is { } ret ? BuildExpression(ret) : null
             );
+        }
 
         if (node.Kind == NodeKind.ExpressionStatement)
+        {
             return new HoloExprStmt(BuildExpression(node.Operands![0]!));
+        }
 
         if (node.Kind == NodeKind.BlockExpression)
+        {
             return new HoloBlockStmt(BuildBlock(node.Body ?? []));
+        }
 
         throw new NotSupportedException($"Unsupported statement: {node.Kind}");
     }

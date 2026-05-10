@@ -295,9 +295,13 @@ public class SyntaxNode
                 var operand = node.Operands[i];
 
                 if (operand != null)
+                {
                     ShowSyntaxNodeInternal(operand, nextIndent, i == node.Operands.Count - 1 && (node.Parameters == null || node.Parameters.Count == 0) && (node.Body == null || node.Body.Count == 0), "O");
+                }
                 else
+                {
                     Console.WriteLine(nextIndent + (i == node.Operands.Count - 1 && (node.Parameters == null || node.Parameters.Count == 0) && (node.Body == null || node.Body.Count == 0) ? "└── " : "├── ") + "[O] <null>");
+                }
             }
         }
 

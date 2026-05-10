@@ -142,10 +142,14 @@ public class CIRBuilder
     private CStmt BuildElse(HoloStmt stmt)
     {
         if (stmt is HoloIfStmt elseIf)
+        {
             return BuildIfStmt(elseIf);
+        }
 
         if (stmt is HoloBlockStmt block)
+        {
             return new CBlockStmt(BuildBlock(block.Block));
+        }
 
         return new CBlockStmt(new CBlock([BuildStatement(stmt)]));
     }
@@ -153,26 +157,36 @@ public class CIRBuilder
     private CExpr BuildExpression(HoloExpr expr)
     {
         if (expr is HoloNumberLiteral numLit)
+        {
             return new CNumberLiteral(numLit.Value);
+        }
 
         if (expr is HoloBoolLiteral boolLit)
+        {
             return new CBoolLiteral(boolLit.Value);
+        }
 
         if (expr is HoloReference reference)
+        {
             return new CIdentifier(reference.Name);
+        }
 
         if (expr is HoloUnaryExpr unary)
+        {
             return new CUnaryExpr(
                 unary.Op == HoloUnaryOp.Neg ? "-" : "+",
                 BuildExpression(unary.Operand)
             );
+        }
 
         if (expr is HoloBinaryExpr binary)
+        {
             return new CBinaryExpr(
                 BuildExpression(binary.Left),
                 BinaryOp(binary.Op),
                 BuildExpression(binary.Right)
             );
+        }
 
         if (expr is HoloCallExpr call)
         {
@@ -185,7 +199,9 @@ public class CIRBuilder
         }
 
         if (expr is HoloWhenExpr when)
+        {
             return BuildWhenExpression(when.Arms);
+        }
 
         if (expr is HoloBlockExpr blockExpr)
         {
@@ -215,9 +231,13 @@ public class CIRBuilder
 
             // Condition == null はelseアーム
             if (arm.Condition == null)
+            {
                 result = value;
+            }
             else
+            {
                 result = new CTernaryExpr(BuildExpression(arm.Condition), value, result);
+            }
         }
 
         return result;
