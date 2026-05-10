@@ -4,7 +4,24 @@ namespace Holoc.Compile.CLang;
 
 public class CIRBuilder
 {
+    public enum CVersion : int
+    {
+        C89 = 1989,
+        C99 = 1999,
+        C11 = 2011,
+        C23 = 2023,
+    };
+
     public CUnit CUnit;
+
+    private CVersion TargetVersion = CVersion.C89;
+
+    /// <summary>
+    /// C99の機能が使用できるかどうか
+    /// - ビット幅指定の数値型がある
+    /// - _Bool型がある
+    /// </summary>
+    private bool C99Feature => TargetVersion >= CVersion.C99;
 
     public CIRBuilder()
     {
@@ -163,7 +180,15 @@ public class CIRBuilder
 
         if (expr is HoloBoolLiteral boolLit)
         {
-            return new CBoolLiteral(boolLit.Value);
+            if (C99Feature)
+            {
+                return new CBoolLiteral(boolLit.Value);
+            }
+            // boolをサポートしていなければ、intとして扱う。
+            else
+            {
+                return new CNumberLiteral(boolLit.Value ? 1 : 0);
+            }
         }
 
         if (expr is HoloReference reference)
@@ -288,38 +313,95 @@ public class CIRBuilder
 
     private string MapType(string holoType)
     {
-        string cType;
-
+        // holo言語のエイリアス
         switch (holoType)
         {
-            case "int8": cType = "int8_t"; break;
-            case "int16": cType = "int16_t"; break;
-            case "int32": cType = "int32_t"; break;
-            case "int64": cType = "int64_t"; break;
-            case "uint": cType = "uint32_t"; break;
-            case "uint8": cType = "uint8_t"; break;
-            case "uint16": cType = "uint16_t"; break;
-            case "uint32": cType = "uint32_t"; break;
-            case "uint64": cType = "uint64_t"; break;
-            case "float32": cType = "float"; break;
-            case "float64": cType = "double"; break;
-            case "void": cType = "void"; break;
-            case "bool": cType = "bool"; break; // C99以降はbool型がある
-            case "int": cType = "int32_t"; break; // エイリアス
-            case "byte": cType = "uint8_t"; break; // エイリアス
-            default: cType = holoType; break; // その他の型はそのまま使う（ユーザー定義型など）
+            case "int":
+                holoType = "int32";
+                break;
+
+            case "uint":
+                holoType = "uint32";
+                break;
+
+            case "byte":
+                holoType = "uint8";
+                break;
         }
 
-        var stdIntTypes = new[] { "int8_t", "int16_t", "int32_t", "int64_t", "uint8_t", "uint16_t", "uint32_t", "uint64_t" };
+        string cType;
 
-        if (stdIntTypes.Contains(cType))
+        // C言語の型にマッピング
+        switch (holoType)
         {
-            AddInclude("<stdint.h>");
+            case "int8":
+                cType = C99Feature ? "int8_t" : "char";
+                break;
+
+            case "int16":
+                cType = C99Feature ? "int16_t" : "short";
+                break;
+
+            case "int32":
+                cType = C99Feature ? "int32_t" : "int";
+                break;
+
+            case "int64":
+                cType = C99Feature ? "int64_t" : "long";
+                break;
+
+            case "uint8":
+                cType = C99Feature ? "uint8_t" : "unsigned char";
+                break;
+
+            case "uint16":
+                cType = C99Feature ? "uint16_t" : "unsigned short";
+                break;
+
+            case "uint32":
+                cType = C99Feature ? "uint32_t" : "unsigned int";
+                break;
+
+            case "uint64":
+                cType = C99Feature ? "uint64_t" : "unsigned long";
+                break;
+
+            case "float32":
+                cType = "float";
+                break;
+
+            case "float64":
+                cType = "double";
+                break;
+
+            case "void":
+                cType = "void";
+                break;
+
+            case "bool":
+                cType = C99Feature ? "bool" : "int";
+                break;
+
+            default:
+                cType = holoType;
+                break; // その他の型はそのまま使う（ユーザー定義型など）
         }
 
-        if (cType == "bool")
+        // include追加
+
+        if (C99Feature)
         {
-            AddInclude("<stdbool.h>");
+            var stdIntTypes = new[] { "int8_t", "int16_t", "int32_t", "int64_t", "uint8_t", "uint16_t", "uint32_t", "uint64_t" };
+
+            if (stdIntTypes.Contains(cType))
+            {
+                AddInclude("<stdint.h>");
+            }
+
+            if (cType == "bool")
+            {
+                AddInclude("<stdbool.h>");
+            }
         }
 
         return cType;

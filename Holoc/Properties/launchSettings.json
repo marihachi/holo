@@ -2,7 +2,7 @@
   "profiles": {
     "Holoc": {
       "commandName": "Project",
-      "commandLineArgs": ".\\main.holo"
+      "commandLineArgs": ".\\main.holo -o main.exe"
     }
   }
 }
