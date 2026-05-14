@@ -1,5 +1,5 @@
+using Holoc.Compile.Holo.Syntax.Node;
 using Holoc.Compile.Syntax;
-using Holoc.Compile.Syntax.Node;
 using System.Text;
 
 namespace Holoc.Compile.Tests

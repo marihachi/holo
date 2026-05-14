@@ -1,4 +1,4 @@
-namespace Holoc.Compile.Syntax.Token;
+namespace Holoc.Compile.Holo.Syntax.Token;
 
 public enum TokenKind : byte
 {

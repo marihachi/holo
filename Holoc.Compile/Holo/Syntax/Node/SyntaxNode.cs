@@ -1,4 +1,4 @@
-namespace Holoc.Compile.Syntax.Node;
+namespace Holoc.Compile.Holo.Syntax.Node;
 
 public class SyntaxNode
 {

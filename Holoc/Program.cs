@@ -1,8 +1,8 @@
 using Holoc;
 using Holoc.Compile.CLang;
-using Holoc.Compile.IR;
+using Holoc.Compile.Holo;
+using Holoc.Compile.Holo.Syntax.Node;
 using Holoc.Compile.Syntax;
-using Holoc.Compile.Syntax.Node;
 using System.CommandLine;
 using System.Diagnostics;
 using System.Text;

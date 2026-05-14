@@ -1,6 +1,6 @@
-using Holoc.Compile.Syntax.Token;
+using Holoc.Compile.Holo.Syntax.Token;
 
-namespace Holoc.Compile.Syntax.Node;
+namespace Holoc.Compile.Holo.Syntax.Node;
 
 public class NodeLocation(SyntaxToken? begin, SyntaxToken? end)
 {

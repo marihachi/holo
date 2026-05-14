@@ -1,4 +1,4 @@
-namespace Holoc.Compile.Semantics;
+namespace Holoc.Compile.Holo;
 
 public class SemanticAnalyzer
 {

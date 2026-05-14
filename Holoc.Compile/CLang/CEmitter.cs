@@ -16,20 +16,22 @@ public class CEmitter
 
         foreach (var include in unit.Includes)
             Write($"#include {include}\n");
+
         if (unit.Includes.Count > 0)
             Write("\n");
+        
         foreach (var decl in unit.Declarations)
             EmitFunctionDecl(decl);
 
         return _sb.ToString();
     }
 
-    private void PushIndent()
+    private void Enter()
     {
         _indentStr = new string(' ', ++_indent * 4);
     }
 
-    private void PopIndent()
+    private void Leave()
     {
         _indentStr = new string(' ', --_indent * 4);
     }
@@ -44,7 +46,7 @@ public class CEmitter
         _sb.Append(_indentStr);
     }
 
-    private void WriteIndented(string s)
+    private void WriteIndent(string s)
     {
         _sb.Append(_indentStr);
         _sb.Append(s);
@@ -56,6 +58,7 @@ public class CEmitter
     {
         var prefix = decl.Body == null ? "extern " : "";
         Write($"{prefix}{decl.ReturnType} {decl.Name}(");
+
         for (int i = 0; i < decl.Parameters.Count; i++)
         {
             if (i > 0) Write(", ");
@@ -77,14 +80,14 @@ public class CEmitter
 
     private void EmitBlock(CBlock block)
     {
-        WriteIndented("{\n");
-        PushIndent();
+        WriteIndent("{\n");
+        Enter();
         foreach (var stmt in block.Statements)
         {
             EmitStatement(stmt);
         }
-        PopIndent();
-        WriteIndented("}\n");
+        Leave();
+        WriteIndent("}\n");
     }
 
     private void EmitStatement(CStmt stmt)
@@ -92,7 +95,7 @@ public class CEmitter
         switch (stmt)
         {
             case CVariableDeclStmt s:
-                WriteIndented($"{s.Type} {s.Name}");
+                WriteIndent($"{s.Type} {s.Name}");
                 if (s.Initializer != null) { Write(" = "); EmitExpression(s.Initializer); }
                 Write(";\n");
                 break;
@@ -110,22 +113,22 @@ public class CEmitter
                 break;
 
             case CWhileStmt s:
-                WriteIndented("while (");
+                WriteIndent("while (");
                 EmitExpression(s.Condition);
                 Write(")\n");
                 EmitBlock(s.Body);
                 break;
 
             case CBreakStmt:
-                WriteIndented("break;\n");
+                WriteIndent("break;\n");
                 break;
 
             case CContinueStmt:
-                WriteIndented("continue;\n");
+                WriteIndent("continue;\n");
                 break;
 
             case CReturnStmt s:
-                WriteIndented("return");
+                WriteIndent("return");
                 if (s.Value != null) { Write(" "); EmitExpression(s.Value); }
                 Write(";\n");
                 break;
@@ -147,7 +150,7 @@ public class CEmitter
 
     private void EmitIfStmt(CIfStmt stmt)
     {
-        WriteIndented("if (");
+        WriteIndent("if (");
         EmitExpression(stmt.Condition);
         Write(")\n");
         EmitBlock(stmt.Then);
@@ -160,7 +163,7 @@ public class CEmitter
 
         if (elseStmt is CIfStmt elseIf)
         {
-            WriteIndented("else if (");
+            WriteIndent("else if (");
             EmitExpression(elseIf.Condition);
             Write(")\n");
             EmitBlock(elseIf.Then);
@@ -168,7 +171,7 @@ public class CEmitter
         }
         else
         {
-            WriteIndented("else\n");
+            WriteIndent("else\n");
             if (elseStmt is CBlockStmt b)
                 EmitBlock(b.Block);
             else

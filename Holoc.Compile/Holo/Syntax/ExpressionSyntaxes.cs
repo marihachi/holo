@@ -1,5 +1,5 @@
-using Holoc.Compile.Syntax.Node;
-using Holoc.Compile.Syntax.Token;
+using Holoc.Compile.Holo.Syntax.Node;
+using Holoc.Compile.Holo.Syntax.Token;
 
 namespace Holoc.Compile.Syntax;
 

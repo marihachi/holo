@@ -1,4 +1,4 @@
-namespace Holoc.Compile.IR;
+namespace Holoc.Compile.Holo;
 
 public record HoloUnit(List<HoloFunctionDecl> Functions);
 

@@ -1,6 +1,6 @@
-using Holoc.Compile.Syntax.Node;
+using Holoc.Compile.Holo.Syntax.Node;
 
-namespace Holoc.Compile.IR;
+namespace Holoc.Compile.Holo;
 
 public class HoloIRBuilder
 {

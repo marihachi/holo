@@ -1,4 +1,4 @@
-using Holoc.Compile.IR;
+using Holoc.Compile.Holo;
 
 namespace Holoc.Compile.CLang;
 
