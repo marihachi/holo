@@ -1,6 +1,6 @@
 # holo
 A system programming language.  
-The Holo compiler internally generates and compiles C.
+The Holo compiler generates C file, and passes it to an external C compiler.
 
 WIP!
 
