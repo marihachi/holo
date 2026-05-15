@@ -29,19 +29,24 @@ fn main(): int {
 }
 ```
 
-## How to compile (Windows)
-`clang` command is required (clang 16 or 17 recommended).
+## Usage (Windows)
+System requirements:
+- Binaries of holo compiler (Holoc).
+- `clang` command (clang >= 16).
 
 ```sh
-# install holo
-install.bat
-
 # compile
-Holoc.exe main.holo lib/dist/system.a -o main.exe
+Holoc main.holo -o main.exe
 
 # run
 main.exe
 ```
+
+## Build holo compiler (Windows)
+System requirements:
+- .NET Core 8.0 (for building of the holo compiler)
+
+Use Visual Studio or dotnet command.
 
 ## Author
 [@marihachi](https://github.com/marihachi)
