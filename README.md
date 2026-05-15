@@ -12,12 +12,20 @@ WIP!
 
 ## Syntax image
 ```
-var x: int;
+external fn putn(x: int): void;
 
-fn main(argc: int, argv: char*[]): int {
-  var x: int = 1;
+var y: int;
 
-  return when (x == 1) 0 else 1;
+fn mul(x: int, c: int): int {
+  return
+    when (c == 1) x
+    else x + mul(x, c - 1);
+}
+
+fn main(): int {
+  y = mul(2, 20);
+  putn(y);
+  return 0;
 }
 ```
 
