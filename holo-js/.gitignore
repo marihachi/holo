@@ -1,0 +1,14 @@
+# npm
+/node_modules
+
+# editor
+/.vscode
+
+# holo
+/debug/*
+!/debug/*.ho
+
+# user
+obj
+dist
+/temp
