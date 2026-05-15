@@ -6,7 +6,10 @@ WIP!
 
 ## Syntax image
 ```
-external fn putn(x: int): void;
+namespace app;
+
+import { putn } from system.libc;
+import * from app.your.lib;
 
 var y: int;
 
