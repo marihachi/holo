@@ -34,7 +34,7 @@ System requirements:
 - Binaries of holo compiler (Holoc).
 - `clang` command (clang >= 16).
 
-Place the Holoc binaries in a location of your choice, and add that location to the PATH environment variable.
+Place the Holoc binaries in a location of your choice, and add that location to the PATH environment variable.  
 
 ```sh
 # compile
@@ -43,6 +43,8 @@ Holoc main.holo -o main.exe
 # run
 main.exe
 ```
+
+Note: The first time you launch the Holo compiler, a configuration file (holo-config.yml) is created in the compiler's installation directory.
 
 ## Build holo compiler (Windows)
 System requirements:
