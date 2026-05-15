@@ -3,14 +3,12 @@
 
 # editor
 /.vscode
-.vs
 
 # holo
 /debug/*
 !/debug/*.ho
 
 # user
-bin
 obj
 dist
 /temp

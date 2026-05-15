@@ -1,0 +1,31 @@
+namespace Holoc.Compile.Holo.Syntax.Node;
+
+public enum NodeMode : byte
+{
+    None,
+
+    // math
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Rem,
+
+    // bit
+    ShiftLeft,
+    ShiftRight,
+    BitAnd,
+    BitOr,
+    Xor,
+
+    // compare
+    Gt,
+    Lt,
+    GtEq,
+    LtEq,
+    Eq,
+    NotEq,
+
+    // when arm
+    DefaultArm,
+}

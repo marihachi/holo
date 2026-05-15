@@ -1,0 +1,35 @@
+using Holoc.Compile.Holo.Syntax.Node;
+using Holoc.Compile.Holo.Syntax.Token;
+
+namespace Holoc.Compile.Syntax;
+
+public partial class Parser
+{
+    private SyntaxNode? ParseTypeReference()
+    {
+        var location = CreateLocation();
+        location.MarkBegin(Reader);
+
+        if (!Expect(TokenKind.Word)) return null;
+        var name = GetTokenValue();
+        if (!Next()) return null;
+
+        location.MarkEnd(Reader);
+        return SyntaxNode.CreateTypeReference(name, location);
+    }
+
+    /// <summary>
+    /// ブロックをパースします。
+    /// </summary>
+    private List<SyntaxNode>? ParseBlock()
+    {
+        if (!NextWith(TokenKind.OpenBrace)) return null;
+
+        var children = Repeat(ParseStatement, x => x.Kind == TokenKind.CloseBrace);
+        if (children == null) return null;
+
+        if (!NextWith(TokenKind.CloseBrace)) return null;
+
+        return children;
+    }
+}

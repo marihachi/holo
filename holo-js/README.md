@@ -1,48 +1,50 @@
-# It is currently being developed in C#. We plan to replace the current implementation.
-
-# holo
-A system programming language of modern syntaxes that transpiles to C.
+# holo-js
+A system programming language of modern syntaxes with LLVM.
 
 WIP!
 
 ## Concept
 - Modern syntax introducing elements of functional languages.
+  - if式やswitch式のサポート
+  - ブロック式による値のReturn
 - Type system
   - 参照型のサポート
   - いずれかの型であることを表すユニオン型のサポート
-- Transpile to C code
+- Generate LLVM IR code
 
 ## Syntax image
 ```
-external fn putn(x: int): void;
+var x: int;
 
-var y: int;
+fn main(argc: int, argv: char*[]): int {
+  var x: int = 1;
 
-fn mul(x: int, c: int): int {
-  return
-    when (c == 1) x
-    else x + mul(x, c - 1);
-}
-
-fn main(): int {
-  y = mul(2, 20);
-  putn(y);
-  return 0;
+  if (x == 1) {
+    0
+  } else {
+    1
+  }
 }
 ```
 
-## How to compile (Windows)
+## How to compile
 `clang` command is required (clang 16 or 17 recommended).
 
 ```sh
 # install holo
-install.bat
+npm i
+npm run build
+
+# compile lib
+cd lib/
+./build.sh
+cd ../
 
 # compile
-Holoc.exe main.holo lib/dist/system.a -o main.exe
+npm run holoc ./debug/main.ho ./lib/dist/system.a
 
 # run
-main.exe
+./main
 ```
 
 ## Author
