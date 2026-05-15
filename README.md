@@ -1,14 +1,8 @@
 # holo
-A system programming language of modern syntaxes that transpiles to C.
+A system programming language.  
+The Holo compiler internally generates and compiles C.
 
 WIP!
-
-## Concept
-- Modern syntax introducing elements of functional languages.
-- Type system
-  - 参照型のサポート
-  - いずれかの型であることを表すユニオン型のサポート
-- Transpile to C code
 
 ## Syntax image
 ```
@@ -51,6 +45,13 @@ System requirements:
 - .NET Core 8.0 (for building of the holo compiler)
 
 Use Visual Studio or dotnet command.
+
+## Concept
+- Modern syntax introducing elements of functional languages.
+- Type system
+  - 参照型のサポート
+  - いずれかの型であることを表すユニオン型のサポート
+- Transpile to C code
 
 ## Author
 [@marihachi](https://github.com/marihachi)
