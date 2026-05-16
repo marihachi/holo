@@ -2,18 +2,21 @@ using Holoc.Compile.Holo.Syntax.Node;
 
 namespace Holoc.Compile.Holo;
 
+/// <summary>
+/// Holo言語のIRの構築および識別子の解決を行います。
+/// </summary>
 public class HoloIRBuilder
 {
     public HoloUnit HoloUnit;
 
     public HoloIRBuilder()
     {
-        HoloUnit = new HoloUnit(new List<HoloFunctionDecl>());
+        HoloUnit = new HoloUnit(new List<HoloTopLevelDecl>());
     }
 
     public void Clear()
     {
-        HoloUnit = new HoloUnit(new List<HoloFunctionDecl>());
+        HoloUnit = new HoloUnit(new List<HoloTopLevelDecl>());
     }
 
     public void Build(SyntaxNode unit)
@@ -23,12 +26,15 @@ public class HoloIRBuilder
             throw new NotSupportedException($"Unsupported node kind: {unit.Kind}");
         }
 
-        var functions = new List<HoloFunctionDecl>();
+        var decls = new List<HoloTopLevelDecl>();
         foreach (var node in unit.Body!)
         {
-            functions.Add(BuildFunctionDecl(node));
+            if (node.Kind == NodeKind.FunctionDeclaration)
+            {
+                decls.Add(BuildFunctionDecl(node));
+            }
         }
-        HoloUnit = new HoloUnit(functions);
+        HoloUnit = new HoloUnit(decls);
     }
 
     private HoloFunctionDecl BuildFunctionDecl(SyntaxNode node)

@@ -1,13 +1,18 @@
 namespace Holoc.Compile.Holo;
 
-public record HoloUnit(List<HoloFunctionDecl> Functions);
+public record HoloUnit(List<HoloTopLevelDecl> Declarations);
+
+
+// Top-level declarations
+
+public abstract record HoloTopLevelDecl;
 
 public record HoloFunctionDecl(
     string Name,
     string ReturnType,
     List<HoloParam> Parameters,
     List<HoloStmt>? Body    // null = extern
-);
+) : HoloTopLevelDecl;
 
 public record HoloParam(string Name, string Type);
 

@@ -27,10 +27,13 @@ public class CIRBuilder
 
     public void Build(HoloUnit unit)
     {
-        foreach (var decl in unit.Functions)
+        foreach (var decl in unit.Declarations)
         {
-            var cDecl = BuildFunctionDecl(decl);
-            CUnit.Declarations.Add(cDecl);
+            if (decl is HoloFunctionDecl func)
+            {
+                var cDecl = BuildFunctionDecl(func);
+                CUnit.Declarations.Add(cDecl);
+            }
         }
     }
 
