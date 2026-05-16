@@ -1,16 +1,15 @@
 # npm
-/node_modules
+node_modules/
 
 # editor
-/.vscode
-.vs
+.vscode/
+.vs/
 
 # holo
-/debug/*
-!/debug/*.ho
+examples/*.exe
 
 # user
-bin
-obj
-dist
-/temp
+bin/
+obj/
+dist/
+temp/
