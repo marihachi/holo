@@ -20,7 +20,7 @@ public class Program
         var outputOption = new Option<string>("-o", "output filename.");
         command.Add(outputOption);
 
-        var showAstOption = new Option<string>("--ast", "show AST.");
+        var showAstOption = new Option<bool>("--ast", "show AST.");
         command.Add(showAstOption);
 
         // Set a handler will be called after command parsing
@@ -37,7 +37,7 @@ public class Program
         return command.InvokeAsync(args).Result;
     }
 
-    static async Task ProcessCommand(string[] input, string? output, string? showAst)
+    static async Task ProcessCommand(string[] input, string? output, bool showAst)
     {
         if (input.Length == 0)
         {
@@ -81,7 +81,7 @@ public class Program
                 }
             }
 
-            if (showAst != null && unitNode != null)
+            if (showAst && unitNode != null)
             {
                 SyntaxNode.ShowSyntaxNode(unitNode);
             }
