@@ -17,10 +17,16 @@ public class Program
         var inputArg = new Argument<string[]>("input", "list of input files.");
         command.Add(inputArg);
 
-        var outputOption = new Option<string>("-o", "output filename.");
+        var outputOption = new Option<string>(["-o", "--outFile"], "specify a filename of an executable file.");
         command.Add(outputOption);
 
-        var showAstOption = new Option<bool>("--ast", "show AST.");
+        var outDirOption = new Option<string>("--outDir", "specify output directory.");
+        command.Add(outDirOption);
+
+        var CompileFrontendOption = new Option<bool>(["-f", "--frontend"], "execute the frontend stage only.");
+        command.Add(CompileFrontendOption);
+
+        var showAstOption = new Option<bool>("--ast", "show syntax tree of the input files.");
         command.Add(showAstOption);
 
         // Set a handler will be called after command parsing
@@ -28,16 +34,30 @@ public class Program
         {
             var inputValues = ctx.ParseResult.GetValueForArgument(inputArg);
             var outputValue = ctx.ParseResult.GetValueForOption(outputOption);
+            var CompileFrontendValue = ctx.ParseResult.GetValueForOption(CompileFrontendOption);
+            var outDirValue = ctx.ParseResult.GetValueForOption(outDirOption);
             var showAstValue = ctx.ParseResult.GetValueForOption(showAstOption);
 
-            await ProcessCommand(inputValues, outputValue, showAstValue);
+            await ProcessCommand(
+                inputValues,
+                outputValue,
+                CompileFrontendValue,
+                outDirValue,
+                showAstValue
+                );
         });
 
         // Execute the command parsing
         return command.InvokeAsync(args).Result;
     }
 
-    static async Task ProcessCommand(string[] input, string? output, bool showAst)
+    static async Task ProcessCommand(
+        string[] input,
+        string? output,
+        bool compileFrontend,
+        string? outDir,
+        bool showAst
+        )
     {
         if (input.Length == 0)
         {
@@ -48,9 +68,11 @@ public class Program
         var config = HoloConfigLoader.Load();
         var parser = new Parser();
 
-        // objフォルダを取得
-        var objDirPath = config.ObjDir;
-        Directory.CreateDirectory(objDirPath);
+        // 出力ディレクトリを取得
+        var outDirPath = outDir ?? "output";
+        Directory.CreateDirectory(outDirPath);
+
+        // frontend stage
 
         var cFileList = new List<string>();
         foreach (var filePath in input)
@@ -104,11 +126,15 @@ public class Program
             var cCode = new CEmitter().Emit(cUnit);
 
             // write C code
-            var cFilePath = Path.Combine(objDirPath, Path.GetFileName(Path.ChangeExtension(filePath, ".c")));
+            var cFilePath = Path.Combine(outDirPath, Path.GetFileName(Path.ChangeExtension(filePath, ".c")));
             File.WriteAllText(cFilePath, cCode, Encoding.UTF8);
 
             cFileList.Add(cFilePath);
         }
+
+        if (compileFrontend) return;
+
+        // C compile stage
 
         var quotedPaths = new List<string>();
         foreach (var path in cFileList)
@@ -116,15 +142,16 @@ public class Program
             quotedPaths.Add($"\"{path}\"");
         }
         var sourceFiles = string.Join(" ", quotedPaths);
-        var binPath = Path.ChangeExtension(output, ".exe");
 
-        // compile and link
-        var clangArgs = $"{sourceFiles} -o {binPath}";
+        // build arguments of C compiler
+        var clangArgs = $"{sourceFiles}";
+        clangArgs += $" -o {Path.Combine(outDirPath, output ?? "a.exe")}";
         if (!string.IsNullOrWhiteSpace(config.ClangExtraArgs))
         {
             clangArgs += $" {config.ClangExtraArgs}";
         }
 
+        // compile C files, and link object files
         await Process.Start(new ProcessStartInfo
         {
             FileName = config.ClangPath,

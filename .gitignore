@@ -6,7 +6,8 @@ node_modules/
 .vs/
 
 # holo
-examples/*.exe
+examples/**/*.exe
+examples/**/*.c
 
 # user
 bin/
