@@ -4,14 +4,6 @@ namespace Holoc.Compile.CLang;
 
 public class CIRBuilder
 {
-    public enum CVersion : int
-    {
-        C89 = 1989,
-        C99 = 1999,
-        C11 = 2011,
-        C23 = 2023,
-    };
-
     public CUnit CUnit;
 
     private CVersion TargetVersion = CVersion.C89;

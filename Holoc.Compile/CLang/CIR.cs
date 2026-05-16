@@ -1,5 +1,14 @@
 namespace Holoc.Compile.CLang;
 
+public enum CVersion
+{
+    C89,
+    C99,
+    C11,
+    C17,
+    C23,
+};
+
 public record CUnit(List<string> Includes, List<CFunctionDecl> Declarations);
 
 public record CFunctionDecl(string ReturnType, string Name, List<CParam> Parameters, CBlock? Body);
