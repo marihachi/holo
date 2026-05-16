@@ -28,8 +28,8 @@ fn main(): int {
 
 ## Usage (Windows)
 System requirements:
-- Binaries of holo compiler (Holoc).
-- `clang` command (clang >= 16).
+- Holoc
+- Clang >= 3.6 (recommended)
 
 Place the Holoc binaries in a location of your choice, and add that location to the PATH environment variable.  
 
