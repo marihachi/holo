@@ -1,69 +1,69 @@
 namespace Holoc.Compile.Holo;
 
-public record HoloUnit(List<HoloTopLevelDecl> Declarations);
+public interface IHoloDecl;
+
+public record HoloUnit(string fileName, List<IHoloDecl> Declarations);
 
 
 // Top-level declarations
-
-public abstract record HoloTopLevelDecl;
 
 public record HoloFunctionDecl(
     string Name,
     string ReturnType,
     List<HoloParam> Parameters,
-    List<HoloStmt>? Body    // null = extern
-) : HoloTopLevelDecl;
+    List<IHoloStmt>? Body    // null = extern
+) : IHoloDecl;
 
 public record HoloParam(string Name, string Type);
 
 
 // Statements
 
-public abstract record HoloStmt;
+public interface IHoloStmt;
 
-public record HoloVariableDeclStmt(string Name, string Type, HoloExpr? Initializer) : HoloStmt;
+public record HoloVariableDeclStmt(string Name, string Type, IHoloExpr? Initializer) : IHoloStmt, IHoloDecl;
 
-public record HoloAssignStmt(HoloExpr Target, HoloAssignOp Op, HoloExpr Value) : HoloStmt;
+public record HoloAssignStmt(IHoloExpr Target, HoloAssignOp Op, IHoloExpr Value) : IHoloStmt;
 
-public record HoloIfStmt(HoloExpr Condition, List<HoloStmt> Then, HoloStmt? Else) : HoloStmt;
+public record HoloIfStmt(IHoloExpr Condition, List<IHoloStmt> Then, IHoloStmt? Else) : IHoloStmt;
 // Else: null = no else, HoloIfStmt = else-if, HoloBlockStmt = else { }
 
-public record HoloWhileStmt(HoloExpr Condition, List<HoloStmt> Body) : HoloStmt;
+public record HoloWhileStmt(IHoloExpr Condition, List<IHoloStmt> Body) : IHoloStmt;
 
-public record HoloBreakStmt() : HoloStmt;
+public record HoloBreakStmt() : IHoloStmt;
 
-public record HoloContinueStmt() : HoloStmt;
+public record HoloContinueStmt() : IHoloStmt;
 
-public record HoloReturnStmt(HoloExpr? Value) : HoloStmt;
+public record HoloReturnStmt(IHoloExpr? Value) : IHoloStmt;
 
-public record HoloExprStmt(HoloExpr Expression) : HoloStmt;
+public record HoloExprStmt(IHoloExpr Expression) : IHoloStmt;
 
-public record HoloBlockStmt(List<HoloStmt> Block) : HoloStmt;
+public record HoloBlockStmt(List<IHoloStmt> Block) : IHoloStmt;
 
 
 // Expressions
 
-public abstract record HoloExpr;
+public interface IHoloExpr;
 
-public record HoloNumberLiteral(long Value) : HoloExpr;
+public record HoloNumberLiteral(long Value) : IHoloExpr;
 
-public record HoloBoolLiteral(bool Value) : HoloExpr;
+public record HoloBoolLiteral(bool Value) : IHoloExpr;
 
-public record HoloReference(string Name) : HoloExpr;
+public record HoloReference(string Name) : IHoloExpr;
 
-public record HoloUnaryExpr(HoloUnaryOp Op, HoloExpr Operand) : HoloExpr;
+public record HoloUnaryExpr(HoloUnaryOp Op, IHoloExpr Operand) : IHoloExpr;
 
-public record HoloBinaryExpr(HoloExpr Left, HoloBinaryOp Op, HoloExpr Right) : HoloExpr;
+public record HoloBinaryExpr(IHoloExpr Left, HoloBinaryOp Op, IHoloExpr Right) : IHoloExpr;
 
-public record HoloCallExpr(HoloExpr Callee, List<HoloExpr> Args) : HoloExpr;
+public record HoloCallExpr(IHoloExpr Callee, List<IHoloExpr> Args) : IHoloExpr;
 
-public record HoloWhenExpr(List<HoloWhenArm> Arms) : HoloExpr;
+public record HoloWhenExpr(List<HoloWhenArm> Arms) : IHoloExpr;
 // Holo-specific: lowered to nested ternary in C IR
 
-public record HoloBlockExpr(List<HoloExpr> Expressions) : HoloExpr;
+public record HoloBlockExpr(List<IHoloExpr> Expressions) : IHoloExpr;
 // Holo-specific: lowered to GCC statement expression in C IR
 
-public record HoloWhenArm(HoloExpr? Condition, HoloExpr Value);
+public record HoloWhenArm(IHoloExpr? Condition, IHoloExpr Value);
 // Condition == null means default arm
 
 

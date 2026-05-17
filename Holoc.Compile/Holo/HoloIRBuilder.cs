@@ -3,7 +3,7 @@ using Holoc.Compile.Holo.Syntax.Node;
 namespace Holoc.Compile.Holo;
 
 /// <summary>
-/// Holo言語のIRの構築および識別子の解決を行います。
+/// Holo IRの構築、識別子の解決、型チェックを行います。
 /// </summary>
 public class HoloIRBuilder
 {
@@ -11,22 +11,22 @@ public class HoloIRBuilder
 
     public HoloIRBuilder()
     {
-        HoloUnit = new HoloUnit(new List<HoloTopLevelDecl>());
+        HoloUnit = new HoloUnit("", new List<IHoloDecl>());
     }
 
     public void Clear()
     {
-        HoloUnit = new HoloUnit(new List<HoloTopLevelDecl>());
+        HoloUnit = new HoloUnit("", new List<IHoloDecl>());
     }
 
-    public void Build(SyntaxNode unit)
+    public void Build(string holoFileName, SyntaxNode unit)
     {
         if (unit.Kind != NodeKind.Unit)
         {
             throw new NotSupportedException($"Unsupported node kind: {unit.Kind}");
         }
 
-        var decls = new List<HoloTopLevelDecl>();
+        var decls = new List<IHoloDecl>();
         foreach (var node in unit.Body!)
         {
             if (node.Kind == NodeKind.FunctionDeclaration)
@@ -34,7 +34,7 @@ public class HoloIRBuilder
                 decls.Add(BuildFunctionDecl(node));
             }
         }
-        HoloUnit = new HoloUnit(decls);
+        HoloUnit = new HoloUnit(holoFileName, decls);
     }
 
     private HoloFunctionDecl BuildFunctionDecl(SyntaxNode node)
@@ -52,9 +52,9 @@ public class HoloIRBuilder
         return new HoloFunctionDecl(node.Name!, returnType, parameters, body);
     }
 
-    private List<HoloStmt> BuildBlock(List<SyntaxNode> stmts)
+    private List<IHoloStmt> BuildBlock(List<SyntaxNode> stmts)
     {
-        var statements = new List<HoloStmt>();
+        var statements = new List<IHoloStmt>();
         foreach (var stmt in stmts)
         {
             statements.Add(BuildStatement(stmt));
@@ -62,7 +62,7 @@ public class HoloIRBuilder
         return statements;
     }
 
-    private List<HoloStmt> BuildInlineBlock(SyntaxNode node)
+    private List<IHoloStmt> BuildInlineBlock(SyntaxNode node)
     {
         if (node.Kind == NodeKind.BlockExpression)
         {
@@ -72,7 +72,7 @@ public class HoloIRBuilder
         return [BuildStatement(node)];
     }
 
-    private HoloStmt BuildStatement(SyntaxNode node)
+    private IHoloStmt BuildStatement(SyntaxNode node)
     {
         if (node.Kind == NodeKind.VariableDeclaration)
         {
@@ -144,7 +144,7 @@ public class HoloIRBuilder
         );
     }
 
-    private HoloStmt BuildElse(SyntaxNode node)
+    private IHoloStmt BuildElse(SyntaxNode node)
     {
         if (node.Kind == NodeKind.IfStatement)
         {
@@ -154,7 +154,7 @@ public class HoloIRBuilder
         return new HoloBlockStmt(BuildInlineBlock(node));
     }
 
-    private HoloExpr BuildExpression(SyntaxNode node)
+    private IHoloExpr BuildExpression(SyntaxNode node)
     {
         if (node.Kind == NodeKind.NumberLiteral)
         {
@@ -192,7 +192,7 @@ public class HoloIRBuilder
 
         if (node.Kind == NodeKind.Call)
         {
-            var args = new List<HoloExpr>();
+            var args = new List<IHoloExpr>();
             foreach (var arg in node.Body ?? [])
             {
                 args.Add(BuildExpression(arg));
@@ -214,7 +214,7 @@ public class HoloIRBuilder
 
         if (node.Kind == NodeKind.BlockExpression)
         {
-            var blockExprs = new List<HoloExpr>();
+            var blockExprs = new List<IHoloExpr>();
             foreach (var n in node.Body ?? [])
             {
                 if (n.Kind == NodeKind.ExpressionStatement)

@@ -1,12 +1,15 @@
 using Holoc.Compile.Holo;
 
-namespace Holoc.Compile.CLang;
+namespace Holoc.Compile.C;
 
-public class CIRBuilder
+public class CSyntaxNodeBuilder
 {
-    public CUnit CUnit;
+    public CFile CImpl;
+    public CFile CHeader;
 
-    private CVersion TargetVersion = CVersion.C89;
+    private string holoFileName;
+
+    private CVersion TargetVersion = CVersion.C11;
 
     /// <summary>
     /// C99の機能が使用できるかどうか
@@ -15,33 +18,77 @@ public class CIRBuilder
     /// </summary>
     private bool C99Feature => TargetVersion >= CVersion.C99;
 
-    public CIRBuilder()
+    private enum IncludeAdd
     {
-        CUnit = new CUnit([], []);
+        Impl,
+        Header,
+    }
+
+    public CSyntaxNodeBuilder()
+    {
+        holoFileName = "a.holo";
+        CImpl = new CFile([], []);
+        CHeader = new CFile([], []);
     }
 
     public void Clear()
     {
-        CUnit = new CUnit([], []);
+        holoFileName = "a.holo";
+        CImpl = new CFile([], []);
+        CHeader = new CFile([], []);
     }
 
     public void Build(HoloUnit unit)
     {
+        holoFileName = unit.fileName;
+
         foreach (var decl in unit.Declarations)
         {
             if (decl is HoloFunctionDecl func)
             {
                 var cDecl = BuildFunctionDecl(func);
-                CUnit.Declarations.Add(cDecl);
+                CHeader.Declarations.Add(new CFunctionDecl(cDecl.ReturnType, cDecl.Name, cDecl.Parameters, null));
+                CImpl.Declarations.Add(cDecl);
+            }
+
+            if (decl is HoloVariableDeclStmt varDecl)
+            {
+                var cDecl = new CVariableDeclStmt(
+                    MapType(varDecl.Type, IncludeAdd.Header),
+                    varDecl.Name,
+                    varDecl.Initializer != null ? BuildExpression(varDecl.Initializer) : null
+                );
+
+                // ヘッダーにも宣言を追加
+                CHeader.Declarations.Add(new CVariableDeclStmt(
+                    cDecl.Type,
+                    cDecl.Name,
+                    null
+                ));
+                CImpl.Declarations.Add(cDecl);
             }
         }
     }
 
-    private void AddInclude(string header)
+    private void AddInclude(string header, IncludeAdd includeAdd)
     {
-        if (!CUnit!.Includes.Contains(header))
+        // ヘッダーファイルにincludeを追加。
+        if (includeAdd.HasFlag(IncludeAdd.Header) && !CHeader!.Includes.Contains(header))
         {
-            CUnit!.Includes.Add(header);
+            CHeader!.Includes.Add(header);
+
+            // 実装ファイルに同じincludeがあれば削除。
+            if (CImpl!.Includes.Contains(header))
+            {
+                CImpl!.Includes.Remove(header);
+            }
+        }
+
+        // 実装ファイルにincludeを追加。
+        // ・既にヘッダー側にあれば追加しない。
+        if (includeAdd.HasFlag(IncludeAdd.Impl) && !CHeader!.Includes.Contains(header) && !CImpl!.Includes.Contains(header))
+        {
+            CImpl!.Includes.Add(header);
         }
     }
 
@@ -56,35 +103,39 @@ public class CIRBuilder
         }
         else
         {
-            returnType = MapType(decl.ReturnType);
+            returnType = MapType(decl.ReturnType, IncludeAdd.Header);
         }
 
         var parameters = new List<CParam>();
         foreach (var p in decl.Parameters)
         {
-            parameters.Add(new CParam(MapType(p.Type), p.Name));
+            parameters.Add(new CParam(MapType(p.Type, IncludeAdd.Header), p.Name));
         }
 
         var body = decl.Body != null ? BuildBlock(decl.Body) : null;
-        return new CFunctionDecl(returnType, decl.Name, parameters, body);
+        var impl = new CFunctionDecl(returnType, decl.Name, parameters, body);
+
+        AddInclude($"\"{Path.ChangeExtension(holoFileName, ".h")}\"", IncludeAdd.Impl);
+
+        return impl;
     }
 
-    private CBlock BuildBlock(List<HoloStmt> block)
+    private CBlock BuildBlock(List<IHoloStmt> block)
     {
-        var stmts = new List<CStmt>();
+        var stmts = new List<ICStmt>();
         foreach (var stmt in block)
         {
-            stmts.Add(BuildStatement(stmt));
+            stmts.Add(BuildStatement(stmt, IncludeAdd.Impl));
         }
         return new CBlock(stmts);
     }
 
-    private CStmt BuildStatement(HoloStmt stmt)
+    private ICStmt BuildStatement(IHoloStmt stmt, IncludeAdd includeAdd)
     {
         if (stmt is HoloVariableDeclStmt varDecl)
         {
             return new CVariableDeclStmt(
-                MapType(varDecl.Type),
+                MapType(varDecl.Type, includeAdd),
                 varDecl.Name,
                 varDecl.Initializer != null ? BuildExpression(varDecl.Initializer) : null
             );
@@ -101,7 +152,7 @@ public class CIRBuilder
         
         if (stmt is HoloIfStmt ifStmt)
         {
-            return BuildIfStmt(ifStmt);
+            return BuildIfStmt(ifStmt, includeAdd);
         }
         
         if (stmt is HoloWhileStmt whileStmt)
@@ -142,20 +193,20 @@ public class CIRBuilder
         throw new NotSupportedException($"Unsupported statement: {stmt.GetType().Name}");
     }
 
-    private CIfStmt BuildIfStmt(HoloIfStmt stmt)
+    private CIfStmt BuildIfStmt(HoloIfStmt stmt, IncludeAdd includeAdd)
     {
         return new CIfStmt(
             BuildExpression(stmt.Condition),
             BuildBlock(stmt.Then),
-            stmt.Else != null ? BuildElse(stmt.Else) : null
+            stmt.Else != null ? BuildElse(stmt.Else, includeAdd) : null
         );
     }
 
-    private CStmt BuildElse(HoloStmt stmt)
+    private ICStmt BuildElse(IHoloStmt stmt, IncludeAdd includeAdd)
     {
         if (stmt is HoloIfStmt elseIf)
         {
-            return BuildIfStmt(elseIf);
+            return BuildIfStmt(elseIf, includeAdd);
         }
 
         if (stmt is HoloBlockStmt block)
@@ -163,10 +214,10 @@ public class CIRBuilder
             return new CBlockStmt(BuildBlock(block.Block));
         }
 
-        return new CBlockStmt(new CBlock([BuildStatement(stmt)]));
+        return new CBlockStmt(new CBlock([BuildStatement(stmt, includeAdd)]));
     }
 
-    private CExpr BuildExpression(HoloExpr expr)
+    private ICExpr BuildExpression(IHoloExpr expr)
     {
         if (expr is HoloNumberLiteral numLit)
         {
@@ -210,7 +261,7 @@ public class CIRBuilder
 
         if (expr is HoloCallExpr call)
         {
-            var args = new List<CExpr>();
+            var args = new List<ICExpr>();
             foreach (var arg in call.Args)
             {
                 args.Add(BuildExpression(arg));
@@ -223,26 +274,28 @@ public class CIRBuilder
             return BuildWhenExpression(when.Arms);
         }
 
-        if (expr is HoloBlockExpr blockExpr)
-        {
-            var exprs = new List<CExpr>();
-            foreach (var e in blockExpr.Expressions)
-            {
-                exprs.Add(BuildExpression(e));
-            }
-            return new CStmtExpr(exprs);
-        }
+        // TODO: ブロック式のサポート
+
+        //if (expr is HoloBlockExpr blockExpr)
+        //{
+        //    var exprs = new List<ICExpr>();
+        //    foreach (var e in blockExpr.Expressions)
+        //    {
+        //        exprs.Add(BuildExpression(e));
+        //    }
+        //    return new CStmtExpr(exprs);
+        //}
 
         throw new NotSupportedException($"Unsupported expression: {expr.GetType().Name}");
     }
 
-    private CExpr BuildWhenExpression(List<HoloWhenArm> arms)
+    private ICExpr BuildWhenExpression(List<HoloWhenArm> arms)
     {
         // when式をネストした条件演算子に変換する。
         // 右から左に処理することで、条件付きアームが外側、elseアームが最も内側になる。
         // 例: when (cond1) v1 when (cond2) v2 else v3
         //   → (cond1 ? v1 : (cond2 ? v2 : (v3)))
-        CExpr result = new CNumberLiteral(0); // elseアームがあれば到達しない
+        ICExpr result = new CNumberLiteral(0); // elseアームがあれば到達しない
 
         for (int i = arms.Count - 1; i >= 0; i--)
         {
@@ -306,7 +359,8 @@ public class CIRBuilder
         throw new NotSupportedException($"Unsupported binary op: {op}");
     }
 
-    private string MapType(string holoType)
+    // NOTE: includeAddはヘッダーと実装の両方で使っている場合でも、ヘッダー側に追加していれば十分であるためヘッダーのみ指定する。
+    private string MapType(string holoType, IncludeAdd includeAdd)
     {
         // holo言語のエイリアス
         switch (holoType)
@@ -390,12 +444,12 @@ public class CIRBuilder
 
             if (stdIntTypes.Contains(cType))
             {
-                AddInclude("<stdint.h>");
+               AddInclude("<stdint.h>", includeAdd);
             }
 
             if (cType == "bool")
             {
-                AddInclude("<stdbool.h>");
+                AddInclude("<stdbool.h>", includeAdd);
             }
         }
 

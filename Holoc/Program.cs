@@ -1,5 +1,5 @@
 using Holoc;
-using Holoc.Compile.CLang;
+using Holoc.Compile.C;
 using Holoc.Compile.Holo;
 using Holoc.Compile.Holo.Syntax.Node;
 using Holoc.Compile.Syntax;
@@ -110,26 +110,33 @@ public class Program
 
             if (unitNode == null) return;
 
+            var holoFileName = Path.GetFileName(filePath);
+
             // AST -> Holo IR
             var holoIrBuilder = new HoloIRBuilder();
-            holoIrBuilder.Build(unitNode);
+            holoIrBuilder.Build(holoFileName, unitNode);
             var holoIr = holoIrBuilder.HoloUnit;
 
             // TODO: semantic analysis
 
             // Holo IR -> C IR
-            var cIrBuilder = new CIRBuilder();
+            var cIrBuilder = new CSyntaxNodeBuilder();
             cIrBuilder.Build(holoIr);
-            var cUnit = cIrBuilder.CUnit;
+            var cImpl = cIrBuilder.CImpl;
+            var cHeader = cIrBuilder.CHeader;
 
-            // C IR -> C code
-            var cCode = new CEmitter().Emit(cUnit);
+            // C AST -> C file
+            var implStr = new CEmitter().Emit(cImpl);
+            var cHeaderStr = new CEmitter().Emit(cHeader);
 
-            // write C code
-            var cFilePath = Path.Combine(outDirPath, Path.GetFileName(Path.ChangeExtension(filePath, ".c")));
-            File.WriteAllText(cFilePath, cCode, Encoding.UTF8);
+            // write implement file
+            var implFilePath = Path.Combine(outDirPath, Path.ChangeExtension(holoFileName, ".c"));
+            File.WriteAllText(implFilePath, implStr, Encoding.UTF8);
+            cFileList.Add(implFilePath);
 
-            cFileList.Add(cFilePath);
+            // write header file
+            var headerFilePath = Path.Combine(outDirPath, Path.ChangeExtension(holoFileName, ".h"));
+            File.WriteAllText(headerFilePath, cHeaderStr, Encoding.UTF8);
         }
 
         if (compileFrontend) return;

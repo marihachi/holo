@@ -1,0 +1,8 @@
+fn main(): int {
+    var l: int = add(1, 2);
+    return l;
+}
+
+fn add(a: int, b: int): int {
+    return a + b;
+}

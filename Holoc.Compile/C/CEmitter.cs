@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace Holoc.Compile.CLang;
+namespace Holoc.Compile.C;
 
 public class CEmitter
 {
@@ -8,7 +8,7 @@ public class CEmitter
     private int _indent;
     private string _indentStr = "";
 
-    public string Emit(CUnit unit)
+    public string Emit(CFile unit)
     {
         _sb.Clear();
         _indent = 0;
@@ -21,7 +21,12 @@ public class CEmitter
             Write("\n");
         
         foreach (var decl in unit.Declarations)
-            EmitFunctionDecl(decl);
+        {
+            if (decl is CFunctionDecl func)
+            {
+                EmitFunctionDecl(func);
+            }
+        }
 
         return _sb.ToString();
     }
@@ -56,8 +61,7 @@ public class CEmitter
 
     private void EmitFunctionDecl(CFunctionDecl decl)
     {
-        var prefix = decl.Body == null ? "extern " : "";
-        Write($"{prefix}{decl.ReturnType} {decl.Name}(");
+        Write($"{decl.ReturnType} {decl.Name}(");
 
         for (int i = 0; i < decl.Parameters.Count; i++)
         {
@@ -90,7 +94,7 @@ public class CEmitter
         WriteIndent("}\n");
     }
 
-    private void EmitStatement(CStmt stmt)
+    private void EmitStatement(ICStmt stmt)
     {
         switch (stmt)
         {
@@ -157,7 +161,7 @@ public class CEmitter
         EmitElseChain(stmt.Else);
     }
 
-    private void EmitElseChain(CStmt? elseStmt)
+    private void EmitElseChain(ICStmt? elseStmt)
     {
         if (elseStmt == null) return;
 
@@ -181,7 +185,7 @@ public class CEmitter
 
     // --- Expressions ---
 
-    private void EmitExpression(CExpr expr)
+    private void EmitExpression(ICExpr expr)
     {
         switch (expr)
         {
@@ -232,15 +236,15 @@ public class CEmitter
                 Write(")");
                 break;
 
-            case CStmtExpr e:
-                Write("({ ");
-                foreach (var ex in e.Expressions)
-                {
-                    EmitExpression(ex);
-                    Write("; ");
-                }
-                Write("})");
-                break;
+            //case CStmtExpr e:
+            //    Write("({ ");
+            //    foreach (var ex in e.Expressions)
+            //    {
+            //        EmitExpression(ex);
+            //        Write("; ");
+            //    }
+            //    Write("})");
+            //    break;
 
             default:
                 throw new NotSupportedException($"Unsupported expression: {expr.GetType().Name}");
