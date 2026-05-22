@@ -79,7 +79,7 @@ public partial class Parser
         {
             if (!Next()) return null;
 
-            returnType = ParseTypeReference();
+            returnType = ParseType();
             if (returnType == null) return null;
         }
 
@@ -117,7 +117,7 @@ public partial class Parser
         {
             if (!Next()) return null;
 
-            paramType = ParseTypeReference();
+            paramType = ParseType();
             if (paramType == null) return null;
         }
 

@@ -175,6 +175,18 @@ public class TokenReader
                     }
                     continue;
 
+                case '[':
+                    beginLocation = GetNextLocation();
+                    ReadNextChar();
+                    SetNextToken(new SyntaxToken(TokenKind.OpenBracket, beginLocation, GetCurrentLocation().MoveRight()));
+                    return;
+
+                case ']':
+                    beginLocation = GetNextLocation();
+                    ReadNextChar();
+                    SetNextToken(new SyntaxToken(TokenKind.CloseBracket, beginLocation, GetCurrentLocation().MoveRight()));
+                    return;
+
                 case '{':
                     beginLocation = GetNextLocation();
                     ReadNextChar();

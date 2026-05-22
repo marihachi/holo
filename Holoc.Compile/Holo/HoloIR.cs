@@ -5,23 +5,32 @@ public interface IHoloDecl;
 public record HoloUnit(string fileName, List<IHoloDecl> Declarations);
 
 
+// Types
+
+public interface IHoloType;
+
+public record HoloNamedType(string name) : IHoloType;
+
+public record HoloCollectionType(IHoloType elementType) : IHoloType;
+
+
 // Top-level declarations
 
 public record HoloFunctionDecl(
     string Name,
-    string ReturnType,
+    IHoloType ReturnType,
     List<HoloParam> Parameters,
     List<IHoloStmt>? Body    // null = extern
 ) : IHoloDecl;
 
-public record HoloParam(string Name, string Type);
+public record HoloParam(string Name, IHoloType Type);
 
 
 // Statements
 
 public interface IHoloStmt;
 
-public record HoloVariableDeclStmt(string Name, string Type, IHoloExpr? Initializer) : IHoloStmt, IHoloDecl;
+public record HoloVariableDeclStmt(string Name, IHoloType Type, IHoloExpr? Initializer) : IHoloStmt, IHoloDecl;
 
 public record HoloAssignStmt(IHoloExpr Target, HoloAssignOp Op, IHoloExpr Value) : IHoloStmt;
 
@@ -49,7 +58,7 @@ public record HoloNumberLiteral(long Value) : IHoloExpr;
 
 public record HoloBoolLiteral(bool Value) : IHoloExpr;
 
-public record HoloReference(string Name) : IHoloExpr;
+public record HoloIdentifier(string Name) : IHoloExpr;
 
 public record HoloUnaryExpr(HoloUnaryOp Op, IHoloExpr Operand) : IHoloExpr;
 

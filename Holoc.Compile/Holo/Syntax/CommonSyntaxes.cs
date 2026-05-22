@@ -5,17 +5,43 @@ namespace Holoc.Compile.Syntax;
 
 public partial class Parser
 {
-    private SyntaxNode? ParseTypeReference()
+    private SyntaxNode? ParseType()
     {
-        var location = CreateLocation();
-        location.MarkBegin(Reader);
+        SyntaxNode? outerNode = null;
 
-        if (!Expect(TokenKind.Word)) return null;
-        var name = GetTokenValue();
-        if (!Next()) return null;
+        while (true)
+        {
+            if (Try(TokenKind.OpenBracket))
+            {
+                var location = CreateLocation();
+                location.MarkBegin(Reader);
+                if (!NextWith(TokenKind.OpenBracket)) return null;
+                if (!NextWith(TokenKind.CloseBracket)) return null;
+                location.MarkEnd(Reader);
+                outerNode = SyntaxNode.CreateCollectionType(outerNode, location);
+                continue;
+            }
 
-        location.MarkEnd(Reader);
-        return SyntaxNode.CreateTypeReference(name, location);
+            if (Try(TokenKind.Word))
+            {
+                var location = CreateLocation();
+                location.MarkBegin(Reader);
+                if (!Expect(TokenKind.Word)) return null;
+                var name = GetTokenValue();
+                if (!Next()) return null;
+                location.MarkEnd(Reader);
+                outerNode = SyntaxNode.CreateNamedType(name, location);
+                continue;
+            }
+            
+            if (outerNode == null)
+            {
+                GenerateError(Reader.CreateUnexpectedError());
+                return null;
+            }
+
+            return outerNode;
+        }
     }
 
     /// <summary>

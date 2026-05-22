@@ -4,7 +4,8 @@ public enum NodeKind : byte
 {
     // Common
     Reference,
-    TypeReference,
+    NamedType,
+    CollectionType,
     Call,
     BlockExpression,
 

@@ -159,7 +159,7 @@ public partial class Parser
         {
             if (!Next()) return null;
 
-            variableType = ParseTypeReference();
+            variableType = ParseType();
             if (variableType == null) return null;
         }
 

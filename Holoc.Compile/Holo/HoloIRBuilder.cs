@@ -39,17 +39,44 @@ public class HoloIRBuilder
 
     private HoloFunctionDecl BuildFunctionDecl(SyntaxNode node)
     {
-        var returnType = node.Operands![0]?.Name ?? "void";
+        var returnType = node.Operands![0];
+
+        if (returnType == null)
+        {
+            throw new NotSupportedException($"The return type is not specified");
+        }
 
         var parameters = new List<HoloParam>();
         foreach (var p in node.Parameters ?? [])
         {
-            parameters.Add(new HoloParam(p.Name!, p.Operands?[0]?.Name ?? "int"));
+            var paramType = node.Operands![0];
+
+            if (paramType == null)
+            {
+                throw new NotSupportedException($"A parameter type is not specified");
+            }
+
+            parameters.Add(new HoloParam(p.Name!, BuildType(paramType)));
         }
 
         var body = node.IsExternal ? null : BuildBlock(node.Body ?? []);
 
-        return new HoloFunctionDecl(node.Name!, returnType, parameters, body);
+        return new HoloFunctionDecl(node.Name!, BuildType(returnType), parameters, body);
+    }
+
+    private IHoloType BuildType(SyntaxNode node)
+    {
+        if (node.Kind == NodeKind.NamedType)
+        {
+            return new HoloNamedType(node.Name!);
+        }
+
+        if (node.Kind == NodeKind.CollectionType)
+        {
+            return new HoloCollectionType(BuildType(node.Operands![0]!));
+        }
+
+        throw new NotSupportedException($"Unsupported type node: {node.Kind}");
     }
 
     private List<IHoloStmt> BuildBlock(List<SyntaxNode> stmts)
@@ -76,9 +103,16 @@ public class HoloIRBuilder
     {
         if (node.Kind == NodeKind.VariableDeclaration)
         {
+            var variableType = node.Operands![0];
+
+            if (variableType == null)
+            {
+                throw new NotSupportedException($"The variable type is not specified");
+            }
+
             return new HoloVariableDeclStmt(
                 node.Name!,
-                node.Operands![0]?.Name ?? "int",
+                BuildType(variableType),
                 node.Operands[1] is { } init ? BuildExpression(init) : null
             );
         }
@@ -170,7 +204,7 @@ public class HoloIRBuilder
                 return new HoloBoolLiteral(name == "true");
             }
 
-            return new HoloReference(node.Name!);
+            return new HoloIdentifier(node.Name!);
         }
 
         if (node.Kind == NodeKind.UnaryOperation)

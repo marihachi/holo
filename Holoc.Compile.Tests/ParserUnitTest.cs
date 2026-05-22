@@ -83,7 +83,7 @@ namespace Holoc.Compile.Tests
 
             var returnType = functionDecl.Operands?[0];
             Assert.NotNull(returnType);
-            Assert.Equal(NodeKind.TypeReference, returnType.Kind);
+            Assert.Equal(NodeKind.NamedType, returnType.Kind);
             Assert.Equal("int", returnType.Name);
 
             Assert.NotNull(functionDecl.Parameters);
@@ -98,7 +98,7 @@ namespace Holoc.Compile.Tests
 
             var paramType = param.Operands[0];
             Assert.NotNull(paramType);
-            Assert.Equal(NodeKind.TypeReference, paramType.Kind);
+            Assert.Equal(NodeKind.NamedType, paramType.Kind);
             Assert.Equal("int", paramType.Name);
 
             param = functionDecl.Parameters[0];
@@ -110,7 +110,7 @@ namespace Holoc.Compile.Tests
 
             paramType = param.Operands[0];
             Assert.NotNull(paramType);
-            Assert.Equal(NodeKind.TypeReference, paramType.Kind);
+            Assert.Equal(NodeKind.NamedType, paramType.Kind);
             Assert.Equal("int", paramType.Name);
         }
 
@@ -139,7 +139,7 @@ namespace Holoc.Compile.Tests
 
             var variableType = variableDecl.Operands[0];
             Assert.NotNull(variableType);
-            Assert.Equal(NodeKind.TypeReference, variableType.Kind);
+            Assert.Equal(NodeKind.NamedType, variableType.Kind);
             Assert.Equal("int", variableType.Name);
 
             var initializer = variableDecl.Operands[1];
@@ -173,7 +173,7 @@ namespace Holoc.Compile.Tests
 
             var variableType = variableDecl.Operands[0];
             Assert.NotNull(variableType);
-            Assert.Equal(NodeKind.TypeReference, variableType.Kind);
+            Assert.Equal(NodeKind.NamedType, variableType.Kind);
             Assert.Equal("int", variableType.Name);
 
             var initializer = variableDecl.Operands[1];

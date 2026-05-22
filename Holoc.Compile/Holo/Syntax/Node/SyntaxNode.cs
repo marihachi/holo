@@ -224,13 +224,23 @@ public class SyntaxNode
         };
     }
 
-    public static SyntaxNode CreateTypeReference(string name, NodeLocation location)
+    public static SyntaxNode CreateNamedType(string name, NodeLocation location)
     {
         return new SyntaxNode
         {
-            Kind = NodeKind.TypeReference,
+            Kind = NodeKind.NamedType,
             Location = location,
             Name = name,
+        };
+    }
+
+    public static SyntaxNode CreateCollectionType(SyntaxNode? elementType, NodeLocation location)
+    {
+        return new SyntaxNode
+        {
+            Kind = NodeKind.CollectionType,
+            Location = location,
+            Operands = [elementType],
         };
     }
 
