@@ -1,0 +1,1 @@
+void putn(int x);
