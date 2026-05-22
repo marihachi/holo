@@ -8,7 +8,7 @@ WIP!
 ```
 namespace app;
 
-import { putn } from system.libc;
+import { putn } from holo.io.util;
 import * from app.your.lib;
 
 var y: int;
