@@ -42,8 +42,8 @@ holo言語 ソース文字列
 | プロジェクト | 役割 |
 |---|---|
 | `Holoc` | CLIのエントリーポイント。 |
-| `Holoc.Compile` | コンパイルに関するライブラリ。 |
-| `Holoc.Compile.Tests` | ユニットテスト用。 |
+| `Holoc.Compile` | Holo言語からC言語へのトランスパイラを実装。 |
+| `Holoc.Compile.Tests` | Holoc.Compileのユニットテスト用。 |
 
 ## Holoc.Compile
 - TokenReaderはソースコードの一部を読み取ってSyntaxTokenを生成し、Parserに渡す役割。
