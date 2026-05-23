@@ -61,12 +61,26 @@ public class CEmitter
 
     private void EmitFunctionDecl(CFunctionDecl decl)
     {
-        Write($"{decl.ReturnType} {decl.Name}(");
+        foreach (string ty in decl.ReturnType)
+        {
+            Write(ty);
+        }
+
+        Write($" {decl.Name}(");
 
         for (int i = 0; i < decl.Parameters.Count; i++)
         {
-            if (i > 0) Write(", ");
-            Write($"{decl.Parameters[i].Type} {decl.Parameters[i].Name}");
+            if (i > 0)
+            {
+                Write(", ");
+            }
+
+            foreach (string ty in decl.Parameters[i].Type)
+            {
+                Write(ty);
+            }
+
+            Write($" {decl.Parameters[i].Name}");
         }
 
         if (decl.Body == null)

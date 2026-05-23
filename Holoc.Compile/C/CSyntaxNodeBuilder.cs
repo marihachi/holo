@@ -98,23 +98,23 @@ public class CSyntaxNodeBuilder
 
     private CFunctionDecl BuildFunctionDecl(HoloFunctionDecl decl)
     {
-        string returnType;
+        List<string> returnType;
 
         // C言語の仕様でmain関数の戻り値はintでなければならない
         if (decl.Name == "main")
         {
-            returnType = "int";
+            returnType = ["int"];
         }
         else
         {
-            returnType = string.Join("", MapType(decl.ReturnType, IncludeAdd.Header).Item1);
+            (returnType, _) = MapType(decl.ReturnType, IncludeAdd.Header);
         }
 
         var parameters = new List<CParam>();
         foreach (var p in decl.Parameters)
         {
-            var paramType = string.Join("", MapType(p.Type, IncludeAdd.Header).Item1);
-            parameters.Add(new CParam(paramType, p.Name));
+            var (paramTypes, _) = MapType(p.Type, IncludeAdd.Header);
+            parameters.Add(new CParam(paramTypes, p.Name));
         }
 
         var body = decl.Body != null ? BuildBlock(decl.Body) : null;

@@ -17,9 +17,9 @@ public interface ICDecl;
 
 // Top-level declarations
 
-public record CFunctionDecl(string ReturnType, string Name, List<CParam> Parameters, CBlock? Body) : ICDecl;
+public record CFunctionDecl(List<string> ReturnType, string Name, List<CParam> Parameters, CBlock? Body) : ICDecl;
 
-public record CParam(string Type, string Name);
+public record CParam(List<string> Type, string Name);
 
 public record CBlock(List<ICStmt> Statements);
 
