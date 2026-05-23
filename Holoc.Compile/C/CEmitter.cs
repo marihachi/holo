@@ -99,8 +99,20 @@ public class CEmitter
         switch (stmt)
         {
             case CVariableDeclStmt s:
-                WriteIndent($"{s.Type} {s.Name}");
-                if (s.Initializer != null) { Write(" = "); EmitExpression(s.Initializer); }
+                WriteIndent();
+                foreach(var t in s.LeftTypes)
+                {
+                    Write($"{t}");
+                }
+                Write($" {s.Name}");
+                foreach(var t in s.RightTypes)
+                {
+                    Write($"{t}");
+                }
+                if (s.Initializer != null)
+                {
+                    Write(" = "); EmitExpression(s.Initializer);
+                }
                 Write(";\n");
                 break;
 

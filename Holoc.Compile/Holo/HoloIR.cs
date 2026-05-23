@@ -11,7 +11,7 @@ public interface IHoloType;
 
 public record HoloNamedType(string name) : IHoloType;
 
-public record HoloCollectionType(IHoloType elementType) : IHoloType;
+public record HoloCollectionType(IHoloType elementType, long? size) : IHoloType;
 
 
 // Top-level declarations

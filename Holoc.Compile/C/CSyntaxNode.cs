@@ -28,7 +28,7 @@ public record CBlock(List<ICStmt> Statements);
 
 public interface ICStmt;
 
-public record CVariableDeclStmt(string Type, string Name, ICExpr? Initializer) : ICStmt, ICDecl;
+public record CVariableDeclStmt(List<string> LeftTypes, string Name, List<string> RightTypes, ICExpr? Initializer) : ICStmt, ICDecl;
 
 public record CAssignStmt(ICExpr Target, string Op, ICExpr Value) : ICStmt;
 

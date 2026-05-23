@@ -16,9 +16,17 @@ public partial class Parser
                 var location = CreateLocation();
                 location.MarkBegin(Reader);
                 if (!NextWith(TokenKind.OpenBracket)) return null;
+
+                long? size = null;
+                if (Try(TokenKind.NumberLiteral))
+                {
+                    size = GetTokenValue<long>();
+                    if (!Next()) return null;
+                }
+
                 if (!NextWith(TokenKind.CloseBracket)) return null;
                 location.MarkEnd(Reader);
-                outerNode = SyntaxNode.CreateCollectionType(outerNode, location);
+                outerNode = SyntaxNode.CreateCollectionType(outerNode, size, location);
                 continue;
             }
 
@@ -33,15 +41,17 @@ public partial class Parser
                 outerNode = SyntaxNode.CreateNamedType(name, location);
                 continue;
             }
-            
-            if (outerNode == null)
-            {
-                GenerateError(Reader.CreateUnexpectedError());
-                return null;
-            }
 
-            return outerNode;
+            break;
         }
+
+        if (outerNode == null)
+        {
+            GenerateError(Reader.CreateUnexpectedError());
+            return null;
+        }
+
+        return outerNode;
     }
 
     /// <summary>

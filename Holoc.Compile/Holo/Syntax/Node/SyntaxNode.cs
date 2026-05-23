@@ -234,13 +234,14 @@ public class SyntaxNode
         };
     }
 
-    public static SyntaxNode CreateCollectionType(SyntaxNode? elementType, NodeLocation location)
+    public static SyntaxNode CreateCollectionType(SyntaxNode? elementType, long? size, NodeLocation location)
     {
         return new SyntaxNode
         {
             Kind = NodeKind.CollectionType,
             Location = location,
             Operands = [elementType],
+            Value = size,
         };
     }
 

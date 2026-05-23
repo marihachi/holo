@@ -53,16 +53,20 @@ public class CSyntaxNodeBuilder
 
             if (decl is HoloVariableDeclStmt varDecl)
             {
+                var (leftTypes, rightTypes) = MapType(varDecl.Type, IncludeAdd.Header);
+
                 var cDecl = new CVariableDeclStmt(
-                    MapType(varDecl.Type, IncludeAdd.Header),
+                    leftTypes,
                     varDecl.Name,
+                    rightTypes,
                     varDecl.Initializer != null ? BuildExpression(varDecl.Initializer) : null
                 );
 
                 // ヘッダーにも宣言を追加
                 CHeader.Declarations.Add(new CVariableDeclStmt(
-                    cDecl.Type,
+                    cDecl.LeftTypes,
                     cDecl.Name,
+                    cDecl.RightTypes,
                     null
                 ));
                 CImpl.Declarations.Add(cDecl);
@@ -103,13 +107,14 @@ public class CSyntaxNodeBuilder
         }
         else
         {
-            returnType = MapType(decl.ReturnType, IncludeAdd.Header);
+            returnType = string.Join("", MapType(decl.ReturnType, IncludeAdd.Header).Item1);
         }
 
         var parameters = new List<CParam>();
         foreach (var p in decl.Parameters)
         {
-            parameters.Add(new CParam(MapType(p.Type, IncludeAdd.Header), p.Name));
+            var paramType = string.Join("", MapType(p.Type, IncludeAdd.Header).Item1);
+            parameters.Add(new CParam(paramType, p.Name));
         }
 
         var body = decl.Body != null ? BuildBlock(decl.Body) : null;
@@ -134,9 +139,12 @@ public class CSyntaxNodeBuilder
     {
         if (stmt is HoloVariableDeclStmt varDecl)
         {
+            var (leftTypes, rightTypes) = MapType(varDecl.Type, includeAdd);
+
             return new CVariableDeclStmt(
-                MapType(varDecl.Type, includeAdd),
+                leftTypes,
                 varDecl.Name,
+                rightTypes,
                 varDecl.Initializer != null ? BuildExpression(varDecl.Initializer) : null
             );
         }
@@ -360,111 +368,127 @@ public class CSyntaxNodeBuilder
     }
 
     // NOTE: includeAddはヘッダーと実装の両方で使っている場合でも、ヘッダー側に追加していれば十分であるためヘッダーのみ指定する。
-    private string MapType(IHoloType holoType, IncludeAdd includeAdd)
+    private (List<string>, List<string>) MapType(IHoloType holoType, IncludeAdd includeAdd)
     {
-        if (holoType is HoloNamedType namedType)
+        var leftTypes = new List<string>();
+        var rightTypes = new List<string>();
+
+        var currentType = holoType;
+        while (true)
         {
-            string holoTypeName = namedType.name;
-
-            // holo言語のエイリアス
-            switch (holoTypeName)
+            if (currentType is HoloNamedType namedType)
             {
-                case "int":
-                    holoTypeName = "int32";
-                    break;
+                string holoTypeName = namedType.name;
 
-                case "uint":
-                    holoTypeName = "uint32";
-                    break;
-
-                case "byte":
-                    holoTypeName = "uint8";
-                    break;
-            }
-
-            string cType;
-
-            // C言語の型にマッピング
-            switch (holoTypeName)
-            {
-                case "int8":
-                    cType = C99Feature ? "int8_t" : "char";
-                    break;
-
-                case "int16":
-                    cType = C99Feature ? "int16_t" : "short";
-                    break;
-
-                case "int32":
-                    cType = C99Feature ? "int32_t" : "int";
-                    break;
-
-                case "int64":
-                    cType = C99Feature ? "int64_t" : "long";
-                    break;
-
-                case "uint8":
-                    cType = C99Feature ? "uint8_t" : "unsigned char";
-                    break;
-
-                case "uint16":
-                    cType = C99Feature ? "uint16_t" : "unsigned short";
-                    break;
-
-                case "uint32":
-                    cType = C99Feature ? "uint32_t" : "unsigned int";
-                    break;
-
-                case "uint64":
-                    cType = C99Feature ? "uint64_t" : "unsigned long";
-                    break;
-
-                case "float32":
-                    cType = "float";
-                    break;
-
-                case "float64":
-                    cType = "double";
-                    break;
-
-                case "void":
-                    cType = "void";
-                    break;
-
-                case "bool":
-                    cType = C99Feature ? "bool" : "int";
-                    break;
-
-                default:
-                    cType = holoTypeName;
-                    break; // その他の型はそのまま使う（ユーザー定義型など）
-            }
-
-            // include追加
-
-            if (C99Feature)
-            {
-                var stdIntTypes = new[] { "int8_t", "int16_t", "int32_t", "int64_t", "uint8_t", "uint16_t", "uint32_t", "uint64_t" };
-
-                if (stdIntTypes.Contains(cType))
+                // holo言語のエイリアス
+                switch (holoTypeName)
                 {
-                    AddInclude("<stdint.h>", includeAdd);
+                    case "int":
+                        holoTypeName = "int32";
+                        break;
+
+                    case "uint":
+                        holoTypeName = "uint32";
+                        break;
+
+                    case "byte":
+                        holoTypeName = "uint8";
+                        break;
                 }
 
-                if (cType == "bool")
+                string cType;
+
+                // C言語の型にマッピング
+                switch (holoTypeName)
                 {
-                    AddInclude("<stdbool.h>", includeAdd);
+                    case "int8":
+                        cType = C99Feature ? "int8_t" : "char";
+                        break;
+
+                    case "int16":
+                        cType = C99Feature ? "int16_t" : "short";
+                        break;
+
+                    case "int32":
+                        cType = C99Feature ? "int32_t" : "int";
+                        break;
+
+                    case "int64":
+                        cType = C99Feature ? "int64_t" : "long";
+                        break;
+
+                    case "uint8":
+                        cType = C99Feature ? "uint8_t" : "unsigned char";
+                        break;
+
+                    case "uint16":
+                        cType = C99Feature ? "uint16_t" : "unsigned short";
+                        break;
+
+                    case "uint32":
+                        cType = C99Feature ? "uint32_t" : "unsigned int";
+                        break;
+
+                    case "uint64":
+                        cType = C99Feature ? "uint64_t" : "unsigned long";
+                        break;
+
+                    case "float32":
+                        cType = "float";
+                        break;
+
+                    case "float64":
+                        cType = "double";
+                        break;
+
+                    case "void":
+                        cType = "void";
+                        break;
+
+                    case "bool":
+                        cType = C99Feature ? "bool" : "int";
+                        break;
+
+                    default:
+                        cType = holoTypeName;
+                        break; // その他の型はそのまま使う（ユーザー定義型など）
                 }
+
+                // include追加
+
+                if (C99Feature)
+                {
+                    var stdIntTypes = new[] { "int8_t", "int16_t", "int32_t", "int64_t", "uint8_t", "uint16_t", "uint32_t", "uint64_t" };
+
+                    if (stdIntTypes.Contains(cType))
+                    {
+                        AddInclude("<stdint.h>", includeAdd);
+                    }
+
+                    if (cType == "bool")
+                    {
+                        AddInclude("<stdbool.h>", includeAdd);
+                    }
+                }
+
+                leftTypes.Add(cType);
+
+                break;
             }
 
-            return cType;
+            if (currentType is HoloCollectionType collectionType)
+            {
+                // 外側から内側に処理し、後ろに追加
+                rightTypes.Add(collectionType.size != null ? $"[{collectionType.size}]" : "[]");
+
+                currentType = collectionType.elementType;
+
+                continue;
+            }
+
+            throw new NotSupportedException($"Unsupported type: {currentType.GetType().Name}");
         }
 
-        if (holoType is HoloCollectionType collectionType)
-        {
-            // TODO
-        }
-
-        throw new NotSupportedException($"Unsupported type: {holoType.GetType().Name}");
+        return (leftTypes, rightTypes);
     }
 }
