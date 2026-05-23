@@ -100,14 +100,14 @@ public class CEmitter
         {
             case CVariableDeclStmt s:
                 WriteIndent();
-                foreach(var t in s.LeftTypes)
+                foreach(var ty in s.LeftTypes)
                 {
-                    Write($"{t}");
+                    Write(ty);
                 }
                 Write($" {s.Name}");
-                foreach(var t in s.RightTypes)
+                foreach(var ty in s.RightTypes)
                 {
-                    Write($"{t}");
+                    Write(ty);
                 }
                 if (s.Initializer != null)
                 {
