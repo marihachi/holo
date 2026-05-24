@@ -234,6 +234,14 @@ public class HoloIRBuilder
             return new HoloCallExpr(BuildExpression(node.Operands![0]!), args);
         }
 
+        if (node.Kind == NodeKind.IndexRef)
+        {
+            return new HoloIndexRefExpr(
+                BuildExpression(node.Operands![0]!),
+                BuildExpression(node.Operands![1]!)
+            );
+        }
+
         if (node.Kind == NodeKind.WhenExpression)
         {
             var whenArms = new List<HoloWhenArm>();
@@ -257,6 +265,16 @@ public class HoloIRBuilder
                 }
             }
             return new HoloBlockExpr(blockExprs);
+        }
+
+        if (node.Kind == NodeKind.CollectionExpression)
+        {
+            var elements = new List<IHoloExpr>();
+            foreach (var n in node.Body!)
+            {
+                elements.Add(BuildExpression(n));
+            }
+            return new HoloCollectionExpr(elements);
         }
 
         throw new NotSupportedException($"Unsupported expression: {node.Kind}");

@@ -224,6 +224,28 @@ public class SyntaxNode
         };
     }
 
+    public static SyntaxNode CreateIndexRef
+        (SyntaxNode source, SyntaxNode index, NodeLocation location)
+    {
+        return new SyntaxNode
+        {
+            Kind = NodeKind.IndexRef,
+            Location = location,
+            Operands = [source, index],
+        };
+    }
+
+    public static SyntaxNode CreateCollectionExpression
+        (List<SyntaxNode> elements, NodeLocation location)
+    {
+        return new SyntaxNode
+        {
+            Kind = NodeKind.CollectionExpression,
+            Location = location,
+            Body = elements,
+        };
+    }
+
     public static SyntaxNode CreateNamedType(string name, NodeLocation location)
     {
         return new SyntaxNode

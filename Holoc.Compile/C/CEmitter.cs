@@ -252,6 +252,13 @@ public class CEmitter
                 Write(")");
                 break;
 
+            case CIndexRefExpr e:
+                EmitExpression(e.Source);
+                Write("[");
+                EmitExpression(e.Index);
+                Write("]");
+                break;
+
             case CTernaryExpr e:
                 Write("(");
                 EmitExpression(e.Condition);
@@ -260,6 +267,16 @@ public class CEmitter
                 Write(" : ");
                 EmitExpression(e.Else);
                 Write(")");
+                break;
+
+            case CCollectionExpr e:
+                Write("{ ");
+                for (int i = 0; i < e.Elements.Count; i++)
+                {
+                    if (i > 0) Write(", ");
+                    EmitExpression(e.Elements[i]);
+                }
+                Write(" }");
                 break;
 
             //case CStmtExpr e:

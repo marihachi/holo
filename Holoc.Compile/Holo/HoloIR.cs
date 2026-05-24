@@ -66,6 +66,8 @@ public record HoloBinaryExpr(IHoloExpr Left, HoloBinaryOp Op, IHoloExpr Right) :
 
 public record HoloCallExpr(IHoloExpr Callee, List<IHoloExpr> Args) : IHoloExpr;
 
+public record HoloIndexRefExpr(IHoloExpr Source, IHoloExpr Index) : IHoloExpr;
+
 public record HoloWhenExpr(List<HoloWhenArm> Arms) : IHoloExpr;
 // Holo-specific: lowered to nested ternary in C IR
 
@@ -74,6 +76,8 @@ public record HoloBlockExpr(List<IHoloExpr> Expressions) : IHoloExpr;
 
 public record HoloWhenArm(IHoloExpr? Condition, IHoloExpr Value);
 // Condition == null means default arm
+
+public record HoloCollectionExpr(List<IHoloExpr> elements) : IHoloExpr;
 
 
 // Operators

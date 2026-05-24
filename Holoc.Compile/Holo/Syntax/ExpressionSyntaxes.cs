@@ -62,7 +62,7 @@ public partial class Parser
 
     private List<SingleOperatorInfo> PostfixOperators = [
         new(TokenKind.OpenParen, 90),
-        //new(TokenKind.OpenBracket, 90),
+        new(TokenKind.OpenBracket, 90),
     ];
 
     private SyntaxNode? ParsePratt(int minimumBindPower)
@@ -166,6 +166,7 @@ public partial class Parser
 
         if (!Next()) return null;
 
+        // call
         if (operatorInfo.OperatorToken == TokenKind.OpenParen)
         {
             var args = Repeat(ParseExpression, t => t.Kind == TokenKind.CloseParen, s => s.Kind == TokenKind.Comma);
@@ -176,6 +177,18 @@ public partial class Parser
             location.MarkEnd(Reader);
 
             return SyntaxNode.CreateCall(left, args, location);
+        }
+
+        // index reference
+        if (operatorInfo.OperatorToken == TokenKind.OpenBracket)
+        {
+            var indexExpr = ParseExpression();
+            if (indexExpr == null) return null;
+
+            if (!NextWith(TokenKind.CloseBracket)) return null;
+
+            location.MarkEnd(Reader);
+            return SyntaxNode.CreateIndexRef(left, indexExpr, location);
         }
 
         return null;
@@ -291,6 +304,24 @@ public partial class Parser
             location.MarkEnd(Reader);
 
             return SyntaxNode.CreateBlockExpression(nodeList, location);
+        }
+
+        // collection
+        if (Try(TokenKind.OpenBracket))
+        {
+            if (!Next()) return null;
+
+            var location = CreateLocation();
+            location.MarkBegin(Reader);
+
+            var elements = Repeat(ParseExpression, t => t.Kind == TokenKind.CloseBracket, s => s.Kind == TokenKind.Comma);
+            if (elements == null) return null;
+
+            if (!NextWith(TokenKind.CloseBracket)) return null;
+
+            location.MarkEnd(Reader);
+
+            return SyntaxNode.CreateCollectionExpression(elements, location);
         }
 
         GenerateError(Reader.CreateUnexpectedError());

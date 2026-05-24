@@ -277,9 +277,27 @@ public class CSyntaxNodeBuilder
             return new CCallExpr(BuildExpression(call.Callee), args);
         }
 
+        if (expr is HoloIndexRefExpr indexRef)
+        {
+            return new CIndexRefExpr(
+                BuildExpression(indexRef.Source),
+                BuildExpression(indexRef.Index)
+            );
+        }
+
         if (expr is HoloWhenExpr when)
         {
             return BuildWhenExpression(when.Arms);
+        }
+
+        if (expr is HoloCollectionExpr col)
+        {
+            var elements = new List<ICExpr>();
+            foreach (var e in col.elements)
+            {
+                elements.Add(BuildExpression(e));
+            }
+            return new CCollectionExpr(elements);
         }
 
         // TODO: ブロック式のサポート

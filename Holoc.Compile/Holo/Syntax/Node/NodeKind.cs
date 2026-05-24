@@ -3,11 +3,8 @@ namespace Holoc.Compile.Holo.Syntax.Node;
 public enum NodeKind : byte
 {
     // Common
-    Reference,
     NamedType,
     CollectionType,
-    Call,
-    BlockExpression,
 
     // Core
     Unit,
@@ -26,9 +23,14 @@ public enum NodeKind : byte
     ExpressionStatement,
 
     // Expressions
+    Reference,
+    NumberLiteral, // value type: long
+    Call,
+    IndexRef,
+    BlockExpression,
+    CollectionExpression,
     WhenExpression,
     WhenArm,
-    NumberLiteral, // value type: long
     UnaryOperation,
     BinaryOperation,
 }
