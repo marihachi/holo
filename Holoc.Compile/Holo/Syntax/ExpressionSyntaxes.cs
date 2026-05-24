@@ -194,6 +194,20 @@ public partial class Parser
         return null;
     }
 
+    private static readonly Dictionary<TokenKind, NodeMode> InfixToModeTable = new()
+    {
+        { TokenKind.Plus, NodeMode.Add },
+        { TokenKind.Minus, NodeMode.Sub },
+        { TokenKind.Asterisk, NodeMode.Mul },
+        { TokenKind.Slash, NodeMode.Div },
+        { TokenKind.Gt, NodeMode.Gt },
+        { TokenKind.Lt, NodeMode.Lt },
+        { TokenKind.GtEq, NodeMode.GtEq },
+        { TokenKind.LtEq, NodeMode.LtEq },
+        { TokenKind.Eq2, NodeMode.Eq },
+        { TokenKind.NotEq, NodeMode.NotEq },
+    };
+
     private SyntaxNode? ParseInfix(InfixOperatorInfo operatorInfo, SyntaxNode left)
     {
         var location = CreateLocation();
@@ -206,52 +220,8 @@ public partial class Parser
         var right = ParsePratt(operatorInfo.RightBindPower);
         if (right == null) return null;
 
-        // TODO: 変換テーブルを使ってTokenKindからModeに変換
-
-        NodeMode mode;
-        // math
-        if (operatorInfo.OperatorToken == TokenKind.Plus)
-        {
-            mode = NodeMode.Add;
-        }
-        else if (operatorInfo.OperatorToken == TokenKind.Minus)
-        {
-            mode = NodeMode.Sub;
-        }
-        else if (operatorInfo.OperatorToken == TokenKind.Asterisk)
-        {
-            mode = NodeMode.Mul;
-        }
-        else if (operatorInfo.OperatorToken == TokenKind.Slash)
-        {
-            mode = NodeMode.Div;
-        }
-        // compare
-        else if (operatorInfo.OperatorToken == TokenKind.Gt)
-        {
-            mode = NodeMode.Gt;
-        }
-        else if (operatorInfo.OperatorToken == TokenKind.Lt)
-        {
-            mode = NodeMode.Lt;
-        }
-        else if (operatorInfo.OperatorToken == TokenKind.GtEq)
-        {
-            mode = NodeMode.GtEq;
-        }
-        else if (operatorInfo.OperatorToken == TokenKind.LtEq)
-        {
-            mode = NodeMode.LtEq;
-        }
-        else if (operatorInfo.OperatorToken == TokenKind.Eq2)
-        {
-            mode = NodeMode.Eq;
-        }
-        else if (operatorInfo.OperatorToken == TokenKind.NotEq)
-        {
-            mode = NodeMode.NotEq;
-        }
-        else
+        // 演算子トークンからモードへ変換
+        if (!InfixToModeTable.TryGetValue(operatorInfo.OperatorToken, out NodeMode mode))
         {
             return null;
         }
