@@ -15,11 +15,15 @@ public class CEmitter
         _indentStr = "";
 
         foreach (var include in unit.Includes)
+        {
             Write($"#include {include}\n");
+        }
 
         if (unit.Includes.Count > 0)
+        {
             Write("\n");
-        
+        }
+
         foreach (var decl in unit.Declarations)
         {
             if (decl is CFunctionDecl func)
@@ -159,7 +163,11 @@ public class CEmitter
 
             case CReturnStmt s:
                 WriteIndent("return");
-                if (s.Value != null) { Write(" "); EmitExpression(s.Value); }
+                if (s.Value != null)
+                {
+                    Write(" ");
+                    EmitExpression(s.Value);
+                }
                 Write(";\n");
                 break;
 
@@ -246,7 +254,10 @@ public class CEmitter
                 Write("(");
                 for (int i = 0; i < e.Args.Count; i++)
                 {
-                    if (i > 0) Write(", ");
+                    if (i > 0)
+                    {
+                        Write(", ");
+                    }
                     EmitExpression(e.Args[i]);
                 }
                 Write(")");
@@ -273,7 +284,10 @@ public class CEmitter
                 Write("{ ");
                 for (int i = 0; i < e.Elements.Count; i++)
                 {
-                    if (i > 0) Write(", ");
+                    if (i > 0)
+                    {
+                        Write(", ");
+                    }
                     EmitExpression(e.Elements[i]);
                 }
                 Write(" }");
