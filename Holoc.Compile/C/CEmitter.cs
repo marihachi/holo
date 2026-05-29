@@ -85,17 +85,16 @@ public class CEmitter
         }
         else if (node is CPointerType pointerType)
         {
-            // ポインタを生成する時、中身が配列であれば結合順を制御するために括弧を追加する。
-
             parentString = parentString ?? "";
 
+            // ポインタを生成する時、中身が配列であれば結合順を制御するために括弧を追加する。
             if (pointerType.InnerType is CArrayType)
             {
-                return GetTypeString(pointerType.InnerType, $"*{parentString}");
+                return GetTypeString(pointerType.InnerType, $"(*{parentString})");
             }
             else
             {
-                return GetTypeString(pointerType.InnerType, $"(*{parentString})");
+                return GetTypeString(pointerType.InnerType, $"*{parentString}");
             }
         }
         else if (node is CArrayType arrayType)
