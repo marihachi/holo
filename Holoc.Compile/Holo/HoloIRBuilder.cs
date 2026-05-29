@@ -76,6 +76,11 @@ public class HoloIRBuilder
             return new HoloCollectionType(BuildType(node.Operands![0]!), (long?)node.Value);
         }
 
+        if (node.Kind == NodeKind.PointerType)
+        {
+            return new HoloPointerType(BuildType(node.Operands![0]!));
+        }
+
         throw new NotSupportedException($"Unsupported type node: {node.Kind}");
     }
 

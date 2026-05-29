@@ -5,6 +5,7 @@ public enum NodeKind : byte
     // Common
     NamedType,
     CollectionType,
+    PointerType,
 
     // Core
     Unit,

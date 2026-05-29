@@ -267,6 +267,16 @@ public class SyntaxNode
         };
     }
 
+    public static SyntaxNode CreatePointerType(SyntaxNode? elementType, NodeLocation location)
+    {
+        return new SyntaxNode
+        {
+            Kind = NodeKind.PointerType,
+            Location = location,
+            Operands = [elementType],
+        };
+    }
+
     /// <summary>
     /// SyntaxNodeのツリー構造をコンソールに表示します。
     /// </summary>

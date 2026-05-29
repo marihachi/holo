@@ -104,6 +104,11 @@ public class CSyntaxNodeBuilder
             return new CArrayType(BuildType(collectionType.elementType, includeAdd), collectionType.size);
         }
 
+        if (holoType is HoloPointerType pointerType)
+        {
+            return new CPointerType(BuildType(pointerType.elementType, includeAdd));
+        }
+
         throw new NotSupportedException($"Unsupported statement: {holoType.GetType().Name}");
     }
 

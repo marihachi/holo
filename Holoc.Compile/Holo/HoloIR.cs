@@ -13,6 +13,8 @@ public record HoloNamedType(string name) : IHoloType;
 
 public record HoloCollectionType(IHoloType elementType, long? size) : IHoloType;
 
+public record HoloPointerType(IHoloType elementType) : IHoloType;
+
 
 // Top-level declarations
 

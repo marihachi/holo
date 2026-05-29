@@ -30,11 +30,20 @@ public partial class Parser
                 continue;
             }
 
+            if (Try(TokenKind.Asterisk))
+            {
+                var location = CreateLocation();
+                location.MarkBegin(Reader);
+                if (!Next()) return null;
+                location.MarkEnd(Reader);
+                outerNode = SyntaxNode.CreatePointerType(outerNode, location);
+                continue;
+            }
+
             if (Try(TokenKind.Word))
             {
                 var location = CreateLocation();
                 location.MarkBegin(Reader);
-                if (!Expect(TokenKind.Word)) return null;
                 var name = GetTokenValue();
                 if (!Next()) return null;
                 location.MarkEnd(Reader);
