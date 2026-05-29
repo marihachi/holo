@@ -14,12 +14,25 @@ public record CFile(List<string> Includes, List<ICDecl> Declarations);
 
 public interface ICDecl;
 
+public interface ICTypeWalkable;
+
+
+// Types
+
+public interface ICType : ICTypeWalkable;
+
+public record CNamedType(string Name) : ICType;
+
+public record CArrayType(ICType ElementType, long? size) : ICType;
+
+public record CPointerType(ICType InnerType) : ICType;
+
 
 // Top-level declarations
 
-public record CFunctionDecl(List<string> ReturnType, string Name, List<CParam> Parameters, CBlock? Body) : ICDecl;
+public record CFunctionDecl(ICType ReturnType, string Name, List<CParam> Parameters, CBlock? Body) : ICDecl, ICTypeWalkable;
 
-public record CParam(List<string> Type, string Name);
+public record CParam(ICType Type, string? Name) : ICTypeWalkable;
 
 public record CBlock(List<ICStmt> Statements);
 
@@ -28,7 +41,7 @@ public record CBlock(List<ICStmt> Statements);
 
 public interface ICStmt;
 
-public record CVariableDeclStmt(List<string> LeftTypes, string Name, List<string> RightTypes, ICExpr? Initializer) : ICStmt, ICDecl;
+public record CVariableDeclStmt(ICType Type, string Name, ICExpr? Initializer) : ICStmt, ICDecl, ICTypeWalkable;
 
 public record CAssignStmt(ICExpr Target, string Op, ICExpr Value) : ICStmt;
 

@@ -61,16 +61,62 @@ public class CEmitter
         _sb.Append(s);
     }
 
+    // --- Types ---
+
+    private string GetTypeString(ICTypeWalkable node, string? parentString)
+    {
+        if (node is CFunctionDecl functionDecl)
+        {
+            return GetTypeString(functionDecl.ReturnType, functionDecl.Name);
+        }
+        else if (node is CVariableDeclStmt variableDecl)
+        {
+            return GetTypeString(variableDecl.Type, variableDecl.Name);
+        }
+        else if (node is CParam parameter)
+        {
+            return GetTypeString(parameter.Type, parameter.Name);
+        }
+        else if (node is CNamedType namedType)
+        {
+            return parentString != null
+                ? $"{namedType.Name} {parentString}"
+                : namedType.Name;
+        }
+        else if (node is CPointerType pointerType)
+        {
+            // ポインタを生成する時、中身が配列であれば結合順を制御するために括弧を追加する。
+
+            parentString = parentString ?? "";
+
+            if (pointerType.InnerType is CArrayType)
+            {
+                return GetTypeString(pointerType.InnerType, $"*{parentString}");
+            }
+            else
+            {
+                return GetTypeString(pointerType.InnerType, $"(*{parentString})");
+            }
+        }
+        else if (node is CArrayType arrayType)
+        {
+            parentString = parentString ?? "";
+
+            return GetTypeString(arrayType.ElementType, parentString + (arrayType.size != null ? $"[{arrayType.size}]" : "[]"));
+        }
+        else
+        {
+            throw new NotSupportedException($"Unsupported node type: {node.GetType().Name}");
+        }
+    }
+
     // --- Declarations ---
 
     private void EmitFunctionDecl(CFunctionDecl decl)
     {
-        foreach (string ty in decl.ReturnType)
-        {
-            Write(ty);
-        }
+        Write(GetTypeString(decl, ""));
 
-        Write($" {decl.Name}(");
+        Write($"(");
 
         for (int i = 0; i < decl.Parameters.Count; i++)
         {
@@ -79,12 +125,7 @@ public class CEmitter
                 Write(", ");
             }
 
-            foreach (string ty in decl.Parameters[i].Type)
-            {
-                Write(ty);
-            }
-
-            Write($" {decl.Parameters[i].Name}");
+            Write(GetTypeString(decl.Parameters[i], ""));
         }
 
         if (decl.Body == null)
@@ -118,15 +159,7 @@ public class CEmitter
         {
             case CVariableDeclStmt s:
                 WriteIndent();
-                foreach(var ty in s.LeftTypes)
-                {
-                    Write(ty);
-                }
-                Write($" {s.Name}");
-                foreach(var ty in s.RightTypes)
-                {
-                    Write(ty);
-                }
+                Write(GetTypeString(s, ""));
                 if (s.Initializer != null)
                 {
                     Write(" = "); EmitExpression(s.Initializer);
