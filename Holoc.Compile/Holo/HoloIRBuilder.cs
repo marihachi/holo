@@ -49,7 +49,7 @@ public class HoloIRBuilder
         var parameters = new List<HoloParam>();
         foreach (var p in node.Parameters ?? [])
         {
-            var paramType = node.Operands![0];
+            var paramType = p.Operands![0];
 
             if (paramType == null)
             {
