@@ -60,19 +60,38 @@ public partial class Parser
         var expr = ParseExpression();
         if (expr != null)
         {
-            if (!NextWith(TokenKind.SemiColon)) return null;
+            if (Try(TokenKind.SemiColon))
+            {
+                if (!Next()) return null;
 
-            location.MarkEnd(Reader);
+                location.MarkEnd(Reader);
 
-            return SyntaxNode.CreateExpressionStatement(
-                expr,
-                location);
+                return SyntaxNode.CreateExpressionStatement(
+                    expr,
+                    location);
+            }
+
+            if (Try(TokenKind.Eq))
+            {
+                if (!Next()) return null;
+
+                var rightExpr = ParseExpression();
+                if (rightExpr == null) return null;
+
+                if (!NextWith(TokenKind.SemiColon)) return null;
+                
+                location.MarkEnd(Reader);
+                
+                return SyntaxNode.CreateAssignmentStatement(
+                    NodeMode.None,
+                    expr,
+                    rightExpr,
+                    location);
+            }
         }
-        else
-        {
-            GenerateError(Reader.CreateUnexpectedError());
-            return null;
-        }
+
+        GenerateError(Reader.CreateUnexpectedError());
+        return null;
     }
 
     /// <summary>

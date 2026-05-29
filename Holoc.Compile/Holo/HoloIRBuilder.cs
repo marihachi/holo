@@ -122,7 +122,7 @@ public class HoloIRBuilder
             );
         }
 
-        if (node.Kind == NodeKind.AssignStatement)
+        if (node.Kind == NodeKind.AssignmentStatement)
         {
             return new HoloAssignStmt(
                 BuildExpression(node.Operands![0]!),

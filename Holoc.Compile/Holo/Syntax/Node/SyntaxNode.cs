@@ -73,14 +73,14 @@ public class SyntaxNode
         };
     }
 
-    public static SyntaxNode CreateAssignStatement
-        (NodeMode assignMode, SyntaxNode assignee, SyntaxNode expression, NodeLocation location)
+    public static SyntaxNode CreateAssignmentStatement
+        (NodeMode assignMode, SyntaxNode target, SyntaxNode expression, NodeLocation location)
     {
         return new SyntaxNode
         {
-            Kind = NodeKind.AssignStatement,
+            Kind = NodeKind.AssignmentStatement,
             Location = location,
-            Operands = [assignee, expression],
+            Operands = [target, expression],
             Mode = assignMode,
         };
     }

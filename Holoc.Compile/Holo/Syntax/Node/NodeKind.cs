@@ -14,7 +14,7 @@ public enum NodeKind : byte
     FunctionDeclaration,
     FunctionParameter,
     VariableDeclaration,
-    AssignStatement,
+    AssignmentStatement,
     IfStatement,
     WhileStatement,
     //ForStatement,
