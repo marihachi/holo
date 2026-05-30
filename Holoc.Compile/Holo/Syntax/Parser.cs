@@ -86,32 +86,37 @@ public partial class Parser
     /// <summary>
     /// 現在のトークンが期待する種類であるかを確認します。
     /// </summary>
-    private bool Try(TokenKind kind)
+    private bool Try(params TokenKind[] kind)
     {
-        if (GetKind() != kind)
+        foreach (var x in kind)
         {
-            return false;
+            if (GetKind() == x)
+            {
+                return true;
+            }
         }
-
-        return true;
+        return false;
     }
 
     /// <summary>
     /// 現在のトークンが期待するキーワードであるかを確認します。
     /// </summary>
-    private bool Try(string keyword)
+    private bool Try(params string[] keyword)
     {
         if (GetKind() != TokenKind.Word)
         {
             return false;
         }
 
-        if (GetTokenValue() != keyword)
+        foreach (var x in keyword)
         {
-            return false;
+            if (GetTokenValue() == x)
+            {
+                return true;
+            }
         }
 
-        return true;
+        return false;
     }
 
     /// <summary>

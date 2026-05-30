@@ -71,8 +71,10 @@ public partial class Parser
                     location);
             }
 
-            if (Try(TokenKind.Eq))
+            if (Try(TokenKind.Eq, TokenKind.PlusEq, TokenKind.MinusEq, TokenKind.AsterEq, TokenKind.SlashEq))
             {
+                var nodeMode = ConvertToNodeMode(GetKind());
+
                 if (!Next()) return null;
 
                 var rightExpr = ParseExpression();
@@ -83,7 +85,7 @@ public partial class Parser
                 location.MarkEnd(Reader);
                 
                 return SyntaxNode.CreateAssignmentStatement(
-                    NodeMode.None,
+                    nodeMode,
                     expr,
                     rightExpr,
                     location);
@@ -92,6 +94,24 @@ public partial class Parser
 
         GenerateError(Reader.CreateUnexpectedError());
         return null;
+    }
+
+    private Dictionary<TokenKind, NodeMode> NodeModeMap = new()
+    {
+        { TokenKind.Eq, NodeMode.None },
+        { TokenKind.PlusEq, NodeMode.Add },
+        { TokenKind.MinusEq, NodeMode.Sub },
+        { TokenKind.AsterEq, NodeMode.Mul },
+        { TokenKind.SlashEq, NodeMode.Div }
+    };
+
+    private NodeMode ConvertToNodeMode(TokenKind tokenKind)
+    {
+        if (!NodeModeMap.TryGetValue(tokenKind, out NodeMode mode))
+        {
+            throw new InvalidOperationException($"Unexpected token kind: {tokenKind}");
+        }
+        return mode;
     }
 
     /// <summary>
