@@ -6,6 +6,7 @@
 var x: int;
 var y: int = 0;
 ```
+
 生成コード:
 ```c
 int x;

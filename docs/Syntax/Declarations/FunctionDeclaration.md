@@ -25,9 +25,12 @@ int add(int x, int y) {
 ## 外部関数宣言
 外部関数が存在することをコンパイラが認識するための宣言。  
 オブジェクトコードをリンクする段階でその外部関数が存在すればコンパイルは成功する。  
+
+使用例:
 ```
 extern fn max(x: int, y: int): int;
 ```
+
 生成コード:
 ```c
 extern int max(int x, int y);
