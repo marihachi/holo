@@ -25,7 +25,4 @@ public enum NodeMode : byte
     LtEq,
     Eq,
     NotEq,
-
-    // when arm
-    DefaultArm,
 }

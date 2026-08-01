@@ -9,6 +9,8 @@ public enum NodeKind : byte
 
     // Core
     Unit,
+    ModuleDeclaration,
+    ImportDeclaration,
 
     // Statements
     FunctionDeclaration,
@@ -30,8 +32,7 @@ public enum NodeKind : byte
     IndexRef,
     BlockExpression,
     CollectionExpression,
-    WhenExpression,
-    WhenArm,
+    IfExpression,
     UnaryOperation,
     BinaryOperation,
 }

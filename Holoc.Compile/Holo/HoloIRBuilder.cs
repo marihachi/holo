@@ -59,7 +59,7 @@ public class HoloIRBuilder
             parameters.Add(new HoloParam(p.Name!, BuildType(paramType)));
         }
 
-        var body = node.IsExternal ? null : BuildBlock(node.Body ?? []);
+        var body = node.IsDeclare ? null : BuildStatements(node.Body ?? []);
 
         return new HoloFunctionDecl(node.Name!, BuildType(returnType), parameters, body);
     }
@@ -84,7 +84,7 @@ public class HoloIRBuilder
         throw new NotSupportedException($"Unsupported type node: {node.Kind}");
     }
 
-    private List<IHoloStmt> BuildBlock(List<SyntaxNode> stmts)
+    private List<IHoloStmt> BuildStatements(List<SyntaxNode> stmts)
     {
         var statements = new List<IHoloStmt>();
         foreach (var stmt in stmts)
@@ -98,7 +98,7 @@ public class HoloIRBuilder
     {
         if (node.Kind == NodeKind.BlockExpression)
         {
-            return BuildBlock(node.Body ?? []);
+            return BuildStatements(node.Body ?? []);
         }
 
         return [BuildStatement(node)];
@@ -168,7 +168,7 @@ public class HoloIRBuilder
 
         if (node.Kind == NodeKind.BlockExpression)
         {
-            return new HoloBlockStmt(BuildBlock(node.Body ?? []));
+            return new HoloBlockStmt(BuildStatements(node.Body ?? []));
         }
 
         throw new NotSupportedException($"Unsupported statement: {node.Kind}");
@@ -247,16 +247,16 @@ public class HoloIRBuilder
             );
         }
 
-        if (node.Kind == NodeKind.WhenExpression)
+        if (node.Kind == NodeKind.IfExpression)
         {
-            var whenArms = new List<HoloWhenArm>();
-            foreach (var arm in node.Body!)
+            var elseNode = node.Operands![2];
+
+            if (elseNode == null)
             {
-                var condition = arm.Mode == NodeMode.DefaultArm ? null : BuildExpression(arm.Operands![1]!);
-                var value = BuildExpression(arm.Operands![0]!);
-                whenArms.Add(new HoloWhenArm(condition, value));
+                throw new NotSupportedException($"The if expression needs an else clause.");
             }
-            return new HoloWhenExpr(whenArms);
+
+            return new HoloIfExpr(BuildExpression(node.Operands![0]!), BuildExpression(node.Operands![1]!), BuildExpression(elseNode));
         }
 
         if (node.Kind == NodeKind.BlockExpression)

@@ -305,9 +305,9 @@ public class CSyntaxNodeBuilder
             );
         }
 
-        if (expr is HoloWhenExpr when)
+        if (expr is HoloIfExpr ifExpr)
         {
-            return BuildWhenExpression(when.Arms);
+            return BuildConditionalOperator(ifExpr);
         }
 
         if (expr is HoloCollectionExpr col)
@@ -335,31 +335,13 @@ public class CSyntaxNodeBuilder
         throw new NotSupportedException($"Unsupported expression: {expr.GetType().Name}");
     }
 
-    private ICExpr BuildWhenExpression(List<HoloWhenArm> arms)
+    private ICExpr BuildConditionalOperator(HoloIfExpr ifExpr)
     {
-        // when式をネストした条件演算子に変換する。
-        // 右から左に処理することで、条件付きアームが外側、elseアームが最も内側になる。
-        // 例: when (cond1) v1 when (cond2) v2 else v3
-        //   → (cond1 ? v1 : (cond2 ? v2 : (v3)))
-        ICExpr result = new CNumberLiteral(0); // elseアームがあれば到達しない
+        var cond = BuildExpression(ifExpr.condition);
+        var thenExpr = BuildExpression(ifExpr.thenExpr);
+        var elseExpr = BuildExpression(ifExpr.elseExpr);
 
-        for (int i = arms.Count - 1; i >= 0; i--)
-        {
-            var arm = arms[i];
-            var value = BuildExpression(arm.Value);
-
-            // Condition == null はelseアーム
-            if (arm.Condition == null)
-            {
-                result = value;
-            }
-            else
-            {
-                result = new CTernaryExpr(BuildExpression(arm.Condition), value, result);
-            }
-        }
-
-        return result;
+        return new CConditionalOperator(cond, thenExpr, elseExpr);
     }
 
     private static string AssignOp(HoloAssignOp op)

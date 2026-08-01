@@ -244,9 +244,9 @@ public partial class Parser
             return SyntaxNode.CreateNumberLiteral(value, location);
         }
 
-        if (Try("when"))
+        if (Try("if"))
         {
-            return ParseWhenExpression();
+            return ParseIfExpression();
         }
 
         if (Try(TokenKind.Word))
@@ -299,41 +299,36 @@ public partial class Parser
     }
 
     /// <summary>
-    /// when式
+    /// if式
     /// </summary>
-    private SyntaxNode? ParseWhenExpression()
+    private SyntaxNode? ParseIfExpression()
     {
         var location = CreateLocation();
         location.MarkBegin(Reader);
 
         var arms = new List<SyntaxNode>();
-        while (Try("when"))
-        {
-            if (!Next()) return null;
 
-            if (!NextWith(TokenKind.OpenParen)) return null;
-            var condExpr = ParseExpression();
-            if (condExpr == null) return null;
-            if (!NextWith(TokenKind.CloseParen)) return null;
+        if (!Next()) return null;
 
-            var thenExpr = ParseExpression();
-            if (thenExpr == null) return null;
+        if (!NextWith(TokenKind.OpenParen)) return null;
+        var condExpr = ParseExpression();
+        if (condExpr == null) return null;
+        if (!NextWith(TokenKind.CloseParen)) return null;
 
-            arms.Add(SyntaxNode.CreateWhenArm(false, condExpr, thenExpr, location));
-        }
+        var thenExpr = ParseExpression();
+        if (thenExpr == null) return null;
 
+        SyntaxNode? elseExpr = null;
         if (Try("else"))
         {
             if (!Next()) return null;
 
-            var elseExpr = ParseExpression();
+            elseExpr = ParseExpression();
             if (elseExpr == null) return null;
-
-            arms.Add(SyntaxNode.CreateWhenArm(true, null, elseExpr, location));
         }
 
         location.MarkEnd(Reader);
 
-        return SyntaxNode.CreateWhenExpression(arms, location);
+        return SyntaxNode.CreateIfExpression(condExpr, thenExpr, elseExpr, location);
     }
 }

@@ -79,6 +79,6 @@ public record CCallExpr(ICExpr Callee, List<ICExpr> Args) : ICExpr;
 
 public record CIndexRefExpr(ICExpr Source, ICExpr Index) : ICExpr;
 
-public record CTernaryExpr(ICExpr Condition, ICExpr Then, ICExpr Else) : ICExpr;
+public record CConditionalOperator(ICExpr Condition, ICExpr Then, ICExpr Else) : ICExpr;
 
 public record CCollectionExpr(List<ICExpr> Elements) : ICExpr;

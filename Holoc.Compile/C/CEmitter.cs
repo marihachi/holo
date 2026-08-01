@@ -268,17 +268,14 @@ public class CEmitter
                 break;
 
             case CUnaryExpr e:
-                Write($"{e.Op}(");
+                Write($"{e.Op}");
                 EmitExpression(e.Operand);
-                Write(")");
                 break;
 
             case CBinaryExpr e:
-                Write("(");
                 EmitExpression(e.Left);
                 Write($" {e.Op} ");
                 EmitExpression(e.Right);
-                Write(")");
                 break;
 
             case CCallExpr e:
@@ -302,7 +299,7 @@ public class CEmitter
                 Write("]");
                 break;
 
-            case CTernaryExpr e:
+            case CConditionalOperator e:
                 Write("(");
                 EmitExpression(e.Condition);
                 Write(" ? ");

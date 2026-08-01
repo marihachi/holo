@@ -70,14 +70,10 @@ public record HoloCallExpr(IHoloExpr Callee, List<IHoloExpr> Args) : IHoloExpr;
 
 public record HoloIndexRefExpr(IHoloExpr Source, IHoloExpr Index) : IHoloExpr;
 
-public record HoloWhenExpr(List<HoloWhenArm> Arms) : IHoloExpr;
-// Holo-specific: lowered to nested ternary in C IR
+public record HoloIfExpr(IHoloExpr condition, IHoloExpr thenExpr, IHoloExpr elseExpr) : IHoloExpr;
 
 public record HoloBlockExpr(List<IHoloExpr> Expressions) : IHoloExpr;
 // Holo-specific: lowered to GCC statement expression in C IR
-
-public record HoloWhenArm(IHoloExpr? Condition, IHoloExpr Value);
-// Condition == null means default arm
 
 public record HoloCollectionExpr(List<IHoloExpr> elements) : IHoloExpr;
 

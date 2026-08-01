@@ -27,38 +27,82 @@ public partial class Parser
     /// </summary>
     private SyntaxNode? ParseTopLevelDecl()
     {
-        var isExternal = false;
-        if (Try("extern"))
+        var isDeclare = false;
+        if (Try("declare"))
         {
             Next();
-            isExternal = true;
+            isDeclare = true;
+        }
+
+        // declareは変数か関数の宣言にのみ指定可能
+        if (isDeclare && !Try("fn", "var"))
+        {
+            GenerateError(Reader.CreateUnexpectedError());
+            return null;
+        }
+
+        var isPartial = false;
+        if (Try("partial"))
+        {
+            Next();
+            isPartial = true;
+        }
+
+        // partialはmodule宣言にのみ指定可能
+        if (isPartial && !Try("module"))
+        {
+            GenerateError(Reader.CreateUnexpectedError());
+            return null;
+        }
+
+        if (Try("module"))
+        {
+            return ParseModuleDecl(isPartial);
         }
 
         if (Try("fn"))
         {
-            return ParseFunctionDecl(isExternal);
+            return ParseFunctionDecl(isDeclare);
         }
 
-        if (Try("var") && !isExternal)
+        if (Try("var"))
         {
-            return ParseVariableDeclaration();
+            return ParseVariableDeclaration(isDeclare);
         }
 
         GenerateError(Reader.CreateUnexpectedError());
         return null;
     }
 
+    private SyntaxNode? ParseModuleDecl(bool isPartial)
+    {
+        var location = CreateLocation();
+        location.MarkBegin(Reader);
+
+        if (!Next()) return null;
+
+        // name
+        // TODO: ドット区切りの名前空間を指定可能にする
+        if (!Expect(TokenKind.Word)) return null;
+        var name = GetTokenValue();
+        if (!Next()) return null;
+
+        location.MarkEnd(Reader);
+
+        return SyntaxNode.CreateModuleDecl(name, isPartial, location);
+    }
+
     /// <summary>
     /// 関数宣言
     /// </summary>
-    private SyntaxNode? ParseFunctionDecl(bool isExternal)
+    private SyntaxNode? ParseFunctionDecl(bool isDeclare)
     {
         List<SyntaxNode>? results;
 
         var location = CreateLocation();
         location.MarkBegin(Reader);
 
-        if (!NextWith("fn")) return null;
+        if (!Next()) return null;
 
         // name
         if (!Expect(TokenKind.Word)) return null;
@@ -97,7 +141,7 @@ public partial class Parser
 
         location.MarkEnd(Reader);
 
-        return SyntaxNode.CreateFunctionDecl(name, returnType, paramList, body, isExternal, location);
+        return SyntaxNode.CreateFunctionDecl(name, returnType, paramList, body, isDeclare, location);
     }
 
     /// <summary>

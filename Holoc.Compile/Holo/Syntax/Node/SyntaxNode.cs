@@ -10,7 +10,10 @@ public class SyntaxNode
     public List<SyntaxNode>? Body { get; set; }
     public string? Name { get; set; }
     public object? Value { get; set; }
-    public bool IsExternal { get; set; }
+    public bool IsDeclare { get; set; }
+    public bool IsPartial { get; set; }
+    public bool IsExport { get; set; }
+
     public bool IsForceReturnFunc { get; set; }
 
     public static SyntaxNode CreateUnit(List<SyntaxNode> body, NodeLocation location)
@@ -23,8 +26,20 @@ public class SyntaxNode
         };
     }
 
+    public static SyntaxNode CreateModuleDecl
+        (string name, bool isPartial, NodeLocation location)
+    {
+        return new SyntaxNode
+        {
+            Kind = NodeKind.ModuleDeclaration,
+            Location = location,
+            Name = name,
+            IsPartial = isPartial,
+        };
+    }
+
     public static SyntaxNode CreateFunctionDecl
-        (string name, SyntaxNode? returnType, List<SyntaxNode>? parameters, List<SyntaxNode>? body, bool isExternal, NodeLocation location)
+        (string name, SyntaxNode? returnType, List<SyntaxNode>? parameters, List<SyntaxNode>? body, bool isDeclare, NodeLocation location)
     {
         return new SyntaxNode
         {
@@ -34,7 +49,7 @@ public class SyntaxNode
             Operands = [returnType],
             Parameters = parameters,
             Body = body,
-            IsExternal = isExternal,
+            IsDeclare = isDeclare,
         };
     }
 
@@ -51,7 +66,7 @@ public class SyntaxNode
     }
 
     public static SyntaxNode CreateVariableDecl
-        (string name, SyntaxNode? variableType, SyntaxNode? initializer, NodeLocation location)
+        (string name, SyntaxNode? variableType, SyntaxNode? initializer, bool isDeclare, NodeLocation location)
     {
         return new SyntaxNode
         {
@@ -59,6 +74,7 @@ public class SyntaxNode
             Location = location,
             Name = name,
             Operands = [variableType, initializer],
+            IsDeclare = isDeclare,
         };
     }
 
@@ -114,27 +130,14 @@ public class SyntaxNode
         };
     }
 
-    public static SyntaxNode CreateWhenExpression
-        (List<SyntaxNode> arms, NodeLocation location)
+    public static SyntaxNode CreateIfExpression
+        (SyntaxNode condition, SyntaxNode thenExpr, SyntaxNode? elseExpr, NodeLocation location)
     {
         return new SyntaxNode
         {
-            Kind = NodeKind.WhenExpression,
+            Kind = NodeKind.IfExpression,
             Location = location,
-            Operands = [],
-            Body = arms,
-        };
-    }
-
-    public static SyntaxNode CreateWhenArm
-        (bool isDefaultArm, SyntaxNode? condition, SyntaxNode expression, NodeLocation location)
-    {
-        return new SyntaxNode
-        {
-            Kind = NodeKind.WhenArm,
-            Location = location,
-            Mode = isDefaultArm ? NodeMode.DefaultArm : NodeMode.None,
-            Operands = [expression, condition],
+            Operands = [condition, thenExpr, elseExpr],
         };
     }
 
@@ -145,6 +148,22 @@ public class SyntaxNode
             Kind = NodeKind.ExpressionStatement,
             Location = location,
             Operands = [expression],
+        };
+    }
+
+    public enum ImportMode
+    {
+        All,
+        Specific,
+    }
+
+    public static SyntaxNode CreateImportDeclaration(ImportMode mode, SyntaxNode? members, SyntaxNode source, NodeLocation location)
+    {
+        return new SyntaxNode
+        {
+            Kind = NodeKind.ImportDeclaration,
+            Location = location,
+            Operands = [members, source],
         };
     }
 
@@ -314,9 +333,19 @@ public class SyntaxNode
             Console.Write($" [Mode: {node.Mode}]");
         }
 
-        if (node.IsExternal)
+        if (node.IsDeclare)
         {
-            Console.Write(" [External]");
+            Console.Write(" [Declare]");
+        }
+
+        if (node.IsPartial)
+        {
+            Console.Write(" [Partial]");
+        }
+
+        if (node.IsExport)
+        {
+            Console.Write(" [Export]");
         }
 
         if (node.IsForceReturnFunc)

@@ -87,14 +87,17 @@ public enum TokenKind : byte
 
     //Break,
     //Continue,
+    //Declare,
     //Do,
     //Else,
-    //External,
+    //Export,
     //Fn,
     //If,
+    //Import,
+    //Module,
+    //Partial,
     //Return,
     //Var,
-    //When,
     //While,
 }
 

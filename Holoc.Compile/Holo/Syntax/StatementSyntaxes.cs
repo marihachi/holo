@@ -10,6 +10,20 @@ public partial class Parser
     /// </summary>
     private SyntaxNode? ParseStatement()
     {
+        var isDeclare = false;
+        if (Try("declare"))
+        {
+            Next();
+            isDeclare = true;
+        }
+
+        // declareは宣言にのみ指定可能
+        if (isDeclare && !Try("var"))
+        {
+            GenerateError(Reader.CreateUnexpectedError());
+            return null;
+        }
+
         if (Try("break"))
         {
             return ParseBreakStatement();
@@ -27,7 +41,7 @@ public partial class Parser
 
         if (Try("var"))
         {
-            return ParseVariableDeclaration();
+            return ParseVariableDeclaration(isDeclare);
         }
 
         if (Try("while"))
@@ -43,23 +57,15 @@ public partial class Parser
         var location = CreateLocation();
         location.MarkBegin(Reader);
 
-        //// block statement
-        //if (Try(TokenKind.OpenBrace))
-        //{
-        //    var nodeList = ParseBlock();
-        //    if (nodeList == null) return null;
-
-        //    location.MarkEnd(Reader);
-
-        //    return SyntaxNode.CreateExpressionStatement(
-        //        SyntaxNode.CreateBlockExpression(nodeList, location),
-        //        location);
-        //}
-
         // 式文
         var expr = ParseExpression();
         if (expr != null)
         {
+            if (expr.Kind == NodeKind.BlockExpression)
+            {
+                return expr;
+            }
+
             if (Try(TokenKind.SemiColon))
             {
                 if (!Next()) return null;
@@ -182,12 +188,12 @@ public partial class Parser
         return SyntaxNode.CreateReturnStatement(expr, isForceReturnFunc, location);
     }
 
-    private SyntaxNode? ParseVariableDeclaration()
+    private SyntaxNode? ParseVariableDeclaration(bool isDeclare)
     {
         var location = CreateLocation();
         location.MarkBegin(Reader);
 
-        if (!NextWith("var")) return null;
+        if (!Next()) return null;
 
         if (!Expect(TokenKind.Word)) return null;
         var name = GetTokenValue();
@@ -215,7 +221,7 @@ public partial class Parser
 
         location.MarkEnd(Reader);
 
-        return SyntaxNode.CreateVariableDecl(name, variableType, initializer, location);
+        return SyntaxNode.CreateVariableDecl(name, variableType, initializer, isDeclare, location);
     }
 
     private SyntaxNode? ParseWhileStatement()
