@@ -69,7 +69,7 @@ public partial class Parser
     /// 現在のトークンの値を取得します。
     /// </summary>
     /// <returns></returns>
-    public string GetTokenValue()
+    private string GetTokenValue()
     {
         return (string)Reader.NextToken!.Value!;
     }
@@ -78,7 +78,7 @@ public partial class Parser
     /// 現在のトークンの値を取得します。
     /// </summary>
     /// <returns></returns>
-    public T GetTokenValue<T>()
+    private T GetTokenValue<T>()
     {
         return (T)Reader.NextToken!.Value!;
     }
