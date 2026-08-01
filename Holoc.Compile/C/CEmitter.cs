@@ -65,6 +65,9 @@ public class CEmitter
 
     private string GetTypeString(ICTypeWalkable node, string? parentString)
     {
+        // 行きがけ順で文字列を組み立てるためにparentStringに親ノードの結果を保持し、子ノードの訪問時にそれを渡す。
+        // 親ノードの型情報が最も内側になるため、この様に処理する必要がある。
+
         if (node is CFunctionDecl functionDecl)
         {
             return GetTypeString(functionDecl.ReturnType, functionDecl.Name);

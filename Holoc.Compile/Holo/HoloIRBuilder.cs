@@ -251,6 +251,7 @@ public class HoloIRBuilder
         {
             var elseNode = node.Operands![2];
 
+            // if式ではelse句は必須。
             if (elseNode == null)
             {
                 throw new NotSupportedException($"The if expression needs an else clause.");
