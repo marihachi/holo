@@ -6,7 +6,7 @@ WIP!
 
 ## Syntax image
 ```
-namespace app;
+module app.main;
 
 import { putn } from holo.io.util;
 import * from app.your.lib;
@@ -15,7 +15,7 @@ var y: int;
 
 fn mul(x: int, c: int): int {
   return
-    when (c == 1) x
+    if (c == 1) x
     else x + mul(x, c - 1);
 }
 
