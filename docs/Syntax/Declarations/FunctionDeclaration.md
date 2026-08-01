@@ -1,21 +1,17 @@
-## 関数宣言
+## 関数定義
 
-宣言のみの場合:
-```
-fn add(x: int, y: int): int;
-```
-生成コード:
-```c
-int add(int x, int y);
-```
-
-関数本体を定義する場合:
 ```
 fn add(x: int, y: int): int {
   return x + y;
 }
 ```
-生成コード:
+
+生成コード(.h ファイル):
+```c
+int add(int x, int y);
+```
+
+生成コード(.c ファイル):
 ```c
 int add(int x, int y) {
   return x + y;
@@ -23,15 +19,15 @@ int add(int x, int y) {
 ```
 
 ## 外部関数宣言
-外部関数が存在することをコンパイラが認識するための宣言。  
+外部関数が存在することをコンパイラに認識させることができる。  
 オブジェクトコードをリンクする段階でその外部関数が存在すればコンパイルは成功する。  
 
 使用例:
 ```
-extern fn max(x: int, y: int): int;
+declare fn max(x: int, y: int): int;
 ```
 
-生成コード:
+生成コード(.h ファイル):
 ```c
-extern int max(int x, int y);
+int max(int x, int y);
 ```
