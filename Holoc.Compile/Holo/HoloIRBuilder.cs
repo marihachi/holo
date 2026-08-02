@@ -127,23 +127,11 @@ public class HoloIRBuilder
                 throw new NotSupportedException($"The variable type is not specified");
             }
 
-            var modifiers = HoloDeclModifier.None;
-
-            if (node.IsDeclare)
-            {
-                modifiers |= HoloDeclModifier.Declare;
-            }
-
-            if (node.IsExport)
-            {
-                modifiers |= HoloDeclModifier.Export;
-            }
-
             return new HoloVariableDeclStmt(
                 node.Name!,
                 BuildType(variableType),
                 node.Operands[1] is { } init ? BuildExpression(init) : null,
-                modifiers
+                HoloDeclModifier.None
             );
         }
 
