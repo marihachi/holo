@@ -39,7 +39,7 @@ public class SyntaxNode
     }
 
     public static SyntaxNode CreateFunctionDecl
-        (string name, SyntaxNode? returnType, List<SyntaxNode>? parameters, List<SyntaxNode>? body, bool isDeclare, NodeLocation location)
+        (string name, SyntaxNode? returnType, List<SyntaxNode>? parameters, List<SyntaxNode>? body, bool isDeclare, bool isExport, NodeLocation location)
     {
         return new SyntaxNode
         {
@@ -50,6 +50,7 @@ public class SyntaxNode
             Parameters = parameters,
             Body = body,
             IsDeclare = isDeclare,
+            IsExport = isExport,
         };
     }
 
@@ -66,7 +67,7 @@ public class SyntaxNode
     }
 
     public static SyntaxNode CreateVariableDecl
-        (string name, SyntaxNode? variableType, SyntaxNode? initializer, bool isDeclare, NodeLocation location)
+        (string name, SyntaxNode? variableType, SyntaxNode? initializer, bool isDeclare, bool isExport, NodeLocation location)
     {
         return new SyntaxNode
         {
@@ -75,6 +76,7 @@ public class SyntaxNode
             Name = name,
             Operands = [variableType, initializer],
             IsDeclare = isDeclare,
+            IsExport = isExport,
         };
     }
 

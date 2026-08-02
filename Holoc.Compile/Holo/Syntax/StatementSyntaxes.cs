@@ -11,10 +11,18 @@ public partial class Parser
     private SyntaxNode? ParseStatement()
     {
         var isDeclare = false;
-        if (Try("declare"))
+
+        // 修飾子は順不同
+        while (true)
         {
-            Next();
-            isDeclare = true;
+            if (Try("declare"))
+            {
+                Next();
+                isDeclare = true;
+                continue;
+            }
+
+            break;
         }
 
         // declareは宣言にのみ指定可能
@@ -41,7 +49,9 @@ public partial class Parser
 
         if (Try("var"))
         {
-            return ParseVariableDeclaration(isDeclare);
+            var isExport = false;
+
+            return ParseVariableDeclaration(isDeclare, isExport);
         }
 
         if (Try("while"))
@@ -188,7 +198,7 @@ public partial class Parser
         return SyntaxNode.CreateReturnStatement(expr, isForceReturnFunc, location);
     }
 
-    private SyntaxNode? ParseVariableDeclaration(bool isDeclare)
+    private SyntaxNode? ParseVariableDeclaration(bool isDeclare, bool isExport)
     {
         var location = CreateLocation();
         location.MarkBegin(Reader);
@@ -221,7 +231,7 @@ public partial class Parser
 
         location.MarkEnd(Reader);
 
-        return SyntaxNode.CreateVariableDecl(name, variableType, initializer, isDeclare, location);
+        return SyntaxNode.CreateVariableDecl(name, variableType, initializer, isDeclare, isExport, location);
     }
 
     private SyntaxNode? ParseWhileStatement()

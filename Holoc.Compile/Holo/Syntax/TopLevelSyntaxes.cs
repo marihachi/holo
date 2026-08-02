@@ -28,10 +28,34 @@ public partial class Parser
     private SyntaxNode? ParseTopLevelDecl()
     {
         var isDeclare = false;
-        if (Try("declare"))
+        var isPartial = false;
+        var isExport = false;
+
+        // 修飾子は順不同
+        while (true)
         {
-            Next();
-            isDeclare = true;
+            if (Try("declare"))
+            {
+                Next();
+                isDeclare = true;
+                continue;
+            }
+
+            if (Try("partial"))
+            {
+                Next();
+                isPartial = true;
+                continue;
+            }
+
+            if (Try("export"))
+            {
+                Next();
+                isExport = true;
+                continue;
+            }
+
+            break;
         }
 
         // declareは変数か関数の宣言にのみ指定可能
@@ -41,15 +65,15 @@ public partial class Parser
             return null;
         }
 
-        var isPartial = false;
-        if (Try("partial"))
-        {
-            Next();
-            isPartial = true;
-        }
-
         // partialはmodule宣言にのみ指定可能
         if (isPartial && !Try("module"))
+        {
+            GenerateError(Reader.CreateUnexpectedError());
+            return null;
+        }
+
+        // exportは変数か関数の宣言にのみ指定可能
+        if (isExport && !Try("fn", "var"))
         {
             GenerateError(Reader.CreateUnexpectedError());
             return null;
@@ -62,12 +86,12 @@ public partial class Parser
 
         if (Try("fn"))
         {
-            return ParseFunctionDecl(isDeclare);
+            return ParseFunctionDecl(isDeclare, isExport);
         }
 
         if (Try("var"))
         {
-            return ParseVariableDeclaration(isDeclare);
+            return ParseVariableDeclaration(isDeclare, isExport);
         }
 
         GenerateError(Reader.CreateUnexpectedError());
@@ -95,7 +119,7 @@ public partial class Parser
     /// <summary>
     /// 関数宣言
     /// </summary>
-    private SyntaxNode? ParseFunctionDecl(bool isDeclare)
+    private SyntaxNode? ParseFunctionDecl(bool isDeclare, bool isExport)
     {
         List<SyntaxNode>? results;
 
@@ -141,7 +165,7 @@ public partial class Parser
 
         location.MarkEnd(Reader);
 
-        return SyntaxNode.CreateFunctionDecl(name, returnType, paramList, body, isDeclare, location);
+        return SyntaxNode.CreateFunctionDecl(name, returnType, paramList, body, isDeclare, isExport, location);
     }
 
     /// <summary>
