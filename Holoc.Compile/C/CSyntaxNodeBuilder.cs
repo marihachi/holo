@@ -47,24 +47,43 @@ public class CSyntaxNodeBuilder
             if (decl is HoloFunctionDecl func)
             {
                 var cDecl = BuildFunctionDecl(func);
-                CHeader.Declarations.Add(new CFunctionDecl(cDecl.ReturnType, cDecl.Name, cDecl.Parameters, null));
+
+                // exportが付いていればヘッダーで公開
+                if (func.Modifiers.HasFlag(HoloDeclModifier.Export))
+                {
+                    CHeader.Declarations.Add(new CFunctionDecl(
+                        cDecl.ReturnType,
+                        cDecl.Name,
+                        cDecl.Parameters,
+                        null,
+                        CDeclModifier.None
+                    ));
+                }
+
                 CImpl.Declarations.Add(cDecl);
             }
 
             if (decl is HoloVariableDeclStmt varDecl)
             {
+                // exportでなければstaticを付ける
                 var cDecl = new CVariableDeclStmt(
                     BuildType(varDecl.Type, IncludeAdd.Header),
                     varDecl.Name,
-                    varDecl.Initializer != null ? BuildExpression(varDecl.Initializer) : null
+                    varDecl.Initializer != null ? BuildExpression(varDecl.Initializer) : null,
+                    !varDecl.Modifiers.HasFlag(HoloDeclModifier.Export) ? CDeclModifier.Static : CDeclModifier.None
                 );
 
-                // ヘッダーにも宣言を追加
-                CHeader.Declarations.Add(new CVariableDeclStmt(
-                    cDecl.Type,
-                    cDecl.Name,
-                    null
-                ));
+                // exportが付いていればヘッダーで公開
+                if (varDecl.Modifiers.HasFlag(HoloDeclModifier.Export))
+                {
+                    CHeader.Declarations.Add(new CVariableDeclStmt(
+                        cDecl.Type,
+                        cDecl.Name,
+                        null,
+                        CDeclModifier.Extern
+                    ));
+                }
+
                 CImpl.Declarations.Add(cDecl);
             }
         }
@@ -139,7 +158,14 @@ public class CSyntaxNodeBuilder
         }
 
         var body = decl.Body != null ? BuildBlock(decl.Body) : null;
-        var impl = new CFunctionDecl(returnType, decl.Name, parameters, body);
+
+        // exportが付いていなければstaticを付ける
+        var impl = new CFunctionDecl(
+            returnType,
+            decl.Name,
+            parameters,
+            body,
+            !decl.Modifiers.HasFlag(HoloDeclModifier.Export) ? CDeclModifier.Static : CDeclModifier.None);
 
         AddInclude($"\"{Path.ChangeExtension(holoFileName, ".h")}\"", IncludeAdd.Impl);
 
@@ -165,7 +191,8 @@ public class CSyntaxNodeBuilder
             return new CVariableDeclStmt(
                 variableType,
                 varDecl.Name,
-                varDecl.Initializer != null ? BuildExpression(varDecl.Initializer) : null
+                varDecl.Initializer != null ? BuildExpression(varDecl.Initializer) : null,
+                CDeclModifier.None
             );
         }
         

@@ -39,6 +39,18 @@ public class HoloIRBuilder
 
     private HoloFunctionDecl BuildFunctionDecl(SyntaxNode node)
     {
+        var modifiers = HoloDeclModifier.None;
+
+        if (node.IsDeclare)
+        {
+            modifiers |= HoloDeclModifier.Declare;
+        }
+
+        if (node.IsExport)
+        {
+            modifiers |= HoloDeclModifier.Export;
+        }
+
         var returnType = node.Operands![0];
 
         if (returnType == null)
@@ -61,7 +73,7 @@ public class HoloIRBuilder
 
         var body = node.IsDeclare ? null : BuildStatements(node.Body ?? []);
 
-        return new HoloFunctionDecl(node.Name!, BuildType(returnType), parameters, body);
+        return new HoloFunctionDecl(node.Name!, BuildType(returnType), parameters, body, modifiers);
     }
 
     private IHoloType BuildType(SyntaxNode node)
@@ -115,10 +127,23 @@ public class HoloIRBuilder
                 throw new NotSupportedException($"The variable type is not specified");
             }
 
+            var modifiers = HoloDeclModifier.None;
+
+            if (node.IsDeclare)
+            {
+                modifiers |= HoloDeclModifier.Declare;
+            }
+
+            if (node.IsExport)
+            {
+                modifiers |= HoloDeclModifier.Export;
+            }
+
             return new HoloVariableDeclStmt(
                 node.Name!,
                 BuildType(variableType),
-                node.Operands[1] is { } init ? BuildExpression(init) : null
+                node.Operands[1] is { } init ? BuildExpression(init) : null,
+                modifiers
             );
         }
 

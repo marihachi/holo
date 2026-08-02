@@ -4,6 +4,12 @@ public interface IHoloDecl;
 
 public record HoloUnit(string fileName, List<IHoloDecl> Declarations);
 
+public enum HoloDeclModifier
+{
+    None = 0,
+    Declare = 1,
+    Export = 2,
+}
 
 // Types
 
@@ -22,7 +28,8 @@ public record HoloFunctionDecl(
     string Name,
     IHoloType ReturnType,
     List<HoloParam> Parameters,
-    List<IHoloStmt>? Body    // null = extern
+    List<IHoloStmt>? Body,    // null = extern
+    HoloDeclModifier Modifiers
 ) : IHoloDecl;
 
 public record HoloParam(string Name, IHoloType Type);
@@ -32,7 +39,7 @@ public record HoloParam(string Name, IHoloType Type);
 
 public interface IHoloStmt;
 
-public record HoloVariableDeclStmt(string Name, IHoloType Type, IHoloExpr? Initializer) : IHoloStmt, IHoloDecl;
+public record HoloVariableDeclStmt(string Name, IHoloType Type, IHoloExpr? Initializer, HoloDeclModifier Modifiers) : IHoloStmt, IHoloDecl;
 
 public record HoloAssignStmt(IHoloExpr Target, HoloAssignOp Op, IHoloExpr Value) : IHoloStmt;
 

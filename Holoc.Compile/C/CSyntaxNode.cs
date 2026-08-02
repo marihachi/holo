@@ -16,6 +16,12 @@ public interface ICDecl;
 
 public interface ICTypeWalkable;
 
+public enum CDeclModifier
+{
+    None = 0,
+    Static = 1,
+    Extern = 2,
+}
 
 // Types
 
@@ -30,7 +36,7 @@ public record CPointerType(ICType InnerType) : ICType;
 
 // Top-level declarations
 
-public record CFunctionDecl(ICType ReturnType, string Name, List<CParam> Parameters, CBlock? Body) : ICDecl, ICTypeWalkable;
+public record CFunctionDecl(ICType ReturnType, string Name, List<CParam> Parameters, CBlock? Body, CDeclModifier Modifier) : ICDecl, ICTypeWalkable;
 
 public record CParam(ICType Type, string? Name) : ICTypeWalkable;
 
@@ -41,7 +47,7 @@ public record CBlock(List<ICStmt> Statements);
 
 public interface ICStmt;
 
-public record CVariableDeclStmt(ICType Type, string Name, ICExpr? Initializer) : ICStmt, ICDecl, ICTypeWalkable;
+public record CVariableDeclStmt(ICType Type, string Name, ICExpr? Initializer, CDeclModifier Modifiers) : ICStmt, ICDecl, ICTypeWalkable;
 
 public record CAssignStmt(ICExpr Target, string Op, ICExpr Value) : ICStmt;
 

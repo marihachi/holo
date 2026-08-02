@@ -116,6 +116,11 @@ public class CEmitter
 
     private void EmitFunctionDecl(CFunctionDecl decl)
     {
+        if (decl.Modifier.HasFlag(CDeclModifier.Static))
+        {
+            Write("static ");
+        }
+
         Write(GetTypeString(decl, ""));
 
         Write($"(");
