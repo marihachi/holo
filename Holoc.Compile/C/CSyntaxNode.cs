@@ -36,7 +36,7 @@ public record CPointerType(ICType InnerType) : ICType;
 
 // Top-level declarations
 
-public record CFunctionDecl(ICType ReturnType, string Name, List<CParam> Parameters, CBlock? Body, CDeclModifier Modifier) : ICDecl, ICTypeWalkable;
+public record CFunctionDecl(ICType ReturnType, string Name, List<CParam> Parameters, CBlock? Body, CDeclModifier Modifiers) : ICDecl, ICTypeWalkable;
 
 public record CParam(ICType Type, string? Name) : ICTypeWalkable;
 

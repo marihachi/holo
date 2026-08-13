@@ -33,6 +33,11 @@ public class HoloIRBuilder
             {
                 decls.Add(BuildFunctionDecl(node));
             }
+
+            if (node.Kind == NodeKind.VariableDeclaration)
+            {
+                decls.Add(BuildVariableDecl(node, true));
+            }
         }
         HoloUnit = new HoloUnit(holoFileName, decls);
     }
@@ -120,19 +125,7 @@ public class HoloIRBuilder
     {
         if (node.Kind == NodeKind.VariableDeclaration)
         {
-            var variableType = node.Operands![0];
-
-            if (variableType == null)
-            {
-                throw new NotSupportedException($"The variable type is not specified");
-            }
-
-            return new HoloVariableDeclStmt(
-                node.Name!,
-                BuildType(variableType),
-                node.Operands[1] is { } init ? BuildExpression(init) : null,
-                HoloDeclModifier.None
-            );
+            return BuildVariableDecl(node, false);
         }
 
         if (node.Kind == NodeKind.AssignmentStatement)
@@ -185,6 +178,38 @@ public class HoloIRBuilder
         }
 
         throw new NotSupportedException($"Unsupported statement: {node.Kind}");
+    }
+
+    private HoloVariableDeclStmt BuildVariableDecl(SyntaxNode node, bool isTopLevel)
+    {
+        var modifiers = HoloDeclModifier.None;
+
+        if (isTopLevel)
+        {
+            if (node.IsDeclare)
+            {
+                modifiers |= HoloDeclModifier.Declare;
+            }
+
+            if (node.IsExport)
+            {
+                modifiers |= HoloDeclModifier.Export;
+            }
+        }
+
+        var variableType = node.Operands![0];
+
+        if (variableType == null)
+        {
+            throw new NotSupportedException($"The variable type is not specified");
+        }
+
+        return new HoloVariableDeclStmt(
+            node.Name!,
+            BuildType(variableType),
+            node.Operands[1] is { } init ? BuildExpression(init) : null,
+            modifiers
+        );
     }
 
     private HoloIfStmt BuildIfStmt(SyntaxNode node)

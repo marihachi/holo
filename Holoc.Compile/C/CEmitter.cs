@@ -30,6 +30,11 @@ public class CEmitter
             {
                 EmitFunctionDecl(func);
             }
+
+            if (decl is CVariableDeclStmt variable)
+            {
+                EmitStatement(variable);
+            }
         }
 
         return _sb.ToString();
@@ -116,7 +121,7 @@ public class CEmitter
 
     private void EmitFunctionDecl(CFunctionDecl decl)
     {
-        if (decl.Modifier.HasFlag(CDeclModifier.Static))
+        if (decl.Modifiers.HasFlag(CDeclModifier.Static))
         {
             Write("static ");
         }
@@ -166,6 +171,14 @@ public class CEmitter
         {
             case CVariableDeclStmt s:
                 WriteIndent();
+                if (s.Modifiers.HasFlag(CDeclModifier.Static))
+                {
+                    Write("static ");
+                }
+                if (s.Modifiers.HasFlag(CDeclModifier.Extern))
+                {
+                    Write("extern ");
+                }
                 Write(GetTypeString(s, ""));
                 if (s.Initializer != null)
                 {
