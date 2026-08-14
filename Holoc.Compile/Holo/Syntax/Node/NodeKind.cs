@@ -19,6 +19,7 @@ public enum NodeKind : byte
     AssignmentStatement,
     IfStatement,
     WhileStatement,
+    DoWhileStatement,
     //ForStatement,
     BreakStatement,
     ContinueStatement,

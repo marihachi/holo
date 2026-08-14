@@ -59,6 +59,11 @@ public partial class Parser
             return ParseWhileStatement();
         }
 
+        if (Try("do"))
+        {
+            return ParseDoWhileStatement();
+        }
+
         if (Try("if"))
         {
             return ParseIfStatement();
@@ -163,7 +168,7 @@ public partial class Parser
     }
 
     /// <summary>
-    /// return文
+    /// return文、return fn文
     /// </summary>
     private SyntaxNode? ParseReturnStatement()
     {
@@ -253,7 +258,31 @@ public partial class Parser
 
         location.MarkEnd(Reader);
 
-        return SyntaxNode.CreateWhileStatement(condition, body, location);
+        return SyntaxNode.CreateWhileStatement(condition!, body, location);
+    }
+
+    private SyntaxNode? ParseDoWhileStatement()
+    {
+        var location = CreateLocation();
+        location.MarkBegin(Reader);
+
+        if (!NextWith("do")) return null;
+
+        var body = ParseStatement();
+        if (body == null) return null;
+
+        if (!NextWith("while")) return null;
+
+        if (!NextWith(TokenKind.OpenParen)) return null;
+
+        var condition = ParseExpression();
+        if (condition == null) return null;
+
+        if (!NextWith(TokenKind.CloseParen)) return null;
+
+        location.MarkEnd(Reader);
+
+        return SyntaxNode.CreateDoWhileStatement(condition, body, location);
     }
 
     /// <summary>

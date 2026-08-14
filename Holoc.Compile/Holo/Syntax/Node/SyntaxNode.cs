@@ -91,6 +91,17 @@ public class SyntaxNode
         };
     }
 
+    public static SyntaxNode CreateDoWhileStatement
+        (SyntaxNode condition, SyntaxNode body, NodeLocation location)
+    {
+        return new SyntaxNode
+        {
+            Kind = NodeKind.DoWhileStatement,
+            Location = location,
+            Operands = [condition, body],
+        };
+    }
+
     public static SyntaxNode CreateAssignmentStatement
         (NodeMode assignMode, SyntaxNode target, SyntaxNode expression, NodeLocation location)
     {
