@@ -280,6 +280,8 @@ public partial class Parser
 
         if (!NextWith(TokenKind.CloseParen)) return null;
 
+        if (!NextWith(TokenKind.SemiColon)) return null;
+
         location.MarkEnd(Reader);
 
         return SyntaxNode.CreateDoWhileStatement(condition, body, location);

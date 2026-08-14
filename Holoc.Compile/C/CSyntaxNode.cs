@@ -56,6 +56,8 @@ public record CIfStmt(ICExpr Condition, CBlock Then, ICStmt? Else) : ICStmt;
 
 public record CWhileStmt(ICExpr Condition, CBlock Body) : ICStmt;
 
+public record CDoWhileStmt(ICExpr Condition, CBlock Body) : ICStmt;
+
 public record CBreakStmt() : ICStmt;
 
 public record CContinueStmt() : ICStmt;

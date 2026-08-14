@@ -217,7 +217,15 @@ public class CSyntaxNodeBuilder
                 BuildBlock(whileStmt.Body)
             );
         }
-        
+
+        if (stmt is HoloDoWhileStmt doWhileStmt)
+        {
+            return new CDoWhileStmt(
+                BuildExpression(doWhileStmt.Condition),
+                BuildBlock(doWhileStmt.Body)
+            );
+        }
+
         if (stmt is HoloBreakStmt)
         {
             return new CBreakStmt();

@@ -150,6 +150,14 @@ public class HoloIRBuilder
             );
         }
 
+        if (node.Kind == NodeKind.DoWhileStatement)
+        {
+            return new HoloDoWhileStmt(
+                BuildExpression(node.Operands![0]!),
+                BuildInlineBlock(node.Operands[1]!)
+            );
+        }
+
         if (node.Kind == NodeKind.BreakStatement)
         {
             return new HoloBreakStmt();

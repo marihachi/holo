@@ -205,6 +205,14 @@ public class CEmitter
                 Write(")\n");
                 EmitBlock(s.Body);
                 break;
+            
+            case CDoWhileStmt s:
+                WriteIndent("do\n");
+                EmitBlock(s.Body);
+                WriteIndent("while (");
+                EmitExpression(s.Condition);
+                Write(");\n");
+                break;
 
             case CBreakStmt:
                 WriteIndent("break;\n");

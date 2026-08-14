@@ -48,11 +48,15 @@ public record HoloIfStmt(IHoloExpr Condition, List<IHoloStmt> Then, IHoloStmt? E
 
 public record HoloWhileStmt(IHoloExpr Condition, List<IHoloStmt> Body) : IHoloStmt;
 
+public record HoloDoWhileStmt(IHoloExpr Condition, List<IHoloStmt> Body) : IHoloStmt;
+
 public record HoloBreakStmt() : IHoloStmt;
 
 public record HoloContinueStmt() : IHoloStmt;
 
 public record HoloReturnStmt(IHoloExpr? Value) : IHoloStmt;
+
+//public record HoloReturnFnStmt(IHoloExpr? Value) : IHoloStmt;
 
 public record HoloExprStmt(IHoloExpr Expression) : IHoloStmt;
 
