@@ -20,8 +20,49 @@ internal interface ISyntaxMode
     NodeMode Mode { get; }
 }
 
+internal interface ISyntaxImportMode
+{
+    ImportMode Mode { get; }
+}
+
+internal interface ISyntaxCollectionSize
+{
+    long? Size { get; }
+}
+
+internal interface ISyntaxDeclare
+{
+    bool IsDeclare { get; }
+}
+
+internal interface ISyntaxExport
+{
+    bool IsExport { get; }
+}
+
+internal interface ISyntaxPartial
+{
+    bool IsPartial { get; }
+}
+
+internal interface ISyntaxForceReturn
+{
+    bool IsForceReturnFunc { get; }
+}
+
 internal static class SyntaxNodeVisitor
 {
+    /// <summary>
+    /// 表示対象の子ノードを表します。単一の子ノードとリストの子ノードのどちらかを保持します。
+    /// </summary>
+    private class ChildEntry
+    {
+        public string Label { get; init; } = "";
+        public ISyntaxNode? Node { get; init; }
+        public List<ISyntaxNode>? Nodes { get; init; }
+        public bool IsList { get; init; }
+    }
+
     public static void ShowSyntaxNode(ISyntaxNode? node)
     {
         if (node == null) return;
@@ -47,28 +88,224 @@ internal static class SyntaxNodeVisitor
         if (node is ISyntaxMode modeNode)
             Console.Write($" [Mode: {modeNode.Mode}]");
 
+        if (node is ISyntaxImportMode importModeNode)
+            Console.Write($" [ImportMode: {importModeNode.Mode}]");
+
+        if (node is ISyntaxCollectionSize sizeNode && sizeNode.Size != null)
+            Console.Write($" [Size: {sizeNode.Size}]");
+
+        if (node is ISyntaxDeclare declareNode && declareNode.IsDeclare)
+            Console.Write(" [Declare]");
+
+        if (node is ISyntaxExport exportNode && exportNode.IsExport)
+            Console.Write(" [Export]");
+
+        if (node is ISyntaxPartial partialNode && partialNode.IsPartial)
+            Console.Write(" [Partial]");
+
+        if (node is ISyntaxForceReturn forceReturnNode && forceReturnNode.IsForceReturnFunc)
+            Console.Write(" [ForceReturnFunc]");
+
         // ノード位置を表示
         Console.Write($" ({node.Location.GetLocationString()})");
         Console.WriteLine();
 
-        // TODO: ここに子ノードの表示処理を追加
+        // 子ノードを表示
+        var children = CreateChildEntries(node);
+        string nextIndent = indent + (isLast ? "    " : "│   ");
+        for (int i = 0; i < children.Count; i++)
+        {
+            var entry = children[i];
+            bool isLastChild = i == children.Count - 1;
+            string childPrefix = isLastChild ? "└── " : "├── ";
 
-        //switch (node)
-        //{
-        //    case SyntaxUnit unit:
-        //        foreach (var child in unit.Body)
-        //        {
-        //            Visit(child);
-        //        }
-        //        break;
+            if (entry.IsList)
+            {
+                if (entry.Nodes == null)
+                {
+                    Console.WriteLine($"{nextIndent}{childPrefix}[{entry.Label}] <null>");
+                }
+                else if (entry.Nodes.Count == 0)
+                {
+                    Console.WriteLine($"{nextIndent}{childPrefix}[{entry.Label}] <empty>");
+                }
+                else
+                {
+                    // リストは見出し行を出し、その下に要素をぶら下げる
+                    Console.WriteLine($"{nextIndent}{childPrefix}[{entry.Label}]");
+                    string listIndent = nextIndent + (isLastChild ? "    " : "│   ");
+                    for (int j = 0; j < entry.Nodes.Count; j++)
+                    {
+                        ShowSyntaxNodeInternal(entry.Nodes[j], listIndent, j == entry.Nodes.Count - 1, "");
+                    }
+                }
+            }
+            else
+            {
+                if (entry.Node == null)
+                {
+                    Console.WriteLine($"{nextIndent}{childPrefix}[{entry.Label}] <null>");
+                }
+                else
+                {
+                    ShowSyntaxNodeInternal(entry.Node, nextIndent, isLastChild, entry.Label);
+                }
+            }
+        }
+    }
 
-        //    case SyntaxFunctionDecl funcDecl:
-        //        if (funcDecl.ReturnType != null)
-        //            Visit(funcDecl.ReturnType);
-        //        funcDecl.Parameters?.ForEach(param => Visit(param));
-        //        funcDecl.Body?.ForEach(stmt => Visit(stmt));
-        //        break;
-        //}
+    /// <summary>
+    /// ノードの子ノードを表示順に列挙します。
+    /// </summary>
+    private static List<ChildEntry> CreateChildEntries(ISyntaxNode node)
+    {
+        List<ChildEntry> children;
+        switch (node)
+        {
+            case SyntaxUnit unit:
+                children = [CreateChildList("Body", unit.Body)];
+                break;
+
+            case SyntaxFunctionDecl funcDecl:
+                children =
+                [
+                    CreateChild("ReturnType", funcDecl.ReturnType),
+                    CreateChildList("Parameters", funcDecl.Parameters),
+                    CreateChildList("Body", funcDecl.Body),
+                ];
+                break;
+
+            case SyntaxFunctionParameter funcParam:
+                children = [CreateChild("ParamType", funcParam.ParamType)];
+                break;
+
+            case SyntaxVariableDecl varDecl:
+                children =
+                [
+                    CreateChild("VariableType", varDecl.VariableType),
+                    CreateChild("Initializer", varDecl.Initializer),
+                ];
+                break;
+
+            case SyntaxWhileStatement whileStatement:
+                children =
+                [
+                    CreateChild("Condition", whileStatement.Condition),
+                    CreateChild("Body", whileStatement.Body),
+                ];
+                break;
+
+            case SyntaxDoWhileStatement doWhileStatement:
+                children =
+                [
+                    CreateChild("Condition", doWhileStatement.Condition),
+                    CreateChild("Body", doWhileStatement.Body),
+                ];
+                break;
+
+            case SyntaxAssignmentStatement assignment:
+                children =
+                [
+                    CreateChild("Target", assignment.Target),
+                    CreateChild("Expression", assignment.Expression),
+                ];
+                break;
+
+            case SyntaxReturnStatement returnStatement:
+                children = [CreateChild("Expression", returnStatement.Expression)];
+                break;
+
+            case SyntaxIfExpression ifExpression:
+                children =
+                [
+                    CreateChild("Condition", ifExpression.Condition),
+                    CreateChild("ThenExpr", ifExpression.ThenExpr),
+                    CreateChild("ElseExpr", ifExpression.ElseExpr),
+                ];
+                break;
+
+            case SyntaxIfStatement ifStatement:
+                children =
+                [
+                    CreateChild("Condition", ifStatement.Condition),
+                    CreateChild("ThenStatement", ifStatement.ThenStatement),
+                    CreateChild("ElseStatement", ifStatement.ElseStatement),
+                ];
+                break;
+
+            case SyntaxExpressionStatement expressionStatement:
+                children = [CreateChild("Expression", expressionStatement.Expression)];
+                break;
+
+            case SyntaxImportDeclaration importDecl:
+                children =
+                [
+                    CreateChild("Members", importDecl.Members),
+                    CreateChild("Source", importDecl.Source),
+                ];
+                break;
+
+            case SyntaxUnaryOperation unaryOperation:
+                children = [CreateChild("Expression", unaryOperation.Expression)];
+                break;
+
+            case SyntaxBinaryOperation binaryOperation:
+                children =
+                [
+                    CreateChild("Left", binaryOperation.Left),
+                    CreateChild("Right", binaryOperation.Right),
+                ];
+                break;
+
+            case SyntaxBlockExpression blockExpression:
+                children = [CreateChildList("Body", blockExpression.Body)];
+                break;
+
+            case SyntaxCall call:
+                children =
+                [
+                    CreateChild("Callee", call.Callee),
+                    CreateChildList("Args", call.Args),
+                ];
+                break;
+
+            case SyntaxIndexRef indexRef:
+                children =
+                [
+                    CreateChild("Source", indexRef.Source),
+                    CreateChild("Index", indexRef.Index),
+                ];
+                break;
+
+            case SyntaxCollectionExpression collectionExpression:
+                children = [CreateChildList("Elements", collectionExpression.Elements)];
+                break;
+
+            case SyntaxCollectionType collectionType:
+                children = [CreateChild("ElementType", collectionType.ElementType)];
+                break;
+
+            case SyntaxPointerType pointerType:
+                children = [CreateChild("ElementType", pointerType.ElementType)];
+                break;
+
+            default:
+                // 子ノードを持たないノード
+                children = [];
+                break;
+        }
+
+        return children;
+    }
+
+    private static ChildEntry CreateChild(string label, ISyntaxNode? node)
+    {
+        return new ChildEntry { Label = label, Node = node, IsList = false };
+    }
+
+    private static ChildEntry CreateChildList(string label, List<ISyntaxNode>? nodes)
+    {
+        return new ChildEntry { Label = label, Nodes = nodes, IsList = true };
     }
 }
 
@@ -76,13 +313,13 @@ internal record SyntaxNodeBase(NodeLocation Location) : ISyntaxNode { }
 
 internal record SyntaxUnit(List<ISyntaxNode> Body, NodeLocation Location) : SyntaxNodeBase(Location) { }
 
-internal record SyntaxModuleDecl(string Name, bool IsPartial, NodeLocation Location) : SyntaxNodeBase(Location), ISyntaxName;
+internal record SyntaxModuleDecl(string Name, bool IsPartial, NodeLocation Location) : SyntaxNodeBase(Location), ISyntaxName, ISyntaxPartial;
 
-internal record SyntaxFunctionDecl(string Name, ISyntaxNode? ReturnType, List<ISyntaxNode>? Parameters, List<ISyntaxNode>? Body, bool IsDeclare, bool IsExport, NodeLocation Location) : SyntaxNodeBase(Location), ISyntaxName { }
+internal record SyntaxFunctionDecl(string Name, ISyntaxNode? ReturnType, List<ISyntaxNode>? Parameters, List<ISyntaxNode>? Body, bool IsDeclare, bool IsExport, NodeLocation Location) : SyntaxNodeBase(Location), ISyntaxName, ISyntaxDeclare, ISyntaxExport { }
 
 internal record SyntaxFunctionParameter(string Name, ISyntaxNode? ParamType, NodeLocation Location) : SyntaxNodeBase(Location), ISyntaxName { }
 
-internal record SyntaxVariableDecl(string Name, ISyntaxNode? VariableType, ISyntaxNode? Initializer, bool IsDeclare, bool IsExport, NodeLocation Location) : SyntaxNodeBase(Location), ISyntaxName { }
+internal record SyntaxVariableDecl(string Name, ISyntaxNode? VariableType, ISyntaxNode? Initializer, bool IsDeclare, bool IsExport, NodeLocation Location) : SyntaxNodeBase(Location), ISyntaxName, ISyntaxDeclare, ISyntaxExport { }
 
 internal record SyntaxWhileStatement(ISyntaxNode Condition, ISyntaxNode Body, NodeLocation Location) : SyntaxNodeBase(Location) { }
 
@@ -94,7 +331,7 @@ internal record SyntaxBreakStatement(NodeLocation Location) : SyntaxNodeBase(Loc
 
 internal record SyntaxContinueStatement(NodeLocation Location) : SyntaxNodeBase(Location);
 
-internal record SyntaxReturnStatement(ISyntaxNode? Expression, bool IsForceReturnFunc, NodeLocation Location) : SyntaxNodeBase(Location) { }
+internal record SyntaxReturnStatement(ISyntaxNode? Expression, bool IsForceReturnFunc, NodeLocation Location) : SyntaxNodeBase(Location), ISyntaxForceReturn { }
 
 internal record SyntaxIfExpression(ISyntaxNode Condition, ISyntaxNode ThenExpr, ISyntaxNode? ElseExpr, NodeLocation Location) : SyntaxNodeBase(Location) { }
 
@@ -106,7 +343,7 @@ internal enum ImportMode
     Specific,
 }
 
-internal record SyntaxImportDeclaration(ImportMode Mode, ISyntaxNode? Members, ISyntaxNode Source, NodeLocation Location) : SyntaxNodeBase(Location) { }
+internal record SyntaxImportDeclaration(ImportMode Mode, ISyntaxNode? Members, ISyntaxNode Source, NodeLocation Location) : SyntaxNodeBase(Location), ISyntaxImportMode { }
 
 internal record SyntaxNumberLiteral(long Value, NodeLocation Location) : SyntaxNodeBase(Location), ISyntaxNumberValue;
 
@@ -128,7 +365,7 @@ internal record SyntaxCollectionExpression(List<ISyntaxNode> Elements, NodeLocat
 
 internal record SyntaxNamedType(string Name, NodeLocation Location) : SyntaxNodeBase(Location);
 
-internal record SyntaxCollectionType(ISyntaxNode? ElementType, long? Size, NodeLocation Location) : SyntaxNodeBase(Location) { }
+internal record SyntaxCollectionType(ISyntaxNode? ElementType, long? Size, NodeLocation Location) : SyntaxNodeBase(Location), ISyntaxCollectionSize { }
 
 internal record SyntaxPointerType(ISyntaxNode? ElementType, NodeLocation Location) : SyntaxNodeBase(Location) { }
 
