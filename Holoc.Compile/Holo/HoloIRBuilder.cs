@@ -93,12 +93,12 @@ public class HoloIRBuilder
 
         if (node is SyntaxCollectionType collectionType)
         {
-            return new HoloCollectionType(BuildType(collectionType.ElementType!), collectionType.Size);
+            return new HoloCollectionType(BuildType(collectionType.ElementType), collectionType.Size);
         }
 
         if (node is SyntaxPointerType pointerType)
         {
-            return new HoloPointerType(BuildType(pointerType.ElementType!));
+            return new HoloPointerType(BuildType(pointerType.ElementType));
         }
 
         throw new NotSupportedException($"Unsupported type node: {node.GetType().Name}");
