@@ -405,6 +405,79 @@ namespace Holoc.Compile.Tests
         }
 
         /// <summary>
+        /// 括弧によるグループ化
+        /// </summary>
+        [Fact]
+        public void GroupExpressionTest()
+        {
+            // (1 + 2) * 3 -> グループ化した加算と3の乗算
+            var mul = Assert.IsType<SyntaxBinaryOperation>(PrepareExpression("(1 + 2) * 3"));
+            Assert.Equal(NodeMode.Mul, mul.Mode);
+
+            var group = Assert.IsType<SyntaxGroupExpression>(mul.Left);
+
+            var add = Assert.IsType<SyntaxBinaryOperation>(group.Expression);
+            Assert.Equal(NodeMode.Add, add.Mode);
+
+            var right = Assert.IsType<SyntaxNumberLiteral>(mul.Right);
+            Assert.Equal(3L, right.Value);
+        }
+
+        /// <summary>
+        /// 括弧は入れ子にできる
+        /// </summary>
+        [Fact]
+        public void NestedGroupExpressionTest()
+        {
+            var outerGroup = Assert.IsType<SyntaxGroupExpression>(PrepareExpression("((1))"));
+
+            var innerGroup = Assert.IsType<SyntaxGroupExpression>(outerGroup.Expression);
+
+            var numberLiteral = Assert.IsType<SyntaxNumberLiteral>(innerGroup.Expression);
+            Assert.Equal(1L, numberLiteral.Value);
+        }
+
+        /// <summary>
+        /// 関数コールの括弧はグループ化として扱わない
+        /// </summary>
+        [Fact]
+        public void CallIsNotGroupExpressionTest()
+        {
+            // f(1) -> 関数コール
+            var call = Assert.IsType<SyntaxCall>(PrepareExpression("f(1)"));
+
+            var callee = Assert.IsType<SyntaxReference>(call.Callee);
+            Assert.Equal("f", callee.Name);
+
+            Assert.Single(call.Args);
+
+            var arg = Assert.IsType<SyntaxNumberLiteral>(call.Args[0]);
+            Assert.Equal(1L, arg.Value);
+
+            // (f)(1) -> グループ化された識別子への関数コール
+            call = Assert.IsType<SyntaxCall>(PrepareExpression("(f)(1)"));
+
+            var group = Assert.IsType<SyntaxGroupExpression>(call.Callee);
+            callee = Assert.IsType<SyntaxReference>(group.Expression);
+            Assert.Equal("f", callee.Name);
+        }
+
+        /// <summary>
+        /// 括弧の閉じ忘れはエラーになる
+        /// </summary>
+        [Fact]
+        public void UnclosedGroupExpressionIsErrorTest()
+        {
+            using var stream = new MemoryStream(Encoding.UTF8.GetBytes("var x: int = (1 + 2;"));
+            using var reader = new StreamReader(stream);
+
+            var result = Parser.Parse(reader);
+
+            Assert.Null(result);
+            Assert.NotEmpty(Parser.Errors);
+        }
+
+        /// <summary>
         /// 前置演算子は二項演算子より強く結合する
         /// </summary>
         [Fact]

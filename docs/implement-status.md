@@ -59,9 +59,10 @@
 
 ## 括弧によるグループ化
 
-- 未実装
-  - `ParseAtom`が`(`を式のグループとして扱っていない
-  - 対応する場合、CEmitterに括弧の出力が必要になる
+- **実装済み**
+- CEmitterは括弧を付けずに平坦に出力するため、グループ化はノードとして保持している
+  - AST: `SyntaxGroupExpression` / Holo IR: `HoloGroupExpr` / C IR: `CGroupExpr`
+  - ソースに書かれた括弧は冗長なものも含めてそのまま出力される
 
 ## while文
 

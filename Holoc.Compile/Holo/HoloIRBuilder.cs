@@ -278,6 +278,11 @@ public class HoloIRBuilder
             );
         }
 
+        if (node is SyntaxGroupExpression groupExpr)
+        {
+            return new HoloGroupExpr(BuildExpression(groupExpr.Expression));
+        }
+
         if (node is SyntaxCall call)
         {
             var args = new List<IHoloExpr>();

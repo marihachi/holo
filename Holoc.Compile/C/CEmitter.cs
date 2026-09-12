@@ -307,6 +307,12 @@ public class CEmitter
                 EmitExpression(e.Right);
                 break;
 
+            case CGroupExpr e:
+                Write("(");
+                EmitExpression(e.Expression);
+                Write(")");
+                break;
+
             case CCallExpr e:
                 EmitExpression(e.Callee);
                 Write("(");

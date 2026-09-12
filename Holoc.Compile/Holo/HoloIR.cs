@@ -77,6 +77,9 @@ public record HoloUnaryExpr(HoloUnaryOp Op, IHoloExpr Operand) : IHoloExpr;
 
 public record HoloBinaryExpr(IHoloExpr Left, HoloBinaryOp Op, IHoloExpr Right) : IHoloExpr;
 
+public record HoloGroupExpr(IHoloExpr Expression) : IHoloExpr;
+// 括弧によってグループ化された式。CEmitterが平坦に出力するため、グループ化を保持する。
+
 public record HoloCallExpr(IHoloExpr Callee, List<IHoloExpr> Args) : IHoloExpr;
 
 public record HoloIndexRefExpr(IHoloExpr Source, IHoloExpr Index) : IHoloExpr;

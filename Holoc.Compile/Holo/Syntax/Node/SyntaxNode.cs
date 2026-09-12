@@ -261,6 +261,10 @@ public static class SyntaxView
                 ];
                 break;
 
+            case SyntaxGroupExpression groupExpression:
+                children = [CreateChild("Expression", groupExpression.Expression)];
+                break;
+
             case SyntaxBlockExpression blockExpression:
                 children = [CreateChildList("Body", blockExpression.Body)];
                 break;
@@ -354,6 +358,12 @@ public record SyntaxNumberLiteral(long Value, NodeLocation Location) : SyntaxNod
 public record SyntaxUnaryOperation(NodeMode Mode, ISyntaxNode Expression, NodeLocation Location) : SyntaxNodeBase(Location), ISyntaxMode { }
 
 public record SyntaxBinaryOperation(NodeMode Mode, ISyntaxNode Left, ISyntaxNode Right, NodeLocation Location) : SyntaxNodeBase(Location), ISyntaxMode { }
+
+/// <summary>
+/// 括弧によってグループ化された式。
+/// CEmitterは括弧を付けずに平坦に出力するため、グループ化はノードとして保持する。
+/// </summary>
+public record SyntaxGroupExpression(ISyntaxNode Expression, NodeLocation Location) : SyntaxNodeBase(Location) { }
 
 public record SyntaxIfStatement(ISyntaxNode Condition, ISyntaxNode ThenStatement, ISyntaxNode? ElseStatement, NodeLocation Location) : SyntaxNodeBase(Location) { }
 

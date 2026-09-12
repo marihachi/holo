@@ -322,6 +322,11 @@ public class CSyntaxNodeBuilder
             );
         }
 
+        if (expr is HoloGroupExpr group)
+        {
+            return new CGroupExpr(BuildExpression(group.Expression));
+        }
+
         if (expr is HoloCallExpr call)
         {
             var args = new List<ICExpr>();
