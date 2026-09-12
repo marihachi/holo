@@ -7,8 +7,21 @@ public partial class Parser
 {
     private ISyntaxNode? ParseType()
     {
-        ISyntaxNode? outerNode = null;
+        // 型名に続けて、後置の修飾子(配列、ポインタ)を任意の数だけ指定できます。
 
+        // 型名
+        var nameLocation = CreateLocation();
+        nameLocation.MarkBegin(Reader);
+
+        if (!Expect(TokenKind.Word)) return null;
+        var name = GetTokenValue();
+        if (!Next()) return null;
+
+        nameLocation.MarkEnd(Reader);
+
+        ISyntaxNode outerNode = new SyntaxNamedType(name, nameLocation);
+
+        // 後置の修飾子
         while (true)
         {
             if (Try(TokenKind.OpenBracket))
@@ -40,24 +53,7 @@ public partial class Parser
                 continue;
             }
 
-            if (Try(TokenKind.Word))
-            {
-                var location = CreateLocation();
-                location.MarkBegin(Reader);
-                var name = GetTokenValue();
-                if (!Next()) return null;
-                location.MarkEnd(Reader);
-                outerNode = new SyntaxNamedType(name, location);
-                continue;
-            }
-
             break;
-        }
-
-        if (outerNode == null)
-        {
-            GenerateError(Reader.CreateUnexpectedError());
-            return null;
         }
 
         return outerNode;

@@ -369,7 +369,7 @@ public record SyntaxCollectionExpression(List<ISyntaxNode> Elements, NodeLocatio
 
 public record SyntaxNamedType(string Name, NodeLocation Location) : SyntaxNodeBase(Location), ISyntaxName;
 
-public record SyntaxCollectionType(ISyntaxNode? ElementType, long? Size, NodeLocation Location) : SyntaxNodeBase(Location), ISyntaxCollectionSize { }
+public record SyntaxCollectionType(ISyntaxNode ElementType, long? Size, NodeLocation Location) : SyntaxNodeBase(Location), ISyntaxCollectionSize { }
 
-public record SyntaxPointerType(ISyntaxNode? ElementType, NodeLocation Location) : SyntaxNodeBase(Location) { }
+public record SyntaxPointerType(ISyntaxNode ElementType, NodeLocation Location) : SyntaxNodeBase(Location) { }
 

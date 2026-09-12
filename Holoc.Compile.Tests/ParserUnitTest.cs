@@ -135,5 +135,125 @@ namespace Holoc.Compile.Tests
 
             Assert.Null(variableDecl.Initializer);
         }
+
+        /// <summary>
+        /// 変数宣言の型を準備します。
+        /// </summary>
+        private ISyntaxNode? PrepareVariableType(string source)
+        {
+            using var stream = new MemoryStream(Encoding.UTF8.GetBytes(source));
+            using var reader = new StreamReader(stream);
+
+            var result = Parser.Parse(reader);
+
+            var unit = Assert.IsType<SyntaxUnit>(result);
+            Assert.Single(unit.Body);
+
+            var variableDecl = Assert.IsType<SyntaxVariableDecl>(unit.Body[0]);
+            return variableDecl.VariableType;
+        }
+
+        /// <summary>
+        /// 配列型
+        /// </summary>
+        [Fact]
+        public void ArrayTypeTest()
+        {
+            // int[3] -> 要素数3のint配列
+            var collectionType = Assert.IsType<SyntaxCollectionType>(PrepareVariableType("var x: int[3];"));
+            Assert.Equal(3L, collectionType.Size);
+
+            var elementType = Assert.IsType<SyntaxNamedType>(collectionType.ElementType);
+            Assert.Equal("int", elementType.Name);
+        }
+
+        /// <summary>
+        /// 要素数の指定がない配列型
+        /// </summary>
+        [Fact]
+        public void ArrayTypeWithoutSizeTest()
+        {
+            // int[] -> 要素数の指定がないint配列
+            var collectionType = Assert.IsType<SyntaxCollectionType>(PrepareVariableType("var x: int[];"));
+            Assert.Null(collectionType.Size);
+
+            var elementType = Assert.IsType<SyntaxNamedType>(collectionType.ElementType);
+            Assert.Equal("int", elementType.Name);
+        }
+
+        /// <summary>
+        /// ポインタ型
+        /// </summary>
+        [Fact]
+        public void PointerTypeTest()
+        {
+            // int* -> intへのポインタ
+            var pointerType = Assert.IsType<SyntaxPointerType>(PrepareVariableType("var x: int*;"));
+
+            var elementType = Assert.IsType<SyntaxNamedType>(pointerType.ElementType);
+            Assert.Equal("int", elementType.Name);
+        }
+
+        /// <summary>
+        /// ポインタの配列型
+        /// </summary>
+        [Fact]
+        public void PointerArrayTypeTest()
+        {
+            // int*[3] -> intへのポインタ3個の配列
+            var collectionType = Assert.IsType<SyntaxCollectionType>(PrepareVariableType("var x: int*[3];"));
+            Assert.Equal(3L, collectionType.Size);
+
+            var pointerType = Assert.IsType<SyntaxPointerType>(collectionType.ElementType);
+
+            var elementType = Assert.IsType<SyntaxNamedType>(pointerType.ElementType);
+            Assert.Equal("int", elementType.Name);
+        }
+
+        /// <summary>
+        /// 配列へのポインタ型
+        /// </summary>
+        [Fact]
+        public void ArrayPointerTypeTest()
+        {
+            // int[3]* -> int3個の配列へのポインタ
+            var pointerType = Assert.IsType<SyntaxPointerType>(PrepareVariableType("var x: int[3]*;"));
+
+            var collectionType = Assert.IsType<SyntaxCollectionType>(pointerType.ElementType);
+            Assert.Equal(3L, collectionType.Size);
+
+            var elementType = Assert.IsType<SyntaxNamedType>(collectionType.ElementType);
+            Assert.Equal("int", elementType.Name);
+        }
+
+        /// <summary>
+        /// 型の修飾子は後置でのみ指定できる
+        /// </summary>
+        [Fact]
+        public void PrefixTypeModifierIsErrorTest()
+        {
+            using var stream = new MemoryStream(Encoding.UTF8.GetBytes("var x: [3]int;"));
+            using var reader = new StreamReader(stream);
+
+            var result = Parser.Parse(reader);
+
+            Assert.Null(result);
+            Assert.NotEmpty(Parser.Errors);
+        }
+
+        /// <summary>
+        /// 型名を2つ続けて指定することはできない
+        /// </summary>
+        [Fact]
+        public void DuplicatedTypeNameIsErrorTest()
+        {
+            using var stream = new MemoryStream(Encoding.UTF8.GetBytes("var x: int int;"));
+            using var reader = new StreamReader(stream);
+
+            var result = Parser.Parse(reader);
+
+            Assert.Null(result);
+            Assert.NotEmpty(Parser.Errors);
+        }
     }
 }
