@@ -359,7 +359,7 @@ public record SyntaxIfStatement(ISyntaxNode Condition, ISyntaxNode ThenStatement
 
 public record SyntaxBlockExpression(List<ISyntaxNode> Body, NodeLocation Location) : SyntaxNodeBase(Location) { }
 
-public record SyntaxReference(string Name, NodeLocation Location) : SyntaxNodeBase(Location);
+public record SyntaxReference(string Name, NodeLocation Location) : SyntaxNodeBase(Location), ISyntaxName;
 
 public record SyntaxCall(ISyntaxNode Callee, List<ISyntaxNode> Args, NodeLocation Location) : SyntaxNodeBase(Location) { }
 
@@ -367,7 +367,7 @@ public record SyntaxIndexRef(ISyntaxNode Source, ISyntaxNode Index, NodeLocation
 
 public record SyntaxCollectionExpression(List<ISyntaxNode> Elements, NodeLocation Location) : SyntaxNodeBase(Location) { }
 
-public record SyntaxNamedType(string Name, NodeLocation Location) : SyntaxNodeBase(Location);
+public record SyntaxNamedType(string Name, NodeLocation Location) : SyntaxNodeBase(Location), ISyntaxName;
 
 public record SyntaxCollectionType(ISyntaxNode? ElementType, long? Size, NodeLocation Location) : SyntaxNodeBase(Location), ISyntaxCollectionSize { }
 
