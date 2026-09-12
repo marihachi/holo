@@ -92,7 +92,10 @@ public partial class Parser
                     location);
             }
 
-            if (Try(TokenKind.Eq, TokenKind.PlusEq, TokenKind.MinusEq, TokenKind.AsterEq, TokenKind.SlashEq))
+            if (Try(
+                TokenKind.Eq,
+                TokenKind.PlusEq, TokenKind.MinusEq, TokenKind.AsterEq, TokenKind.SlashEq, TokenKind.PercentEq,
+                TokenKind.AndEq, TokenKind.OrEq, TokenKind.HatEq, TokenKind.Lt2Eq, TokenKind.Gt2Eq))
             {
                 var nodeMode = ConvertToNodeMode(GetKind());
 
@@ -123,7 +126,13 @@ public partial class Parser
         { TokenKind.PlusEq, NodeMode.Add },
         { TokenKind.MinusEq, NodeMode.Sub },
         { TokenKind.AsterEq, NodeMode.Mul },
-        { TokenKind.SlashEq, NodeMode.Div }
+        { TokenKind.SlashEq, NodeMode.Div },
+        { TokenKind.PercentEq, NodeMode.Rem },
+        { TokenKind.AndEq, NodeMode.BitAnd },
+        { TokenKind.OrEq, NodeMode.BitOr },
+        { TokenKind.HatEq, NodeMode.Xor },
+        { TokenKind.Lt2Eq, NodeMode.ShiftLeft },
+        { TokenKind.Gt2Eq, NodeMode.ShiftRight }
     };
 
     private NodeMode ConvertToNodeMode(TokenKind tokenKind)

@@ -232,6 +232,21 @@ public class TokenReader
                     SetNextToken(new SyntaxToken(TokenKind.Eq, beginLocation, GetCurrentLocation().MoveRight()));
                     return;
 
+                case '!':
+                    beginLocation = GetNextLocation();
+                    ReadNextChar();
+
+                    // =が続いていたら、!=として消費する
+                    if (NextChar == '=')
+                    {
+                        ReadNextChar();
+                        SetNextToken(new SyntaxToken(TokenKind.NotEq, beginLocation, GetCurrentLocation().MoveRight()));
+                        return;
+                    }
+
+                    SetNextToken(new SyntaxToken(TokenKind.Not, beginLocation, GetCurrentLocation().MoveRight()));
+                    return;
+
                 case ':':
                     beginLocation = GetNextLocation();
                     ReadNextChar();
@@ -304,6 +319,82 @@ public class TokenReader
                     SetNextToken(new SyntaxToken(TokenKind.Slash, beginLocation, GetCurrentLocation().MoveRight()));
                     return;
 
+                case '%':
+                    beginLocation = GetNextLocation();
+                    ReadNextChar();
+
+                    // =が続いていたら、%=として消費する
+                    if (NextChar == '=')
+                    {
+                        ReadNextChar();
+                        SetNextToken(new SyntaxToken(TokenKind.PercentEq, beginLocation, GetCurrentLocation().MoveRight()));
+                        return;
+                    }
+
+                    SetNextToken(new SyntaxToken(TokenKind.Percent, beginLocation, GetCurrentLocation().MoveRight()));
+                    return;
+
+                case '&':
+                    beginLocation = GetNextLocation();
+                    ReadNextChar();
+
+                    // &が続いていたら、&&として消費する
+                    if (NextChar == '&')
+                    {
+                        ReadNextChar();
+                        SetNextToken(new SyntaxToken(TokenKind.And2, beginLocation, GetCurrentLocation().MoveRight()));
+                        return;
+                    }
+
+                    // =が続いていたら、&=として消費する
+                    if (NextChar == '=')
+                    {
+                        ReadNextChar();
+                        SetNextToken(new SyntaxToken(TokenKind.AndEq, beginLocation, GetCurrentLocation().MoveRight()));
+                        return;
+                    }
+
+                    SetNextToken(new SyntaxToken(TokenKind.And, beginLocation, GetCurrentLocation().MoveRight()));
+                    return;
+
+                case '|':
+                    beginLocation = GetNextLocation();
+                    ReadNextChar();
+
+                    // |が続いていたら、||として消費する
+                    if (NextChar == '|')
+                    {
+                        ReadNextChar();
+                        SetNextToken(new SyntaxToken(TokenKind.Or2, beginLocation, GetCurrentLocation().MoveRight()));
+                        return;
+                    }
+
+                    // =が続いていたら、|=として消費する
+                    if (NextChar == '=')
+                    {
+                        ReadNextChar();
+                        SetNextToken(new SyntaxToken(TokenKind.OrEq, beginLocation, GetCurrentLocation().MoveRight()));
+                        return;
+                    }
+
+                    SetNextToken(new SyntaxToken(TokenKind.Or, beginLocation, GetCurrentLocation().MoveRight()));
+                    return;
+
+                case '^':
+                    beginLocation = GetNextLocation();
+                    ReadNextChar();
+
+                    // =が続いていたら、^=として消費する
+                    if (NextChar == '=')
+                    {
+                        ReadNextChar();
+                        SetNextToken(new SyntaxToken(TokenKind.HatEq, beginLocation, GetCurrentLocation().MoveRight()));
+                        return;
+                    }
+
+                    SetNextToken(new SyntaxToken(TokenKind.Hat, beginLocation, GetCurrentLocation().MoveRight()));
+                    return;
+
                 case '>':
                     beginLocation = GetNextLocation();
                     ReadNextChar();
@@ -313,6 +404,22 @@ public class TokenReader
                     {
                         ReadNextChar();
                         SetNextToken(new SyntaxToken(TokenKind.GtEq, beginLocation, GetCurrentLocation().MoveRight()));
+                        return;
+                    }
+
+                    // >が続いていたら、>>または>>=として消費する
+                    if (NextChar == '>')
+                    {
+                        ReadNextChar();
+
+                        if (NextChar == '=')
+                        {
+                            ReadNextChar();
+                            SetNextToken(new SyntaxToken(TokenKind.Gt2Eq, beginLocation, GetCurrentLocation().MoveRight()));
+                            return;
+                        }
+
+                        SetNextToken(new SyntaxToken(TokenKind.Gt2, beginLocation, GetCurrentLocation().MoveRight()));
                         return;
                     }
 
@@ -328,6 +435,22 @@ public class TokenReader
                     {
                         ReadNextChar();
                         SetNextToken(new SyntaxToken(TokenKind.LtEq, beginLocation, GetCurrentLocation().MoveRight()));
+                        return;
+                    }
+
+                    // <が続いていたら、<<または<<=として消費する
+                    if (NextChar == '<')
+                    {
+                        ReadNextChar();
+
+                        if (NextChar == '=')
+                        {
+                            ReadNextChar();
+                            SetNextToken(new SyntaxToken(TokenKind.Lt2Eq, beginLocation, GetCurrentLocation().MoveRight()));
+                            return;
+                        }
+
+                        SetNextToken(new SyntaxToken(TokenKind.Lt2, beginLocation, GetCurrentLocation().MoveRight()));
                         return;
                     }
 

@@ -40,29 +40,37 @@ public partial class Parser
     }
 
     private List<SingleOperatorInfo> PrefixOperators = [
-        //new(TokenKind.Hat, 80),
-        //new(TokenKind.Not, 80),
-        new(TokenKind.Plus, 80),
-        new(TokenKind.Minus, 80),
+        //new(TokenKind.Hat, 90),
+        //new(TokenKind.Not, 90),
+        new(TokenKind.Plus, 90),
+        new(TokenKind.Minus, 90),
     ];
 
+    // 演算子の優先順位はC言語に合わせている。
+    // CEmitterは括弧を付けずに平坦に出力するため、Holo側の優先順位がC言語と一致している必要がある。
     private List<InfixOperatorInfo> InfixOperators = [
-        //new(TokenKind.Dot, 90, 91),
-        new(TokenKind.Asterisk, 70, 71),
-        new(TokenKind.Slash, 70, 71),
-        new(TokenKind.Plus, 60, 61),
-        new(TokenKind.Minus, 60, 61),
+        //new(TokenKind.Dot, 100, 101),
+        new(TokenKind.Asterisk, 80, 81),
+        new(TokenKind.Slash, 80, 81),
+        new(TokenKind.Percent, 80, 81),
+        new(TokenKind.Plus, 70, 71),
+        new(TokenKind.Minus, 70, 71),
+        new(TokenKind.Lt2, 60, 61),
+        new(TokenKind.Gt2, 60, 61),
         new(TokenKind.Gt, 50, 51),
         new(TokenKind.GtEq, 50, 51),
         new(TokenKind.Lt, 50, 51),
         new(TokenKind.LtEq, 50, 51),
         new(TokenKind.Eq2, 40, 41),
         new(TokenKind.NotEq, 40, 41),
+        new(TokenKind.And, 30, 31),
+        new(TokenKind.Hat, 20, 21),
+        new(TokenKind.Or, 10, 11),
     ];
 
     private List<SingleOperatorInfo> PostfixOperators = [
-        new(TokenKind.OpenParen, 90),
-        new(TokenKind.OpenBracket, 90),
+        new(TokenKind.OpenParen, 100),
+        new(TokenKind.OpenBracket, 100),
     ];
 
     private ISyntaxNode? ParsePratt(int minimumBindPower)
@@ -200,6 +208,12 @@ public partial class Parser
         { TokenKind.Minus, NodeMode.Sub },
         { TokenKind.Asterisk, NodeMode.Mul },
         { TokenKind.Slash, NodeMode.Div },
+        { TokenKind.Percent, NodeMode.Rem },
+        { TokenKind.Lt2, NodeMode.ShiftLeft },
+        { TokenKind.Gt2, NodeMode.ShiftRight },
+        { TokenKind.And, NodeMode.BitAnd },
+        { TokenKind.Or, NodeMode.BitOr },
+        { TokenKind.Hat, NodeMode.Xor },
         { TokenKind.Gt, NodeMode.Gt },
         { TokenKind.Lt, NodeMode.Lt },
         { TokenKind.GtEq, NodeMode.GtEq },
