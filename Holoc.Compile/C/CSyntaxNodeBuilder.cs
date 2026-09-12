@@ -133,10 +133,13 @@ public class CSyntaxNodeBuilder
 
     private CFunctionDecl BuildFunctionDecl(HoloFunctionDecl decl)
     {
+        // C言語の仕様に合わせるため、main関数は特別に扱う
+        var isMainFunction = decl.Name == "main";
+
         ICType returnType;
 
         // C言語の仕様でmain関数の戻り値はintでなければならない
-        if (decl.Name == "main")
+        if (isMainFunction)
         {
             returnType = new CNamedType("int");
         }
@@ -159,13 +162,20 @@ public class CSyntaxNodeBuilder
 
         var body = decl.Body != null ? BuildBlock(decl.Body) : null;
 
-        // exportが付いていなければstaticを付ける
+        // exportが付いていなければstaticを付ける。
+        // ただしmain関数はプログラムのエントリーポイントであり外部リンケージが必要なため、staticを付けない。
+        var modifiers = CDeclModifier.None;
+        if (!isMainFunction && !decl.Modifiers.HasFlag(HoloDeclModifier.Export))
+        {
+            modifiers = CDeclModifier.Static;
+        }
+
         var impl = new CFunctionDecl(
             returnType,
             decl.Name,
             parameters,
             body,
-            !decl.Modifiers.HasFlag(HoloDeclModifier.Export) ? CDeclModifier.Static : CDeclModifier.None);
+            modifiers);
 
         AddInclude($"\"{Path.ChangeExtension(holoFileName, ".h")}\"", IncludeAdd.Impl);
 
