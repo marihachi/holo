@@ -20,8 +20,10 @@ public class HoloCompiler
 
         var parser = new Parser();
 
+        // 出力ディレクトリが無ければ作成する
         Directory.CreateDirectory(OutDirPath);
 
+        // 入力ファイルを処理
         foreach (var filePath in Input)
         {
             ISyntaxNode? unitNode;
