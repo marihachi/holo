@@ -8,7 +8,7 @@ public partial class Parser
     /// <summary>
     /// 式
     /// </summary>
-    private SyntaxNode? ParseExpression()
+    private ISyntaxNode? ParseExpression()
     {
         return ParsePratt(0);
     }
@@ -65,12 +65,12 @@ public partial class Parser
         new(TokenKind.OpenBracket, 90),
     ];
 
-    private SyntaxNode? ParsePratt(int minimumBindPower)
+    private ISyntaxNode? ParsePratt(int minimumBindPower)
     {
         // pratt parsing
         // https://matklad.github.io/2020/04/13/simple-but-powerful-pratt-parsing.html
 
-        SyntaxNode? left = null;
+        ISyntaxNode? left = null;
 
         var kind = GetKind();
 
@@ -130,7 +130,7 @@ public partial class Parser
         return left;
     }
 
-    private SyntaxNode? ParsePrefix(SingleOperatorInfo operatorInfo)
+    private ISyntaxNode? ParsePrefix(SingleOperatorInfo operatorInfo)
     {
         var location = CreateLocation();
         location.MarkBegin(Reader);
@@ -156,10 +156,10 @@ public partial class Parser
 
         location.MarkEnd(Reader);
 
-        return SyntaxNode.CreateUnaryOperation(mode, right, location);
+        return new SyntaxUnaryOperation(mode, right, location);
     }
 
-    private SyntaxNode? ParsePostfix(SingleOperatorInfo operatorInfo, SyntaxNode left)
+    private ISyntaxNode? ParsePostfix(SingleOperatorInfo operatorInfo, ISyntaxNode left)
     {
         var location = CreateLocation();
         location.MarkBegin(Reader);
@@ -176,7 +176,7 @@ public partial class Parser
 
             location.MarkEnd(Reader);
 
-            return SyntaxNode.CreateCall(left, args, location);
+            return new SyntaxCall(left, args, location);
         }
 
         // index reference
@@ -188,7 +188,7 @@ public partial class Parser
             if (!NextWith(TokenKind.CloseBracket)) return null;
 
             location.MarkEnd(Reader);
-            return SyntaxNode.CreateIndexRef(left, indexExpr, location);
+            return new SyntaxIndexRef(left, indexExpr, location);
         }
 
         return null;
@@ -208,7 +208,7 @@ public partial class Parser
         { TokenKind.NotEq, NodeMode.NotEq },
     };
 
-    private SyntaxNode? ParseInfix(InfixOperatorInfo operatorInfo, SyntaxNode left)
+    private ISyntaxNode? ParseInfix(InfixOperatorInfo operatorInfo, ISyntaxNode left)
     {
         var location = CreateLocation();
         location.MarkBegin(Reader);
@@ -226,10 +226,10 @@ public partial class Parser
             return null;
         }
         
-        return SyntaxNode.CreateBinaryOperation(mode, left, right, location);
+        return new SyntaxBinaryOperation(mode, left, right, location);
     }
 
-    private SyntaxNode? ParseAtom()
+    private ISyntaxNode? ParseAtom()
     {
         if (Try(TokenKind.NumberLiteral))
         {
@@ -241,7 +241,7 @@ public partial class Parser
 
             location.MarkEnd(Reader);
 
-            return SyntaxNode.CreateNumberLiteral(value, location);
+            return new SyntaxNumberLiteral(value, location);
         }
 
         if (Try("if"))
@@ -259,7 +259,7 @@ public partial class Parser
 
             location.MarkEnd(Reader);
 
-            return SyntaxNode.CreateReference(name, location);
+            return new SyntaxReference(name, location);
         }
 
         // block expression
@@ -273,7 +273,7 @@ public partial class Parser
 
             location.MarkEnd(Reader);
 
-            return SyntaxNode.CreateBlockExpression(nodeList, location);
+            return new SyntaxBlockExpression(nodeList, location);
         }
 
         // collection
@@ -291,7 +291,7 @@ public partial class Parser
 
             location.MarkEnd(Reader);
 
-            return SyntaxNode.CreateCollectionExpression(elements, location);
+            return new SyntaxCollectionExpression(elements, location);
         }
 
         GenerateError(Reader.CreateUnexpectedError());
@@ -301,12 +301,10 @@ public partial class Parser
     /// <summary>
     /// if式
     /// </summary>
-    private SyntaxNode? ParseIfExpression()
+    private ISyntaxNode? ParseIfExpression()
     {
         var location = CreateLocation();
         location.MarkBegin(Reader);
-
-        var arms = new List<SyntaxNode>();
 
         if (!Next()) return null;
 
@@ -318,7 +316,7 @@ public partial class Parser
         var thenExpr = ParseExpression();
         if (thenExpr == null) return null;
 
-        SyntaxNode? elseExpr = null;
+        ISyntaxNode? elseExpr = null;
         if (Try("else"))
         {
             if (!Next()) return null;
@@ -329,6 +327,6 @@ public partial class Parser
 
         location.MarkEnd(Reader);
 
-        return SyntaxNode.CreateIfExpression(condExpr, thenExpr, elseExpr, location);
+        return new SyntaxIfExpression(condExpr, thenExpr, elseExpr, location);
     }
 }

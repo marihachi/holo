@@ -19,30 +19,30 @@ public class HoloIRBuilder
         HoloUnit = new HoloUnit("", new List<IHoloDecl>());
     }
 
-    public void Build(string holoFileName, SyntaxNode unit)
+    public void Build(string holoFileName, ISyntaxNode unit)
     {
-        if (unit.Kind != NodeKind.Unit)
+        if (unit is not SyntaxUnit unitNode)
         {
-            throw new NotSupportedException($"Unsupported node kind: {unit.Kind}");
+            throw new NotSupportedException($"Unsupported node: {unit.GetType().Name}");
         }
 
         var decls = new List<IHoloDecl>();
-        foreach (var node in unit.Body!)
+        foreach (var node in unitNode.Body)
         {
-            if (node.Kind == NodeKind.FunctionDeclaration)
+            if (node is SyntaxFunctionDecl funcDecl)
             {
-                decls.Add(BuildFunctionDecl(node));
+                decls.Add(BuildFunctionDecl(funcDecl));
             }
 
-            if (node.Kind == NodeKind.VariableDeclaration)
+            if (node is SyntaxVariableDecl varDecl)
             {
-                decls.Add(BuildVariableDecl(node, true));
+                decls.Add(BuildVariableDecl(varDecl, true));
             }
         }
         HoloUnit = new HoloUnit(holoFileName, decls);
     }
 
-    private HoloFunctionDecl BuildFunctionDecl(SyntaxNode node)
+    private HoloFunctionDecl BuildFunctionDecl(SyntaxFunctionDecl node)
     {
         var modifiers = HoloDeclModifier.None;
 
@@ -56,7 +56,7 @@ public class HoloIRBuilder
             modifiers |= HoloDeclModifier.Export;
         }
 
-        var returnType = node.Operands![0];
+        var returnType = node.ReturnType;
 
         if (returnType == null)
         {
@@ -66,42 +66,45 @@ public class HoloIRBuilder
         var parameters = new List<HoloParam>();
         foreach (var p in node.Parameters ?? [])
         {
-            var paramType = p.Operands![0];
+            if (p is not SyntaxFunctionParameter param)
+            {
+                throw new NotSupportedException($"Unsupported parameter node: {p.GetType().Name}");
+            }
 
-            if (paramType == null)
+            if (param.ParamType == null)
             {
                 throw new NotSupportedException($"A parameter type is not specified");
             }
 
-            parameters.Add(new HoloParam(p.Name!, BuildType(paramType)));
+            parameters.Add(new HoloParam(param.Name, BuildType(param.ParamType)));
         }
 
         var body = node.IsDeclare ? null : BuildStatements(node.Body ?? []);
 
-        return new HoloFunctionDecl(node.Name!, BuildType(returnType), parameters, body, modifiers);
+        return new HoloFunctionDecl(node.Name, BuildType(returnType), parameters, body, modifiers);
     }
 
-    private IHoloType BuildType(SyntaxNode node)
+    private IHoloType BuildType(ISyntaxNode node)
     {
-        if (node.Kind == NodeKind.NamedType)
+        if (node is SyntaxNamedType namedType)
         {
-            return new HoloNamedType(node.Name!);
+            return new HoloNamedType(namedType.Name);
         }
 
-        if (node.Kind == NodeKind.CollectionType)
+        if (node is SyntaxCollectionType collectionType)
         {
-            return new HoloCollectionType(BuildType(node.Operands![0]!), (long?)node.Value);
+            return new HoloCollectionType(BuildType(collectionType.ElementType!), collectionType.Size);
         }
 
-        if (node.Kind == NodeKind.PointerType)
+        if (node is SyntaxPointerType pointerType)
         {
-            return new HoloPointerType(BuildType(node.Operands![0]!));
+            return new HoloPointerType(BuildType(pointerType.ElementType!));
         }
 
-        throw new NotSupportedException($"Unsupported type node: {node.Kind}");
+        throw new NotSupportedException($"Unsupported type node: {node.GetType().Name}");
     }
 
-    private List<IHoloStmt> BuildStatements(List<SyntaxNode> stmts)
+    private List<IHoloStmt> BuildStatements(List<ISyntaxNode> stmts)
     {
         var statements = new List<IHoloStmt>();
         foreach (var stmt in stmts)
@@ -111,84 +114,84 @@ public class HoloIRBuilder
         return statements;
     }
 
-    private List<IHoloStmt> BuildInlineBlock(SyntaxNode node)
+    private List<IHoloStmt> BuildInlineBlock(ISyntaxNode node)
     {
-        if (node.Kind == NodeKind.BlockExpression)
+        if (node is SyntaxBlockExpression blockExpr)
         {
-            return BuildStatements(node.Body ?? []);
+            return BuildStatements(blockExpr.Body);
         }
 
         return [BuildStatement(node)];
     }
 
-    private IHoloStmt BuildStatement(SyntaxNode node)
+    private IHoloStmt BuildStatement(ISyntaxNode node)
     {
-        if (node.Kind == NodeKind.VariableDeclaration)
+        if (node is SyntaxVariableDecl varDecl)
         {
-            return BuildVariableDecl(node, false);
+            return BuildVariableDecl(varDecl, false);
         }
 
-        if (node.Kind == NodeKind.AssignmentStatement)
+        if (node is SyntaxAssignmentStatement assign)
         {
             return new HoloAssignStmt(
-                BuildExpression(node.Operands![0]!),
-                ToAssignOp(node.Mode),
-                BuildExpression(node.Operands[1]!)
+                BuildExpression(assign.Target),
+                ToAssignOp(assign.Mode),
+                BuildExpression(assign.Expression)
             );
         }
 
-        if (node.Kind == NodeKind.IfStatement)
+        if (node is SyntaxIfStatement ifStmt)
         {
-            return BuildIfStmt(node);
+            return BuildIfStmt(ifStmt);
         }
 
-        if (node.Kind == NodeKind.WhileStatement)
+        if (node is SyntaxWhileStatement whileStmt)
         {
             return new HoloWhileStmt(
-                BuildExpression(node.Operands![0]!),
-                BuildInlineBlock(node.Operands[1]!)
+                BuildExpression(whileStmt.Condition),
+                BuildInlineBlock(whileStmt.Body)
             );
         }
 
-        if (node.Kind == NodeKind.DoWhileStatement)
+        if (node is SyntaxDoWhileStatement doWhileStmt)
         {
             return new HoloDoWhileStmt(
-                BuildExpression(node.Operands![0]!),
-                BuildInlineBlock(node.Operands[1]!)
+                BuildExpression(doWhileStmt.Condition),
+                BuildInlineBlock(doWhileStmt.Body)
             );
         }
 
-        if (node.Kind == NodeKind.BreakStatement)
+        if (node is SyntaxBreakStatement)
         {
             return new HoloBreakStmt();
         }
 
-        if (node.Kind == NodeKind.ContinueStatement)
+        if (node is SyntaxContinueStatement)
         {
             return new HoloContinueStmt();
         }
 
-        if (node.Kind == NodeKind.ReturnStatement)
+        if (node is SyntaxReturnStatement returnStmt)
         {
             return new HoloReturnStmt(
-                node.Operands?[0] is { } ret ? BuildExpression(ret) : null
+                returnStmt.Expression != null ? BuildExpression(returnStmt.Expression) : null
             );
         }
 
-        if (node.Kind == NodeKind.ExpressionStatement)
+        if (node is SyntaxExpressionStatement exprStmt)
         {
-            return new HoloExprStmt(BuildExpression(node.Operands![0]!));
+            return new HoloExprStmt(BuildExpression(exprStmt.Expression));
         }
 
-        if (node.Kind == NodeKind.BlockExpression)
+        if (node is SyntaxBlockExpression blockExpr)
         {
-            return new HoloBlockStmt(BuildStatements(node.Body ?? []));
+            return new HoloBlockStmt(BuildStatements(blockExpr.Body));
         }
 
-        throw new NotSupportedException($"Unsupported statement: {node.Kind}");
+        throw new NotSupportedException($"Unsupported statement: {node.GetType().Name}");
     }
 
-    private HoloVariableDeclStmt BuildVariableDecl(SyntaxNode node, bool isTopLevel)
+    private HoloVariableDeclStmt BuildVariableDecl(SyntaxVariableDecl node, bool isTopLevel)
     {
         var modifiers = HoloDeclModifier.None;
 
@@ -205,7 +208,7 @@ public class HoloIRBuilder
             }
         }
 
-        var variableType = node.Operands![0];
+        var variableType = node.VariableType;
 
         if (variableType == null)
         {
@@ -213,123 +216,121 @@ public class HoloIRBuilder
         }
 
         return new HoloVariableDeclStmt(
-            node.Name!,
+            node.Name,
             BuildType(variableType),
-            node.Operands[1] is { } init ? BuildExpression(init) : null,
+            node.Initializer != null ? BuildExpression(node.Initializer) : null,
             modifiers
         );
     }
 
-    private HoloIfStmt BuildIfStmt(SyntaxNode node)
+    private HoloIfStmt BuildIfStmt(SyntaxIfStatement node)
     {
         return new HoloIfStmt(
-            BuildExpression(node.Operands![0]!),
-            BuildInlineBlock(node.Operands[1]!),
-            node.Operands[2] is { } elseNode ? BuildElse(elseNode) : null
+            BuildExpression(node.Condition),
+            BuildInlineBlock(node.ThenStatement),
+            node.ElseStatement != null ? BuildElse(node.ElseStatement) : null
         );
     }
 
-    private IHoloStmt BuildElse(SyntaxNode node)
+    private IHoloStmt BuildElse(ISyntaxNode node)
     {
-        if (node.Kind == NodeKind.IfStatement)
+        if (node is SyntaxIfStatement ifStmt)
         {
-            return BuildIfStmt(node);
+            return BuildIfStmt(ifStmt);
         }
 
         return new HoloBlockStmt(BuildInlineBlock(node));
     }
 
-    private IHoloExpr BuildExpression(SyntaxNode node)
+    private IHoloExpr BuildExpression(ISyntaxNode node)
     {
-        if (node.Kind == NodeKind.NumberLiteral)
+        if (node is SyntaxNumberLiteral numberLiteral)
         {
-            return new HoloNumberLiteral((long)node.Value!);
+            return new HoloNumberLiteral(numberLiteral.Value);
         }
 
-        if (node.Kind == NodeKind.Reference)
+        if (node is SyntaxReference reference)
         {
-            var name = node.Name!;
+            var name = reference.Name;
 
             if (name == "true" || name == "false")
             {
                 return new HoloBoolLiteral(name == "true");
             }
 
-            return new HoloIdentifier(node.Name!);
+            return new HoloIdentifier(name);
         }
 
-        if (node.Kind == NodeKind.UnaryOperation)
+        if (node is SyntaxUnaryOperation unaryOperation)
         {
             return new HoloUnaryExpr(
-                node.Mode == NodeMode.Sub ? HoloUnaryOp.Neg : HoloUnaryOp.Pos,
-                BuildExpression(node.Operands![0]!)
+                unaryOperation.Mode == NodeMode.Sub ? HoloUnaryOp.Neg : HoloUnaryOp.Pos,
+                BuildExpression(unaryOperation.Expression)
             );
         }
 
-        if (node.Kind == NodeKind.BinaryOperation)
+        if (node is SyntaxBinaryOperation binaryOperation)
         {
             return new HoloBinaryExpr(
-                BuildExpression(node.Operands![0]!),
-                ToBinaryOp(node.Mode),
-                BuildExpression(node.Operands[1]!)
+                BuildExpression(binaryOperation.Left),
+                ToBinaryOp(binaryOperation.Mode),
+                BuildExpression(binaryOperation.Right)
             );
         }
 
-        if (node.Kind == NodeKind.Call)
+        if (node is SyntaxCall call)
         {
             var args = new List<IHoloExpr>();
-            foreach (var arg in node.Body ?? [])
+            foreach (var arg in call.Args)
             {
                 args.Add(BuildExpression(arg));
             }
-            return new HoloCallExpr(BuildExpression(node.Operands![0]!), args);
+            return new HoloCallExpr(BuildExpression(call.Callee), args);
         }
 
-        if (node.Kind == NodeKind.IndexRef)
+        if (node is SyntaxIndexRef indexRef)
         {
             return new HoloIndexRefExpr(
-                BuildExpression(node.Operands![0]!),
-                BuildExpression(node.Operands![1]!)
+                BuildExpression(indexRef.Source),
+                BuildExpression(indexRef.Index)
             );
         }
 
-        if (node.Kind == NodeKind.IfExpression)
+        if (node is SyntaxIfExpression ifExpr)
         {
-            var elseNode = node.Operands![2];
-
             // if式ではelse句は必須。
-            if (elseNode == null)
+            if (ifExpr.ElseExpr == null)
             {
                 throw new NotSupportedException($"The if expression needs an else clause.");
             }
 
-            return new HoloIfExpr(BuildExpression(node.Operands![0]!), BuildExpression(node.Operands![1]!), BuildExpression(elseNode));
+            return new HoloIfExpr(BuildExpression(ifExpr.Condition), BuildExpression(ifExpr.ThenExpr), BuildExpression(ifExpr.ElseExpr));
         }
 
-        if (node.Kind == NodeKind.BlockExpression)
+        if (node is SyntaxBlockExpression blockExpr)
         {
             var blockExprs = new List<IHoloExpr>();
-            foreach (var n in node.Body ?? [])
+            foreach (var n in blockExpr.Body)
             {
-                if (n.Kind == NodeKind.ExpressionStatement)
+                if (n is SyntaxExpressionStatement exprStmt)
                 {
-                    blockExprs.Add(BuildExpression(n.Operands![0]!));
+                    blockExprs.Add(BuildExpression(exprStmt.Expression));
                 }
             }
             return new HoloBlockExpr(blockExprs);
         }
 
-        if (node.Kind == NodeKind.CollectionExpression)
+        if (node is SyntaxCollectionExpression collectionExpr)
         {
             var elements = new List<IHoloExpr>();
-            foreach (var n in node.Body!)
+            foreach (var n in collectionExpr.Elements)
             {
                 elements.Add(BuildExpression(n));
             }
             return new HoloCollectionExpr(elements);
         }
 
-        throw new NotSupportedException($"Unsupported expression: {node.Kind}");
+        throw new NotSupportedException($"Unsupported expression: {node.GetType().Name}");
     }
 
     private static HoloAssignOp ToAssignOp(NodeMode mode)

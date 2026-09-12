@@ -5,9 +5,9 @@ namespace Holoc.Compile.Syntax;
 
 public partial class Parser
 {
-    private SyntaxNode? ParseType()
+    private ISyntaxNode? ParseType()
     {
-        SyntaxNode? outerNode = null;
+        ISyntaxNode? outerNode = null;
 
         while (true)
         {
@@ -26,7 +26,7 @@ public partial class Parser
 
                 if (!NextWith(TokenKind.CloseBracket)) return null;
                 location.MarkEnd(Reader);
-                outerNode = SyntaxNode.CreateCollectionType(outerNode, size, location);
+                outerNode = new SyntaxCollectionType(outerNode, size, location);
                 continue;
             }
 
@@ -36,7 +36,7 @@ public partial class Parser
                 location.MarkBegin(Reader);
                 if (!Next()) return null;
                 location.MarkEnd(Reader);
-                outerNode = SyntaxNode.CreatePointerType(outerNode, location);
+                outerNode = new SyntaxPointerType(outerNode, location);
                 continue;
             }
 
@@ -47,7 +47,7 @@ public partial class Parser
                 var name = GetTokenValue();
                 if (!Next()) return null;
                 location.MarkEnd(Reader);
-                outerNode = SyntaxNode.CreateNamedType(name, location);
+                outerNode = new SyntaxNamedType(name, location);
                 continue;
             }
 
@@ -66,7 +66,7 @@ public partial class Parser
     /// <summary>
     /// ブロックをパースします。
     /// </summary>
-    private List<SyntaxNode>? ParseBlock()
+    private List<ISyntaxNode>? ParseBlock()
     {
         if (!NextWith(TokenKind.OpenBrace)) return null;
 

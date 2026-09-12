@@ -82,7 +82,7 @@ public class Program
             //using var mmf = MemoryMappedFile.CreateFromFile(filepath);
             //using var stream = mmf.CreateViewStream();
 
-            SyntaxNode? unitNode;
+            ISyntaxNode? unitNode;
             using (var reader = new StreamReader(
                 filePath,
                 Encoding.UTF8,
@@ -105,7 +105,7 @@ public class Program
 
             if (showAst && unitNode != null)
             {
-                SyntaxNode.ShowSyntaxNode(unitNode);
+                SyntaxView.Show(unitNode);
             }
 
             if (unitNode == null) return;

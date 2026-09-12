@@ -19,13 +19,10 @@ namespace Holoc.Compile.Tests
 
             var result = Parser.Parse(reader);
 
-            Assert.NotNull(result);
-            Assert.Equal(NodeKind.Unit, result.Kind);
-            Assert.NotNull(result.Body);
-            Assert.Single(result.Body);
+            var unit = Assert.IsType<SyntaxUnit>(result);
+            Assert.Single(unit.Body);
 
-            var functionDecl = result.Body[0];
-            Assert.Equal(NodeKind.FunctionDeclaration, functionDecl.Kind);
+            var functionDecl = Assert.IsType<SyntaxFunctionDecl>(unit.Body[0]);
             Assert.Equal("abc", functionDecl.Name);
         }
 
@@ -40,26 +37,21 @@ namespace Holoc.Compile.Tests
 
             var result = Parser.Parse(reader);
 
-            Assert.NotNull(result);
-            Assert.Equal(NodeKind.Unit, result.Kind);
-            Assert.NotNull(result.Body);
-            Assert.Single(result.Body);
+            var unit = Assert.IsType<SyntaxUnit>(result);
+            Assert.Single(unit.Body);
 
-            var functionDecl = result.Body[0];
-            Assert.Equal(NodeKind.FunctionDeclaration, functionDecl.Kind);
+            var functionDecl = Assert.IsType<SyntaxFunctionDecl>(unit.Body[0]);
 
             Assert.NotNull(functionDecl.Parameters);
             Assert.Equal(2, functionDecl.Parameters.Count);
 
-            var param = functionDecl.Parameters[0];
-            Assert.NotNull(param);
-            Assert.Equal(NodeKind.FunctionParameter, param.Kind);
+            var param = Assert.IsType<SyntaxFunctionParameter>(functionDecl.Parameters[0]);
             Assert.Equal("a", param.Name);
+            Assert.Null(param.ParamType);
 
-            param = functionDecl.Parameters[1];
-            Assert.NotNull(param);
-            Assert.Equal(NodeKind.FunctionParameter, param.Kind);
+            param = Assert.IsType<SyntaxFunctionParameter>(functionDecl.Parameters[1]);
             Assert.Equal("b", param.Name);
+            Assert.Null(param.ParamType);
         }
 
         /// <summary>
@@ -73,44 +65,27 @@ namespace Holoc.Compile.Tests
 
             var result = Parser.Parse(reader);
 
-            Assert.NotNull(result);
-            Assert.Equal(NodeKind.Unit, result.Kind);
-            Assert.NotNull(result.Body);
-            Assert.Single(result.Body);
+            var unit = Assert.IsType<SyntaxUnit>(result);
+            Assert.Single(unit.Body);
 
-            var functionDecl = result.Body[0];
-            Assert.Equal(NodeKind.FunctionDeclaration, functionDecl.Kind);
+            var functionDecl = Assert.IsType<SyntaxFunctionDecl>(unit.Body[0]);
 
-            var returnType = functionDecl.Operands?[0];
-            Assert.NotNull(returnType);
-            Assert.Equal(NodeKind.NamedType, returnType.Kind);
+            var returnType = Assert.IsType<SyntaxNamedType>(functionDecl.ReturnType);
             Assert.Equal("int", returnType.Name);
 
             Assert.NotNull(functionDecl.Parameters);
             Assert.Equal(2, functionDecl.Parameters.Count);
 
-            var param = functionDecl.Parameters[0];
-            Assert.NotNull(param);
-            Assert.Equal(NodeKind.FunctionParameter, param.Kind);
+            var param = Assert.IsType<SyntaxFunctionParameter>(functionDecl.Parameters[0]);
             Assert.Equal("a", param.Name);
-            Assert.NotNull(param.Operands);
-            Assert.Single(param.Operands);
 
-            var paramType = param.Operands[0];
-            Assert.NotNull(paramType);
-            Assert.Equal(NodeKind.NamedType, paramType.Kind);
+            var paramType = Assert.IsType<SyntaxNamedType>(param.ParamType);
             Assert.Equal("int", paramType.Name);
 
-            param = functionDecl.Parameters[0];
-            Assert.NotNull(param);
-            Assert.Equal(NodeKind.FunctionParameter, param.Kind);
-            Assert.Equal("a", param.Name);
-            Assert.NotNull(param.Operands);
-            Assert.Single(param.Operands);
+            param = Assert.IsType<SyntaxFunctionParameter>(functionDecl.Parameters[1]);
+            Assert.Equal("b", param.Name);
 
-            paramType = param.Operands[0];
-            Assert.NotNull(paramType);
-            Assert.Equal(NodeKind.NamedType, paramType.Kind);
+            paramType = Assert.IsType<SyntaxNamedType>(param.ParamType);
             Assert.Equal("int", paramType.Name);
         }
 
@@ -125,26 +100,16 @@ namespace Holoc.Compile.Tests
 
             var result = Parser.Parse(reader);
 
-            Assert.NotNull(result);
-            Assert.Equal(NodeKind.Unit, result.Kind);
-            Assert.NotNull(result.Body);
-            Assert.Single(result.Body);
+            var unit = Assert.IsType<SyntaxUnit>(result);
+            Assert.Single(unit.Body);
 
-            var variableDecl = result.Body[0];
-            Assert.Equal(NodeKind.VariableDeclaration, variableDecl.Kind);
+            var variableDecl = Assert.IsType<SyntaxVariableDecl>(unit.Body[0]);
             Assert.Equal("x", variableDecl.Name);
 
-            Assert.NotNull(variableDecl.Operands);
-            Assert.Equal(2, variableDecl.Operands.Count);
-
-            var variableType = variableDecl.Operands[0];
-            Assert.NotNull(variableType);
-            Assert.Equal(NodeKind.NamedType, variableType.Kind);
+            var variableType = Assert.IsType<SyntaxNamedType>(variableDecl.VariableType);
             Assert.Equal("int", variableType.Name);
 
-            var initializer = variableDecl.Operands[1];
-            Assert.NotNull(initializer);
-            Assert.Equal(NodeKind.NumberLiteral, initializer.Kind);
+            var initializer = Assert.IsType<SyntaxNumberLiteral>(variableDecl.Initializer);
             Assert.Equal(1L, initializer.Value);
         }
 
@@ -159,25 +124,16 @@ namespace Holoc.Compile.Tests
 
             var result = Parser.Parse(reader);
 
-            Assert.NotNull(result);
-            Assert.Equal(NodeKind.Unit, result.Kind);
-            Assert.NotNull(result.Body);
-            Assert.Single(result.Body);
+            var unit = Assert.IsType<SyntaxUnit>(result);
+            Assert.Single(unit.Body);
 
-            var variableDecl = result.Body[0];
-            Assert.Equal(NodeKind.VariableDeclaration, variableDecl.Kind);
+            var variableDecl = Assert.IsType<SyntaxVariableDecl>(unit.Body[0]);
             Assert.Equal("x", variableDecl.Name);
 
-            Assert.NotNull(variableDecl.Operands);
-            Assert.Equal(2, variableDecl.Operands.Count);
-
-            var variableType = variableDecl.Operands[0];
-            Assert.NotNull(variableType);
-            Assert.Equal(NodeKind.NamedType, variableType.Kind);
+            var variableType = Assert.IsType<SyntaxNamedType>(variableDecl.VariableType);
             Assert.Equal("int", variableType.Name);
 
-            var initializer = variableDecl.Operands[1];
-            Assert.Null(initializer);
+            Assert.Null(variableDecl.Initializer);
         }
     }
 }
