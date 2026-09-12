@@ -276,6 +276,25 @@ public partial class Parser
             return new SyntaxReference(name, location);
         }
 
+        // group expression
+        // NOTE: 関数コールの"("は後置演算子としてParsePrattのループ側で処理されるため、こことは競合しない。
+        if (Try(TokenKind.OpenParen))
+        {
+            var location = CreateLocation();
+            location.MarkBegin(Reader);
+
+            if (!Next()) return null;
+
+            var innerExpr = ParseExpression();
+            if (innerExpr == null) return null;
+
+            if (!NextWith(TokenKind.CloseParen)) return null;
+
+            location.MarkEnd(Reader);
+
+            return new SyntaxGroupExpression(innerExpr, location);
+        }
+
         // block expression
         if (Try(TokenKind.OpenBrace))
         {

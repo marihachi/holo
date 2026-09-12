@@ -83,6 +83,8 @@ public record CUnaryExpr(string Op, ICExpr Operand) : ICExpr;
 
 public record CBinaryExpr(ICExpr Left, string Op, ICExpr Right) : ICExpr;
 
+public record CGroupExpr(ICExpr Expression) : ICExpr;
+
 public record CCallExpr(ICExpr Callee, List<ICExpr> Args) : ICExpr;
 
 public record CIndexRefExpr(ICExpr Source, ICExpr Index) : ICExpr;
