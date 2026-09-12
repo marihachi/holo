@@ -137,9 +137,9 @@ namespace Holoc.Compile.Tests
         }
 
         /// <summary>
-        /// 変数宣言の型を取得します。
+        /// 変数宣言の型を準備します。
         /// </summary>
-        private ISyntaxNode? ParseVariableType(string source)
+        private ISyntaxNode? PrepareVariableType(string source)
         {
             using var stream = new MemoryStream(Encoding.UTF8.GetBytes(source));
             using var reader = new StreamReader(stream);
@@ -160,7 +160,7 @@ namespace Holoc.Compile.Tests
         public void ArrayTypeTest()
         {
             // int[3] -> 要素数3のint配列
-            var collectionType = Assert.IsType<SyntaxCollectionType>(ParseVariableType("var x: int[3];"));
+            var collectionType = Assert.IsType<SyntaxCollectionType>(PrepareVariableType("var x: int[3];"));
             Assert.Equal(3L, collectionType.Size);
 
             var elementType = Assert.IsType<SyntaxNamedType>(collectionType.ElementType);
@@ -174,7 +174,7 @@ namespace Holoc.Compile.Tests
         public void ArrayTypeWithoutSizeTest()
         {
             // int[] -> 要素数の指定がないint配列
-            var collectionType = Assert.IsType<SyntaxCollectionType>(ParseVariableType("var x: int[];"));
+            var collectionType = Assert.IsType<SyntaxCollectionType>(PrepareVariableType("var x: int[];"));
             Assert.Null(collectionType.Size);
 
             var elementType = Assert.IsType<SyntaxNamedType>(collectionType.ElementType);
@@ -188,7 +188,7 @@ namespace Holoc.Compile.Tests
         public void PointerTypeTest()
         {
             // int* -> intへのポインタ
-            var pointerType = Assert.IsType<SyntaxPointerType>(ParseVariableType("var x: int*;"));
+            var pointerType = Assert.IsType<SyntaxPointerType>(PrepareVariableType("var x: int*;"));
 
             var elementType = Assert.IsType<SyntaxNamedType>(pointerType.ElementType);
             Assert.Equal("int", elementType.Name);
@@ -201,7 +201,7 @@ namespace Holoc.Compile.Tests
         public void PointerArrayTypeTest()
         {
             // int*[3] -> intへのポインタ3個の配列
-            var collectionType = Assert.IsType<SyntaxCollectionType>(ParseVariableType("var x: int*[3];"));
+            var collectionType = Assert.IsType<SyntaxCollectionType>(PrepareVariableType("var x: int*[3];"));
             Assert.Equal(3L, collectionType.Size);
 
             var pointerType = Assert.IsType<SyntaxPointerType>(collectionType.ElementType);
@@ -217,7 +217,7 @@ namespace Holoc.Compile.Tests
         public void ArrayPointerTypeTest()
         {
             // int[3]* -> int3個の配列へのポインタ
-            var pointerType = Assert.IsType<SyntaxPointerType>(ParseVariableType("var x: int[3]*;"));
+            var pointerType = Assert.IsType<SyntaxPointerType>(PrepareVariableType("var x: int[3]*;"));
 
             var collectionType = Assert.IsType<SyntaxCollectionType>(pointerType.ElementType);
             Assert.Equal(3L, collectionType.Size);
