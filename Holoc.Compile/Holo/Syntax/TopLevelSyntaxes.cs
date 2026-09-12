@@ -8,24 +8,24 @@ public partial class Parser
     /// <summary>
     /// コンパイル単位
     /// </summary>
-    private SyntaxNode? ParseUnit()
+    private ISyntaxNode? ParseUnit()
     {
         var location = CreateLocation();
         location.MarkBegin(Reader);
 
         var results = Repeat(ParseTopLevelDecl, x => x.Kind == TokenKind.EOF);
         if (results == null) return null;
-        List<SyntaxNode> body = [];
+        List<ISyntaxNode> body = [];
         body.AddRange(results);
 
         location.MarkEnd(Reader);
-        return SyntaxNode.CreateUnit(body, location);
+        return new SyntaxUnit(body, location);
     }
 
     /// <summary>
     /// トップレベル宣言
     /// </summary>
-    private SyntaxNode? ParseTopLevelDecl()
+    private ISyntaxNode? ParseTopLevelDecl()
     {
         var isDeclare = false;
         var isPartial = false;
@@ -98,7 +98,7 @@ public partial class Parser
         return null;
     }
 
-    private SyntaxNode? ParseModuleDecl(bool isPartial)
+    private ISyntaxNode? ParseModuleDecl(bool isPartial)
     {
         var location = CreateLocation();
         location.MarkBegin(Reader);
@@ -113,15 +113,15 @@ public partial class Parser
 
         location.MarkEnd(Reader);
 
-        return SyntaxNode.CreateModuleDecl(name, isPartial, location);
+        return new SyntaxModuleDecl(name, isPartial, location);
     }
 
     /// <summary>
     /// 関数宣言
     /// </summary>
-    private SyntaxNode? ParseFunctionDecl(bool isDeclare, bool isExport)
+    private ISyntaxNode? ParseFunctionDecl(bool isDeclare, bool isExport)
     {
-        List<SyntaxNode>? results;
+        List<ISyntaxNode>? results;
 
         var location = CreateLocation();
         location.MarkBegin(Reader);
@@ -137,12 +137,12 @@ public partial class Parser
         if (!NextWith(TokenKind.OpenParen)) return null;
         results = Repeat(ParseFunctionParameter, x => x.Kind == TokenKind.CloseParen, x => x.Kind == TokenKind.Comma);
         if (results == null) return null;
-        List<SyntaxNode> paramList = [];
+        List<ISyntaxNode> paramList = [];
         paramList.AddRange(results);
         if (!NextWith(TokenKind.CloseParen)) return null;
 
         // return type
-        SyntaxNode? returnType = null;
+        ISyntaxNode? returnType = null;
         if (Try(TokenKind.Colon))
         {
             if (!Next()) return null;
@@ -152,7 +152,7 @@ public partial class Parser
         }
 
         // body
-        List<SyntaxNode>? body = null;
+        List<ISyntaxNode>? body = null;
         if (Try(TokenKind.OpenBrace))
         {
             body = ParseBlock();
@@ -165,13 +165,13 @@ public partial class Parser
 
         location.MarkEnd(Reader);
 
-        return SyntaxNode.CreateFunctionDecl(name, returnType, paramList, body, isDeclare, isExport, location);
+        return new SyntaxFunctionDecl(name, returnType, paramList, body, isDeclare, isExport, location);
     }
 
     /// <summary>
     /// 関数の仮引数
     /// </summary>
-    private SyntaxNode? ParseFunctionParameter()
+    private ISyntaxNode? ParseFunctionParameter()
     {
         var location = CreateLocation();
         location.MarkBegin(Reader);
@@ -180,7 +180,7 @@ public partial class Parser
         var name = GetTokenValue();
         if (!Next()) return null;
 
-        SyntaxNode? paramType = null;
+        ISyntaxNode? paramType = null;
         if (Try(TokenKind.Colon))
         {
             if (!Next()) return null;
@@ -191,6 +191,6 @@ public partial class Parser
 
         location.MarkEnd(Reader);
 
-        return SyntaxNode.CreateFunctionParameter(name, paramType, location);
+        return new SyntaxFunctionParameter(name, paramType, location);
     }
 }

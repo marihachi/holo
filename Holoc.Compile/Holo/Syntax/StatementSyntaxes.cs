@@ -8,7 +8,7 @@ public partial class Parser
     /// <summary>
     /// 文
     /// </summary>
-    private SyntaxNode? ParseStatement()
+    private ISyntaxNode? ParseStatement()
     {
         var isDeclare = false;
 
@@ -76,7 +76,7 @@ public partial class Parser
         var expr = ParseExpression();
         if (expr != null)
         {
-            if (expr.Kind == NodeKind.BlockExpression)
+            if (expr is SyntaxBlockExpression)
             {
                 return expr;
             }
@@ -87,7 +87,7 @@ public partial class Parser
 
                 location.MarkEnd(Reader);
 
-                return SyntaxNode.CreateExpressionStatement(
+                return new SyntaxExpressionStatement(
                     expr,
                     location);
             }
@@ -105,7 +105,7 @@ public partial class Parser
                 
                 location.MarkEnd(Reader);
                 
-                return SyntaxNode.CreateAssignmentStatement(
+                return new SyntaxAssignmentStatement(
                     nodeMode,
                     expr,
                     rightExpr,
@@ -138,7 +138,7 @@ public partial class Parser
     /// <summary>
     /// break文
     /// </summary>
-    private SyntaxNode? ParseBreakStatement()
+    private ISyntaxNode? ParseBreakStatement()
     {
         var location = CreateLocation();
         location.MarkBegin(Reader);
@@ -148,13 +148,13 @@ public partial class Parser
 
         location.MarkEnd(Reader);
 
-        return SyntaxNode.CreateBreakStatement(location);
+        return new SyntaxBreakStatement(location);
     }
 
     /// <summary>
     /// continue文
     /// </summary>
-    private SyntaxNode? ParseContinueStatement()
+    private ISyntaxNode? ParseContinueStatement()
     {
         var location = CreateLocation();
         location.MarkBegin(Reader);
@@ -164,13 +164,13 @@ public partial class Parser
 
         location.MarkEnd(Reader);
 
-        return SyntaxNode.CreateContinueStatement(location);
+        return new SyntaxContinueStatement(location);
     }
 
     /// <summary>
     /// return文、return fn文
     /// </summary>
-    private SyntaxNode? ParseReturnStatement()
+    private ISyntaxNode? ParseReturnStatement()
     {
         var location = CreateLocation();
         location.MarkBegin(Reader);
@@ -185,7 +185,7 @@ public partial class Parser
             isForceReturnFunc = true;
         }
 
-        SyntaxNode? expr = null;
+        ISyntaxNode? expr = null;
         if (Try(TokenKind.SemiColon))
         {
             if (!Next()) return null;
@@ -200,10 +200,10 @@ public partial class Parser
 
         location.MarkEnd(Reader);
 
-        return SyntaxNode.CreateReturnStatement(expr, isForceReturnFunc, location);
+        return new SyntaxReturnStatement(expr, isForceReturnFunc, location);
     }
 
-    private SyntaxNode? ParseVariableDeclaration(bool isDeclare, bool isExport)
+    private ISyntaxNode? ParseVariableDeclaration(bool isDeclare, bool isExport)
     {
         var location = CreateLocation();
         location.MarkBegin(Reader);
@@ -214,7 +214,7 @@ public partial class Parser
         var name = GetTokenValue();
         if (!Next()) return null;
 
-        SyntaxNode? variableType = null;
+        ISyntaxNode? variableType = null;
         if (Try(TokenKind.Colon))
         {
             if (!Next()) return null;
@@ -223,7 +223,7 @@ public partial class Parser
             if (variableType == null) return null;
         }
 
-        SyntaxNode? initializer = null;
+        ISyntaxNode? initializer = null;
         if (Try(TokenKind.Eq))
         {
             if (!Next()) return null;
@@ -236,10 +236,10 @@ public partial class Parser
 
         location.MarkEnd(Reader);
 
-        return SyntaxNode.CreateVariableDecl(name, variableType, initializer, isDeclare, isExport, location);
+        return new SyntaxVariableDecl(name, variableType, initializer, isDeclare, isExport, location);
     }
 
-    private SyntaxNode? ParseWhileStatement()
+    private ISyntaxNode? ParseWhileStatement()
     {
         var location = CreateLocation();
         location.MarkBegin(Reader);
@@ -258,10 +258,10 @@ public partial class Parser
 
         location.MarkEnd(Reader);
 
-        return SyntaxNode.CreateWhileStatement(condition!, body, location);
+        return new SyntaxWhileStatement(condition, body, location);
     }
 
-    private SyntaxNode? ParseDoWhileStatement()
+    private ISyntaxNode? ParseDoWhileStatement()
     {
         var location = CreateLocation();
         location.MarkBegin(Reader);
@@ -284,13 +284,13 @@ public partial class Parser
 
         location.MarkEnd(Reader);
 
-        return SyntaxNode.CreateDoWhileStatement(condition, body, location);
+        return new SyntaxDoWhileStatement(condition, body, location);
     }
 
     /// <summary>
     /// if文
     /// </summary>
-    private SyntaxNode? ParseIfStatement()
+    private ISyntaxNode? ParseIfStatement()
     {
         var location = CreateLocation();
         location.MarkBegin(Reader);
@@ -305,7 +305,7 @@ public partial class Parser
         var thenStmt = ParseStatement();
         if (thenStmt == null) return null;
 
-        SyntaxNode? elseStmt = null;
+        ISyntaxNode? elseStmt = null;
         if (Try("else"))
         {
             if (!Next()) return null;
@@ -316,6 +316,6 @@ public partial class Parser
 
         location.MarkEnd(Reader);
 
-        return SyntaxNode.CreateIfStatement(condExpr, thenStmt, elseStmt, location);
+        return new SyntaxIfStatement(condExpr, thenStmt, elseStmt, location);
     }
 }

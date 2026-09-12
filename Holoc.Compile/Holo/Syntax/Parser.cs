@@ -186,7 +186,7 @@ public partial class Parser
     /// </summary>
     /// <param name="parseFunc">パース関数</param>
     /// <param name="terminator">繰り返し終了のトークン</param>
-    private List<SyntaxNode>? Repeat(Func<SyntaxNode?> parseFunc, Predicate<SyntaxToken> terminator)
+    private List<ISyntaxNode>? Repeat(Func<ISyntaxNode?> parseFunc, Predicate<SyntaxToken> terminator)
     {
         return Repeat(parseFunc, terminator, null);
     }
@@ -199,9 +199,9 @@ public partial class Parser
     /// <param name="parseItem">パース関数</param>
     /// <param name="terminator">繰り返し終了のトークンかを確認する関数</param>
     /// <param name="separator">区切り文字のトークンかを確認する関数</param>
-    private List<SyntaxNode>? Repeat(Func<SyntaxNode?> parseItem, Predicate<SyntaxToken> terminator, Predicate<SyntaxToken>? separator)
+    private List<ISyntaxNode>? Repeat(Func<ISyntaxNode?> parseItem, Predicate<SyntaxToken> terminator, Predicate<SyntaxToken>? separator)
     {
-        var items = new List<SyntaxNode>();
+        var items = new List<ISyntaxNode>();
 
         // 終端のトークンかを確認する
         while (!terminator(Reader.NextToken!))
@@ -228,7 +228,7 @@ public partial class Parser
         return items;
     }
 
-    public SyntaxNode? Parse(StreamReader stream)
+    public ISyntaxNode? Parse(StreamReader stream)
     {
         Initialize(stream);
         return ParseUnit();
