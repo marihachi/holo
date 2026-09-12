@@ -23,7 +23,9 @@ public class HoloCompiler
         // 出力ディレクトリが無ければ作成する
         Directory.CreateDirectory(OutDirPath);
 
-        // 入力ファイルを処理
+        var holoUnits = new List<HoloUnit>();
+
+        // 入力ファイルをパースし、Holo IRを生成する
         foreach (var filePath in Input)
         {
             ISyntaxNode? unitNode;
@@ -61,8 +63,16 @@ public class HoloCompiler
             holoIrBuilder.Build(holoFileName, unitNode);
             var holoIr = holoIrBuilder.HoloUnit;
 
-            // TODO: semantic analysis
+            holoUnits.Add(holoIr);
+        }
 
+        // TODO: モジュールの依存関係を解決
+
+        // TODO: 識別子の解決、型チェックなど
+
+        // Cコードを生成する
+        foreach (var holoIr in holoUnits)
+        {
             // Holo IR -> C IR
             var cIrBuilder = new CSyntaxNodeBuilder();
             cIrBuilder.Build(holoIr);
@@ -74,12 +84,12 @@ public class HoloCompiler
             var cHeaderStr = new CEmitter().Emit(cHeader);
 
             // write implement file
-            var implFilePath = Path.Combine(OutDirPath, Path.ChangeExtension(holoFileName, ".c"));
+            var implFilePath = Path.Combine(OutDirPath, Path.ChangeExtension(holoIr.fileName, ".c"));
             File.WriteAllText(implFilePath, implStr, Encoding.UTF8);
             CFileList.Add(implFilePath);
 
             // write header file
-            var headerFilePath = Path.Combine(OutDirPath, Path.ChangeExtension(holoFileName, ".h"));
+            var headerFilePath = Path.Combine(OutDirPath, Path.ChangeExtension(holoIr.fileName, ".h"));
             File.WriteAllText(headerFilePath, cHeaderStr, Encoding.UTF8);
         }
     }
