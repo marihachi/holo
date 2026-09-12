@@ -50,12 +50,16 @@ internal interface ISyntaxForceReturn
     bool IsForceReturnFunc { get; }
 }
 
-internal static class SyntaxNodeVisitor
+/// <summary>
+/// ASTを階層表示します。
+/// </summary>
+internal static class SyntaxView
 {
     /// <summary>
-    /// 表示対象の子ノードを表します。単一の子ノードとリストの子ノードのどちらかを保持します。
+    /// 階層表示する上での子ノードを表します。
+    /// 単一または複数の子ノードを保持します。
     /// </summary>
-    private class ChildEntry
+    private class SyntaxViewChild
     {
         public string Label { get; init; } = "";
         public ISyntaxNode? Node { get; init; }
@@ -63,14 +67,14 @@ internal static class SyntaxNodeVisitor
         public bool IsList { get; init; }
     }
 
-    public static void ShowSyntaxNode(ISyntaxNode? node)
+    public static void Show(ISyntaxNode? node)
     {
         if (node == null) return;
 
-        ShowSyntaxNodeInternal(node, "", true, "");
+        ShowNode(node, "", true, "");
     }
 
-    private static void ShowSyntaxNodeInternal(ISyntaxNode node, string indent, bool isLast, string labelName)
+    private static void ShowNode(ISyntaxNode node, string indent, bool isLast, string labelName)
     {
         // 現在のノードを表示
         string prefix = isLast ? "└── " : "├── ";
@@ -111,44 +115,44 @@ internal static class SyntaxNodeVisitor
         Console.WriteLine();
 
         // 子ノードを表示
-        var children = CreateChildEntries(node);
+        var children = CreateChildren(node);
         string nextIndent = indent + (isLast ? "    " : "│   ");
         for (int i = 0; i < children.Count; i++)
         {
-            var entry = children[i];
+            var child = children[i];
             bool isLastChild = i == children.Count - 1;
             string childPrefix = isLastChild ? "└── " : "├── ";
 
-            if (entry.IsList)
+            if (child.IsList)
             {
-                if (entry.Nodes == null)
+                if (child.Nodes == null)
                 {
-                    Console.WriteLine($"{nextIndent}{childPrefix}[{entry.Label}] <null>");
+                    Console.WriteLine($"{nextIndent}{childPrefix}[{child.Label}] <null>");
                 }
-                else if (entry.Nodes.Count == 0)
+                else if (child.Nodes.Count == 0)
                 {
-                    Console.WriteLine($"{nextIndent}{childPrefix}[{entry.Label}] <empty>");
+                    Console.WriteLine($"{nextIndent}{childPrefix}[{child.Label}] <empty>");
                 }
                 else
                 {
                     // リストは見出し行を出し、その下に要素をぶら下げる
-                    Console.WriteLine($"{nextIndent}{childPrefix}[{entry.Label}]");
+                    Console.WriteLine($"{nextIndent}{childPrefix}[{child.Label}]");
                     string listIndent = nextIndent + (isLastChild ? "    " : "│   ");
-                    for (int j = 0; j < entry.Nodes.Count; j++)
+                    for (int j = 0; j < child.Nodes.Count; j++)
                     {
-                        ShowSyntaxNodeInternal(entry.Nodes[j], listIndent, j == entry.Nodes.Count - 1, "");
+                        ShowNode(child.Nodes[j], listIndent, j == child.Nodes.Count - 1, "");
                     }
                 }
             }
             else
             {
-                if (entry.Node == null)
+                if (child.Node == null)
                 {
-                    Console.WriteLine($"{nextIndent}{childPrefix}[{entry.Label}] <null>");
+                    Console.WriteLine($"{nextIndent}{childPrefix}[{child.Label}] <null>");
                 }
                 else
                 {
-                    ShowSyntaxNodeInternal(entry.Node, nextIndent, isLastChild, entry.Label);
+                    ShowNode(child.Node, nextIndent, isLastChild, child.Label);
                 }
             }
         }
@@ -157,9 +161,9 @@ internal static class SyntaxNodeVisitor
     /// <summary>
     /// ノードの子ノードを表示順に列挙します。
     /// </summary>
-    private static List<ChildEntry> CreateChildEntries(ISyntaxNode node)
+    private static List<SyntaxViewChild> CreateChildren(ISyntaxNode node)
     {
-        List<ChildEntry> children;
+        List<SyntaxViewChild> children;
         switch (node)
         {
             case SyntaxUnit unit:
@@ -298,14 +302,14 @@ internal static class SyntaxNodeVisitor
         return children;
     }
 
-    private static ChildEntry CreateChild(string label, ISyntaxNode? node)
+    private static SyntaxViewChild CreateChild(string label, ISyntaxNode? node)
     {
-        return new ChildEntry { Label = label, Node = node, IsList = false };
+        return new SyntaxViewChild { Label = label, Node = node, IsList = false };
     }
 
-    private static ChildEntry CreateChildList(string label, List<ISyntaxNode>? nodes)
+    private static SyntaxViewChild CreateChildList(string label, List<ISyntaxNode>? nodes)
     {
-        return new ChildEntry { Label = label, Nodes = nodes, IsList = true };
+        return new SyntaxViewChild { Label = label, Nodes = nodes, IsList = true };
     }
 }
 
