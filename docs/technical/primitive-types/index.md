@@ -1,15 +1,16 @@
 # 配列やポインタのネスト
 参考: https://enakai00.hatenablog.com/entry/20110808/1312783316
 
+int型へのポインタの配列
 ```
-var x1: int[3];
-var x2: int*[3];
-var x3: int[3]*;
+// Holo -> C
+var x: int*[3]; -> int *x[3];
 ```
+
+int型配列へのポインタ
 ```
-int x1[3];
-int *x2[3];
-int (*x3)[3];
+// Holo -> C
+var x: int[3]*; -> int (*x)[3];
 ```
 
 # bool型
