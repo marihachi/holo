@@ -136,11 +136,11 @@ namespace Holoc.Compile.Tests
             var result = Emit("fn main(): int { return add(1, 2); } fn add(a: int, b: int): int { return a + b; }");
 
             var protoIndex = IndexOf(result.Impl, "int32_t add(int32_t a, int32_t b);");
-            var defIndex = IndexOf(result.Impl, "int32_t add(int32_t a, int32_t b)\n{");
+            var defIndex = IndexOf(result.Impl, "int32_t add(int32_t a, int32_t b) {");
 
             Assert.True(protoIndex < defIndex, "前方宣言が定義より後にあります。");
 
-            var callerIndex = IndexOf(result.Impl, "int main(void)\n{");
+            var callerIndex = IndexOf(result.Impl, "int main(void) {");
             Assert.True(protoIndex < callerIndex, "前方宣言が呼び出し元の定義より後にあります。");
         }
 
