@@ -9,7 +9,7 @@ namespace Holoc.Compile.Tests
         public Parser Parser = new();
 
         /// <summary>
-        /// 関数宣言
+        /// 関数宣言をパースできる
         /// </summary>
         [Fact]
         public void FunctionTest()
@@ -27,7 +27,7 @@ namespace Holoc.Compile.Tests
         }
 
         /// <summary>
-        /// 型指定なしの引数を持つ関数宣言
+        /// 引数の型は省略できる
         /// </summary>
         [Fact]
         public void FunctionNoTypeParamsTest()
@@ -55,7 +55,7 @@ namespace Holoc.Compile.Tests
         }
 
         /// <summary>
-        /// 型指定された引数を持つ関数宣言
+        /// 引数と戻り値に型を指定できる
         /// </summary>
         [Fact]
         public void FunctionParamsTest()
@@ -90,7 +90,7 @@ namespace Holoc.Compile.Tests
         }
 
         /// <summary>
-        /// 初期化付きの変数宣言
+        /// 変数宣言で初期値を指定できる
         /// </summary>
         [Fact]
         public void VariableInitTest()
@@ -114,7 +114,7 @@ namespace Holoc.Compile.Tests
         }
 
         /// <summary>
-        /// 初期化なしの変数宣言
+        /// 変数宣言の初期値は省略できる
         /// </summary>
         [Fact]
         public void VariableWithoutInitTest()
@@ -137,7 +137,7 @@ namespace Holoc.Compile.Tests
         }
 
         /// <summary>
-        /// 変数宣言の型を準備します。
+        /// 変数宣言をパースし、その型を返します。
         /// </summary>
         private ISyntaxNode? PrepareVariableType(string source)
         {
@@ -154,7 +154,7 @@ namespace Holoc.Compile.Tests
         }
 
         /// <summary>
-        /// 配列型
+        /// T[n]は要素数nの配列型になる
         /// </summary>
         [Fact]
         public void ArrayTypeTest()
@@ -168,7 +168,7 @@ namespace Holoc.Compile.Tests
         }
 
         /// <summary>
-        /// 要素数の指定がない配列型
+        /// 配列型の要素数は省略できる
         /// </summary>
         [Fact]
         public void ArrayTypeWithoutSizeTest()
@@ -182,7 +182,7 @@ namespace Holoc.Compile.Tests
         }
 
         /// <summary>
-        /// ポインタ型
+        /// T*はTへのポインタ型になる
         /// </summary>
         [Fact]
         public void PointerTypeTest()
@@ -195,7 +195,7 @@ namespace Holoc.Compile.Tests
         }
 
         /// <summary>
-        /// ポインタの配列型
+        /// T*[n]はポインタの配列型になる
         /// </summary>
         [Fact]
         public void PointerArrayTypeTest()
@@ -211,7 +211,7 @@ namespace Holoc.Compile.Tests
         }
 
         /// <summary>
-        /// 配列へのポインタ型
+        /// T[n]*は配列へのポインタ型になる
         /// </summary>
         [Fact]
         public void ArrayPointerTypeTest()
@@ -257,7 +257,7 @@ namespace Holoc.Compile.Tests
         }
 
         /// <summary>
-        /// 式を準備します。
+        /// 変数の初期化式としてパースし、その式を返します。
         /// </summary>
         private ISyntaxNode PrepareExpression(string expression)
         {
@@ -275,7 +275,7 @@ namespace Holoc.Compile.Tests
         }
 
         /// <summary>
-        /// 代入文を準備します。
+        /// 関数本体の代入文としてパースし、その文を返します。
         /// </summary>
         private SyntaxAssignmentStatement PrepareAssignment(string statement)
         {
@@ -295,7 +295,7 @@ namespace Holoc.Compile.Tests
         }
 
         /// <summary>
-        /// 二項演算子
+        /// 二項演算子をパースできる
         /// </summary>
         [Theory]
         [InlineData("+", NodeMode.Add)]
@@ -327,7 +327,7 @@ namespace Holoc.Compile.Tests
         }
 
         /// <summary>
-        /// 複合代入演算子
+        /// 代入演算子と複合代入演算子をパースできる
         /// </summary>
         [Theory]
         [InlineData("=", NodeMode.None)]
@@ -405,7 +405,7 @@ namespace Holoc.Compile.Tests
         }
 
         /// <summary>
-        /// 括弧によるグループ化
+        /// 括弧で囲んだ式はグループ化される
         /// </summary>
         [Fact]
         public void GroupExpressionTest()
@@ -438,12 +438,12 @@ namespace Holoc.Compile.Tests
         }
 
         /// <summary>
-        /// 関数コールの括弧はグループ化として扱わない
+        /// 関数呼び出しの括弧はグループ化として扱わない
         /// </summary>
         [Fact]
         public void CallIsNotGroupExpressionTest()
         {
-            // f(1) -> 関数コール
+            // f(1) -> 関数呼び出し
             var call = Assert.IsType<SyntaxCall>(PrepareExpression("f(1)"));
 
             var callee = Assert.IsType<SyntaxReference>(call.Callee);
@@ -454,7 +454,7 @@ namespace Holoc.Compile.Tests
             var arg = Assert.IsType<SyntaxNumberLiteral>(call.Args[0]);
             Assert.Equal(1L, arg.Value);
 
-            // (f)(1) -> グループ化された識別子への関数コール
+            // (f)(1) -> グループ化された識別子の呼び出し
             call = Assert.IsType<SyntaxCall>(PrepareExpression("(f)(1)"));
 
             var group = Assert.IsType<SyntaxGroupExpression>(call.Callee);

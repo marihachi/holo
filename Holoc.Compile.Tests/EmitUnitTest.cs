@@ -6,7 +6,7 @@ using System.Text;
 namespace Holoc.Compile.Tests
 {
     /// <summary>
-    /// holo言語のソースからC言語のソースまでを通しで検証します。
+    /// holo言語のソースからC言語のソースへの変換を通しで検証します。
     /// </summary>
     public class EmitUnitTest
     {
@@ -44,7 +44,7 @@ namespace Holoc.Compile.Tests
         }
 
         /// <summary>
-        /// main関数はエントリーポイントなのでstaticを付けない
+        /// main関数にはstaticを付けない
         /// </summary>
         [Fact]
         public void MainFunctionIsNotStaticTest()
@@ -61,7 +61,7 @@ namespace Holoc.Compile.Tests
         [Fact]
         public void MainFunctionReturnTypeIsIntTest()
         {
-            // holo側でintと書いていても、int32_tではなくintを出力する
+            // holo側でintと書いていても、int32_tではなくintを出力します。
             var result = Emit("fn main(): int { return 0; }");
 
             Assert.Contains("int main(void)", result.Impl);
@@ -105,7 +105,7 @@ namespace Holoc.Compile.Tests
         }
 
         /// <summary>
-        /// mainという名前でもexportが付いていれば矛盾しない
+        /// exportが付いたmain関数にもstaticを付けない
         /// </summary>
         [Fact]
         public void ExportedMainFunctionIsNotStaticTest()
@@ -117,7 +117,7 @@ namespace Holoc.Compile.Tests
         }
 
         /// <summary>
-        /// 実装ファイル中の位置を取得します。
+        /// 実装ファイル中の出現位置を返します。
         /// </summary>
         private static int IndexOf(string impl, string text)
         {
@@ -127,22 +127,21 @@ namespace Holoc.Compile.Tests
         }
 
         /// <summary>
-        /// 後で定義される関数を呼び出せるように前方宣言を出力する
+        /// 後で定義される関数の前方宣言を、呼び出し元より前に出力する
         /// </summary>
         [Fact]
         public void ForwardFunctionDeclIsEmittedTest()
         {
-            // mainがaddより先に定義されているため、前方宣言がなければC言語のコンパイルが通らない
+            // addはmainより後に定義されています。
             var result = Emit("fn main(): int { return add(1, 2); } fn add(a: int, b: int): int { return a + b; }");
 
             var protoIndex = IndexOf(result.Impl, "int32_t add(int32_t a, int32_t b);");
             var defIndex = IndexOf(result.Impl, "int32_t add(int32_t a, int32_t b)\n{");
 
-            Assert.True(protoIndex < defIndex, "前方宣言は定義より前に出力される必要があります。");
+            Assert.True(protoIndex < defIndex, "前方宣言が定義より後にあります。");
 
-            // 前方宣言は呼び出し元の定義よりも前に出力される
             var callerIndex = IndexOf(result.Impl, "int main(void)\n{");
-            Assert.True(protoIndex < callerIndex, "前方宣言は呼び出し元の定義より前に出力される必要があります。");
+            Assert.True(protoIndex < callerIndex, "前方宣言が呼び出し元の定義より後にあります。");
         }
 
         /// <summary>
@@ -156,11 +155,11 @@ namespace Holoc.Compile.Tests
             var protoIndex = IndexOf(result.Impl, "static int32_t g;");
             var defIndex = IndexOf(result.Impl, "static int32_t g = 1;");
 
-            Assert.True(protoIndex < defIndex, "前方宣言は定義より前に出力される必要があります。");
+            Assert.True(protoIndex < defIndex, "前方宣言が定義より後にあります。");
         }
 
         /// <summary>
-        /// 前方宣言は変数・関数の順にまとめて出力され、定義より前に置かれる
+        /// 前方宣言は変数、関数の順に並べ、全ての定義より前に出力する
         /// </summary>
         [Fact]
         public void ForwardDeclsArePlacedBeforeAllDefinitionsTest()
@@ -171,8 +170,8 @@ namespace Holoc.Compile.Tests
             var funcProtoIndex = IndexOf(result.Impl, "int32_t f(void);");
             var firstDefIndex = IndexOf(result.Impl, "static int32_t g = 1;");
 
-            Assert.True(varProtoIndex < funcProtoIndex, "変数の前方宣言は関数の前方宣言より前に出力されます。");
-            Assert.True(funcProtoIndex < firstDefIndex, "前方宣言は全ての定義より前に出力される必要があります。");
+            Assert.True(varProtoIndex < funcProtoIndex, "変数の前方宣言が関数の前方宣言より後にあります。");
+            Assert.True(funcProtoIndex < firstDefIndex, "前方宣言が最初の定義より後にあります。");
         }
 
         /// <summary>
@@ -183,27 +182,26 @@ namespace Holoc.Compile.Tests
         {
             var result = Emit("var g: int = 1; fn f(): int { return g; }");
 
-            // exportが付いていないので、ヘッダーには公開されない
+            // exportが付いていないため、ヘッダーには出力しません。
             Assert.DoesNotContain("g", result.Header);
             Assert.DoesNotContain("f(void)", result.Header);
         }
 
         /// <summary>
-        /// export済みの宣言はヘッダーと実装ファイルの両方に出力される
+        /// exportされた宣言も実装ファイルに前方宣言を出力する
         /// </summary>
         [Fact]
         public void ExportedDeclsHaveForwardDeclInImplTest()
         {
             var result = Emit("export var g: int = 1; export fn f(): int { return g; }");
 
-            // 実装ファイル側の前方宣言は定義と同じ記憶域クラスになる
             var varProtoIndex = IndexOf(result.Impl, "int32_t g;");
             var varDefIndex = IndexOf(result.Impl, "int32_t g = 1;");
-            Assert.True(varProtoIndex < varDefIndex, "前方宣言は定義より前に出力される必要があります。");
+            Assert.True(varProtoIndex < varDefIndex, "前方宣言が定義より後にあります。");
 
             Assert.Contains("int32_t f(void);", result.Impl);
 
-            // ヘッダー側の変数はexternで宣言する
+            // ヘッダー側の変数はexternで宣言します。
             Assert.Contains("extern int32_t g;", result.Header);
             Assert.Contains("int32_t f(void);", result.Header);
         }
@@ -214,7 +212,7 @@ namespace Holoc.Compile.Tests
         [Fact]
         public void NonExportedFunctionForwardDeclIsStaticTest()
         {
-            // 前方宣言を外部リンケージ、定義を内部リンケージにするのはC言語の仕様に反する (C11 6.2.2p7)
+            // 前方宣言と定義でリンケージが異なるのは未定義動作です (C11 6.2.2p7)。
             var result = Emit("fn main(): int { return f(); } fn f(): int { return 0; }");
 
             Assert.Contains("static int32_t f(void);", result.Impl);
@@ -226,7 +224,7 @@ namespace Holoc.Compile.Tests
         [Fact]
         public void NonExportedVariableForwardDeclIsStaticTest()
         {
-            // 前方宣言を外部リンケージ、定義を内部リンケージにするのはC言語の仕様に反する (C11 6.2.2p7)
+            // 前方宣言と定義でリンケージが異なるのは未定義動作です (C11 6.2.2p7)。
             var result = Emit("var g: int = 1; fn f(): int { return g; }");
 
             Assert.Contains("static int32_t g;", result.Impl);
