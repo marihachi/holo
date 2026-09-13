@@ -27,15 +27,15 @@ public class CSyntaxNodeBuilder
     public CSyntaxNodeBuilder()
     {
         holoFileName = "a.holo";
-        CImpl = new CFile([], []);
-        CHeader = new CFile([], []);
+        CImpl = new CFile([], [], [], []);
+        CHeader = new CFile([], [], [], []);
     }
 
     public void Clear()
     {
         holoFileName = "a.holo";
-        CImpl = new CFile([], []);
-        CHeader = new CFile([], []);
+        CImpl = new CFile([], [], [], []);
+        CHeader = new CFile([], [], [], []);
     }
 
     public void Build(HoloUnit unit)
@@ -47,6 +47,9 @@ public class CSyntaxNodeBuilder
             if (decl is HoloFunctionDecl func)
             {
                 var cDecl = BuildFunctionDecl(func);
+
+                // 関数定義を追加
+                CImpl.Declarations.Add(cDecl);
 
                 // exportが付いていればヘッダーで公開
                 if (func.Modifiers.HasFlag(HoloDeclModifier.Export))
@@ -60,7 +63,14 @@ public class CSyntaxNodeBuilder
                     ));
                 }
 
-                CImpl.Declarations.Add(cDecl);
+                // 前方宣言にも追加
+                CImpl.ForwardFuncDecls.Add(new CFunctionDecl(
+                    cDecl.ReturnType,
+                    cDecl.Name,
+                    cDecl.Parameters,
+                    null,
+                    cDecl.Modifiers
+                ));
             }
 
             if (decl is HoloVariableDeclStmt varDecl)
@@ -73,6 +83,9 @@ public class CSyntaxNodeBuilder
                     !varDecl.Modifiers.HasFlag(HoloDeclModifier.Export) ? CDeclModifier.Static : CDeclModifier.None
                 );
 
+                // 変数定義を追加
+                CImpl.Declarations.Add(cDecl);
+
                 // exportが付いていればヘッダーで公開
                 if (varDecl.Modifiers.HasFlag(HoloDeclModifier.Export))
                 {
@@ -84,7 +97,13 @@ public class CSyntaxNodeBuilder
                     ));
                 }
 
-                CImpl.Declarations.Add(cDecl);
+                // 前方宣言にも追加
+                CImpl.ForwardVarDecls.Add(new CVariableDeclStmt(
+                    cDecl.Type,
+                    cDecl.Name,
+                    null,
+                    cDecl.Modifiers
+                ));
             }
         }
     }

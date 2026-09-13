@@ -24,6 +24,19 @@ public class CEmitter
             Write("\n");
         }
 
+        // 変数の前方宣言
+        foreach (var decl in unit.ForwardVarDecls)
+        {
+            EmitStatement(decl);
+        }
+
+        // 関数の前方宣言
+        foreach (var decl in unit.ForwardFuncDecls)
+        {
+            EmitFunctionDecl(decl);
+        }
+
+        // 定義
         foreach (var decl in unit.Declarations)
         {
             if (decl is CFunctionDecl func)
