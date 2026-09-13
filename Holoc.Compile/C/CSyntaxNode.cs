@@ -10,7 +10,7 @@ public enum CVersion
 };
 
 
-public record CFile(List<string> Includes, List<ICDecl> Declarations);
+public record CFile(List<string> Includes, List<CFunctionDecl> ForwardFuncDecls, List<CVariableDeclStmt> ForwardVarDecls , List<ICDecl> Declarations);
 
 public interface ICDecl;
 

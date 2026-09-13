@@ -115,5 +115,146 @@ namespace Holoc.Compile.Tests
             Assert.Contains("int main(void)", result.Impl);
             Assert.DoesNotContain("static", result.Impl);
         }
+
+        /// <summary>
+        /// 実装ファイル中の位置を取得します。
+        /// </summary>
+        private static int IndexOf(string impl, string text)
+        {
+            var index = impl.IndexOf(text, StringComparison.Ordinal);
+            Assert.True(index >= 0, $"'{text}' が出力に含まれていません。");
+            return index;
+        }
+
+        /// <summary>
+        /// 後で定義される関数を呼び出せるように前方宣言を出力する
+        /// </summary>
+        [Fact]
+        public void ForwardFunctionDeclIsEmittedTest()
+        {
+            // mainがaddより先に定義されているため、前方宣言がなければC言語のコンパイルが通らない
+            var result = Emit("fn main(): int { return add(1, 2); } fn add(a: int, b: int): int { return a + b; }");
+
+            var protoIndex = IndexOf(result.Impl, "int32_t add(int32_t a, int32_t b);");
+            var defIndex = IndexOf(result.Impl, "int32_t add(int32_t a, int32_t b)\n{");
+
+            Assert.True(protoIndex < defIndex, "前方宣言は定義より前に出力される必要があります。");
+
+            // 前方宣言は呼び出し元の定義よりも前に出力される
+            var callerIndex = IndexOf(result.Impl, "int main(void)\n{");
+            Assert.True(protoIndex < callerIndex, "前方宣言は呼び出し元の定義より前に出力される必要があります。");
+        }
+
+        /// <summary>
+        /// グローバル変数の前方宣言を出力する
+        /// </summary>
+        [Fact]
+        public void ForwardVariableDeclIsEmittedTest()
+        {
+            var result = Emit("var g: int = 1; fn f(): int { return g; }");
+
+            var protoIndex = IndexOf(result.Impl, "static int32_t g;");
+            var defIndex = IndexOf(result.Impl, "static int32_t g = 1;");
+
+            Assert.True(protoIndex < defIndex, "前方宣言は定義より前に出力される必要があります。");
+        }
+
+        /// <summary>
+        /// 前方宣言は変数・関数の順にまとめて出力され、定義より前に置かれる
+        /// </summary>
+        [Fact]
+        public void ForwardDeclsArePlacedBeforeAllDefinitionsTest()
+        {
+            var result = Emit("var g: int = 1; fn f(): int { return g; } fn main(): int { return f(); }");
+
+            var varProtoIndex = IndexOf(result.Impl, "static int32_t g;");
+            var funcProtoIndex = IndexOf(result.Impl, "int32_t f(void);");
+            var firstDefIndex = IndexOf(result.Impl, "static int32_t g = 1;");
+
+            Assert.True(varProtoIndex < funcProtoIndex, "変数の前方宣言は関数の前方宣言より前に出力されます。");
+            Assert.True(funcProtoIndex < firstDefIndex, "前方宣言は全ての定義より前に出力される必要があります。");
+        }
+
+        /// <summary>
+        /// 前方宣言はヘッダーの内容に影響しない
+        /// </summary>
+        [Fact]
+        public void ForwardDeclsDoNotAffectHeaderTest()
+        {
+            var result = Emit("var g: int = 1; fn f(): int { return g; }");
+
+            // exportが付いていないので、ヘッダーには公開されない
+            Assert.DoesNotContain("g", result.Header);
+            Assert.DoesNotContain("f(void)", result.Header);
+        }
+
+        /// <summary>
+        /// export済みの宣言はヘッダーと実装ファイルの両方に出力される
+        /// </summary>
+        [Fact]
+        public void ExportedDeclsHaveForwardDeclInImplTest()
+        {
+            var result = Emit("export var g: int = 1; export fn f(): int { return g; }");
+
+            // 実装ファイル側の前方宣言は定義と同じ記憶域クラスになる
+            var varProtoIndex = IndexOf(result.Impl, "int32_t g;");
+            var varDefIndex = IndexOf(result.Impl, "int32_t g = 1;");
+            Assert.True(varProtoIndex < varDefIndex, "前方宣言は定義より前に出力される必要があります。");
+
+            Assert.Contains("int32_t f(void);", result.Impl);
+
+            // ヘッダー側の変数はexternで宣言する
+            Assert.Contains("extern int32_t g;", result.Header);
+            Assert.Contains("int32_t f(void);", result.Header);
+        }
+
+        /// <summary>
+        /// 非exportの関数は前方宣言にもstaticを付ける
+        /// </summary>
+        [Fact]
+        public void NonExportedFunctionForwardDeclIsStaticTest()
+        {
+            // 前方宣言を外部リンケージ、定義を内部リンケージにするのはC言語の仕様に反する (C11 6.2.2p7)
+            var result = Emit("fn main(): int { return f(); } fn f(): int { return 0; }");
+
+            Assert.Contains("static int32_t f(void);", result.Impl);
+        }
+
+        /// <summary>
+        /// 非exportのグローバル変数は前方宣言にもstaticを付ける
+        /// </summary>
+        [Fact]
+        public void NonExportedVariableForwardDeclIsStaticTest()
+        {
+            // 前方宣言を外部リンケージ、定義を内部リンケージにするのはC言語の仕様に反する (C11 6.2.2p7)
+            var result = Emit("var g: int = 1; fn f(): int { return g; }");
+
+            Assert.Contains("static int32_t g;", result.Impl);
+            Assert.DoesNotContain("extern int32_t g;", result.Impl);
+        }
+
+        /// <summary>
+        /// exportされた関数は前方宣言にstaticを付けない
+        /// </summary>
+        [Fact]
+        public void ExportedFunctionForwardDeclIsNotStaticTest()
+        {
+            var result = Emit("export fn f(): int { return 0; }");
+
+            Assert.Contains("int32_t f(void);", result.Impl);
+            Assert.DoesNotContain("static", result.Impl);
+        }
+
+        /// <summary>
+        /// main関数は前方宣言にstaticを付けない
+        /// </summary>
+        [Fact]
+        public void MainFunctionForwardDeclIsNotStaticTest()
+        {
+            var result = Emit("fn main(): int { return 0; }");
+
+            Assert.Contains("int main(void);", result.Impl);
+            Assert.DoesNotContain("static", result.Impl);
+        }
     }
 }
