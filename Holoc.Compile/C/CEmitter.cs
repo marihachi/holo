@@ -14,31 +14,48 @@ public class CEmitter
         _indent = 0;
         _indentStr = "";
 
-        foreach (var include in unit.Includes)
-        {
-            Write($"#include {include}\n");
-        }
-
+        // includeがある場合
         if (unit.Includes.Count > 0)
         {
+            foreach (var include in unit.Includes)
+            {
+                Write($"#include {include}\n");
+            }
+
             Write("\n");
         }
 
-        // 変数の前方宣言
-        foreach (var decl in unit.ForwardVarDecls)
+        // 前方宣言がある場合
+        if (unit.ForwardVarDecls.Count + unit.ForwardFuncDecls.Count > 0)
         {
-            EmitStatement(decl);
-        }
+            Write("// forward declarations\n");
 
-        // 関数の前方宣言
-        foreach (var decl in unit.ForwardFuncDecls)
-        {
-            EmitFunctionDecl(decl);
+            // 変数の前方宣言
+            foreach (var decl in unit.ForwardVarDecls)
+            {
+                EmitStatement(decl);
+            }
+
+            // 関数の前方宣言
+            foreach (var decl in unit.ForwardFuncDecls)
+            {
+                EmitFunctionDecl(decl);
+            }
+
+            Write("\n");
         }
 
         // 定義
-        foreach (var decl in unit.Declarations)
+        for (int i = 0; i < unit.Declarations.Count; i++)
         {
+            var decl = unit.Declarations[i];
+
+            // 宣言と宣言の間に空行を追加
+            if (i > 0)
+            {
+                Write("\n");
+            }
+
             if (decl is CFunctionDecl func)
             {
                 EmitFunctionDecl(func);
@@ -153,15 +170,17 @@ public class CEmitter
             Write(GetTypeString(decl.Parameters[i], ""));
         }
 
-        if (decl.Body == null)
-        {
-            Write(");\n\n");
-            return;
-        }
+        Write(")");
 
-        Write(")\n");
-        EmitBlock(decl.Body);
-        Write("\n");
+        if (decl.Body != null)
+        {
+            Write(" ");
+            EmitBlock(decl.Body);
+        }
+        else
+        {
+            Write(";\n");
+        }
     }
 
     // --- Statements ---
