@@ -55,12 +55,12 @@ public class CSyntaxNodeBuilder
                 if (func.Modifiers.HasFlag(HoloDeclModifier.Export))
                 {
                     CHeader.Declarations.Add(new CFunctionDecl(
-                    cDecl.ReturnType,
-                    cDecl.Name,
-                    cDecl.Parameters,
-                    null,
-                    CDeclModifier.None
-                ));
+                        cDecl.ReturnType,
+                        cDecl.Name,
+                        cDecl.Parameters,
+                        null,
+                        CDeclModifier.None
+                    ));
                 }
 
                 // 前方宣言にも追加
@@ -90,11 +90,11 @@ public class CSyntaxNodeBuilder
                 if (varDecl.Modifiers.HasFlag(HoloDeclModifier.Export))
                 {
                     CHeader.Declarations.Add(new CVariableDeclStmt(
-                    cDecl.Type,
-                    cDecl.Name,
-                    null,
-                    CDeclModifier.Extern
-                ));
+                        cDecl.Type,
+                        cDecl.Name,
+                        null,
+                        CDeclModifier.Extern
+                    ));
                 }
 
                 // 前方宣言にも追加
